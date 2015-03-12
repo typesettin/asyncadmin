@@ -1,0 +1,89 @@
+{
+  "name": "periodicjs.ext.asyncadmin",
+  "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
+  "version": "5.0.0",
+  "main": "index.js",
+  "engines": {
+    "node": ">=0.10.x"
+  },
+  "author": {
+    "name": "Yaw Joseph Etse",
+    "email": "yaw.etse@gmail.com",
+    "url": "http://about.me/yawjosephetse"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/typesettin/periodicjs.ext.login.git"
+  },
+  "scripts": {
+    "postinstall": "node install.js",
+    "postuninstall": "node uninstall.js",
+    "test": "mocha"
+  },
+  "dependencies": {
+    "periodicjs.core.controller": "~3.1.1",
+    "periodicjs.core.extensions": "~4.0.2",
+    "periodicjs.core.mailer": "~4.0.0",
+    "periodicjs.core.utilities": "~3.1.1"
+  },
+  "devDependencies": {
+    "browserify": "~6.3.2",
+    "chai": "^1.10.0",
+    "chai-fs": "^0.1.0",
+    "grunt": ">=0.4.5",
+    "grunt-browserify": ">=2.1.3",
+    "grunt-contrib-copy": ">=0.5.0",
+    "grunt-contrib-cssmin": ">=0.9.0",
+    "grunt-contrib-jshint": ">=0.10.0",
+    "grunt-contrib-less": ">=0.11.3",
+    "grunt-contrib-uglify": ">=0.4.0",
+    "grunt-contrib-watch": ">=0.6.1",
+    "grunt-jsbeautifier": ">=0.2.7",
+    "grunt-jsdoc": ">=0.5.6",
+    "grunt-newer": ">=0.7.0",
+    "grunt-simple-mocha": ">=0.4.0",
+    "jquery": "^2.1.3",
+    "js-dom": "0.0.1",
+    "jsdoc": "3.3.0-alpha10",
+    "mocha": "2.0.1",
+    "supertest": "^0.15.0",
+    "uglify-js": "^2.4.15",
+    "uglifyify": "^2.5.0"
+  },
+  "keywords": [
+    "periodicjs",
+    "passport",
+    "authentication",
+    "express",
+    "cms",
+    "wordpress",
+    "drupal"
+  ],
+  "bugs": {
+    "url": "https://github.com/typesettin/periodicjs.ext.login/issues"
+  },
+  "homepage": "https://github.com/typesettin/periodicjs.ext.login",
+  "_id": "periodicjs.ext.login@4.9.6",
+  "_shasum": "de6bafe88e8879ab9ab9bf16721fd6e773371724",
+  "_from": "periodicjs.ext.login@>=4.9.5-0 <5.0.0-0",
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.login/-/periodicjs.ext.login-1.5.4.tgz",
+  "gitHead": "4664b50397714fe9aad5c9b1e77d1707525c107c",
+  "_npmVersion": "1.5.0-alpha-4",
+  "_npmUser": {
+    "name": "yawetse",
+    "email": "yaw.etse@gmail.com"
+  },
+  "maintainers": [
+    {
+      "name": "yawetse",
+      "email": "yaw.etse@gmail.com"
+    }
+  ],
+  "dist": {
+    "shasum": "c2c86b8a963aebf4846f09b894164fbc279ac507",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.login/-/periodicjs.ext.login-1.5.4.tgz"
+  },
+  "directories": {},
+  "readme": "# periodicjs.ext.login\n\nAn authentication extension that uses passport to authenticate user sessions.\n\n [API Documentation](https://github.com/typesettin/periodicjs.ext.login/blob/master/doc/api.md)\n\n## Installation\n\n```\n$ npm install periodicjs.ext.login\n```\n\n## Configure\n\nyou can define your own passort authentication strategies, after the extension has been installed, the extension configuration is located in `content/config/extensions/periodicjs.ext.login/transport.json`\n\n##Development\n*Make sure you have grunt installed*\n```\n$ npm install -g grunt-cli\n```\n\nThen run grunt watch\n```\n$ grunt watch\n```\nFor generating documentation\n```\n$ grunt doc\n$ jsdoc2md controller/**/*.js index.js install.js uninstall.js > doc/api.md\n```\n##Notes\n* Check out https://github.com/typesettin/periodicjs for the full Periodic Documentation",
+  "readmeFilename": "README.md"
+}
