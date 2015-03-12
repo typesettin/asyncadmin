@@ -1,13 +1,18 @@
-			<footer class="ts-row ts-serif-clean">
-			  <div class="ts-col-span6 ts-text-sm">
-			    Curated with <a href="http://getperiodic.org" target="_blank">Periodic</a>
-			  </div>
-			  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
-			    Version <%= periodic.version %>
-						<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
-			    <%var d=new Date();%>
-			      <%- d.getFullYear() %>
-			  </div>
+			<footer class="ts-position-fixed ts-position-bottom ts-width-100 ts-text-center ts-serif-clean ts-madding-lg ts-bg-text-primary-color" style="border-top: 1px solid black;">
+				<section class="ts-text-container ">
+					<div class="ts-row ">
+					  <div class="ts-col-span6 ts-text-left ts-text-sm">
+					    Curated with <a href="http://getperiodic.org" target="_blank">Periodic</a>
+					  </div>
+					  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
+					    Version <%= periodic.version %>
+								<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
+					    <%var d=new Date();%>
+					      <%- d.getFullYear() %>
+					  </div>
+					</div>
+				</section>
+				
 			</footer>
 		</div>
 	</main>

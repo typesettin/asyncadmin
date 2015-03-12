@@ -10,13 +10,13 @@ var Utilities = require('periodicjs.core.utilities'),
 	// configError,
 	adminExtSettings;
 
-var admin_index = function(req,res){
-	var viewtemplate={
+var admin_index = function (req, res) {
+	var viewtemplate = {
 			viewname: 'p-admin/home/index',
 			themefileext: appSettings.templatefileextension,
 			extname: 'periodicjs.ext.asyncadmin'
 		},
-		viewdata={
+		viewdata = {
 			pagedata: {
 				title: 'admin',
 				extensions: CoreUtilities.getAdminMenu()
@@ -25,7 +25,7 @@ var admin_index = function(req,res){
 			// contentcounts: req.controllerData.contentcounts,
 			user: req.user
 		};
-	CoreController.renderView(req,res,viewtemplate,viewdata);
+	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
 /**
@@ -50,9 +50,9 @@ var controller = function (resources) {
 
 	// var appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.admin.adminExtSettings;
-	
+
 	return {
-		admin_index:admin_index,
+		admin_index: admin_index,
 		adminExtSettings: adminExtSettings,
 	};
 };

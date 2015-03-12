@@ -100,6 +100,19 @@ module.exports = function (grunt) {
 				dest: '../../public/extensions/periodicjs.ext.asyncadmin',
 			},
 		},
+		less: {
+			development: {
+				options: {
+					sourceMap: true,
+					sourceMapURL: 'asyncadmin.css.map',
+					yuicompress: true,
+					compress: true
+				},
+				files: {
+					'public/stylesheets/asyncadmin.css': 'resources/stylesheets/asyncadmin.less'
+				}
+			}
+		},
 		watch: {
 			scripts: {
 				// files: '**/*.js',
@@ -107,10 +120,11 @@ module.exports = function (grunt) {
 					'Gruntfile.js',
 					'index.js',
 					'controller/**/*.js',
+					'resources/**/*.less',
 					'resources/**/*.js',
 					'test/**/*.js',
 				],
-				tasks: ['lint', 'packagejs', 'copy', /*'doc',*/ 'test'],
+				tasks: ['lint', 'packagejs', 'copy', 'less', 'test'],
 				options: {
 					interrupt: true
 				}

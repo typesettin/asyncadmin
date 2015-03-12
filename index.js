@@ -6,7 +6,7 @@ var path = require('path'),
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
-  // activate_middleware,
+	// activate_middleware,
 	Extensions = require('periodicjs.core.extensions'),
 	CoreExtension = new Extensions({
 		extensionFilePath: path.resolve(process.cwd(), './content/config/extensions.json')
