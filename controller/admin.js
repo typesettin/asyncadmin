@@ -19,6 +19,7 @@ var admin_index = function (req, res) {
 		viewdata = {
 			pagedata: {
 				title: 'admin',
+				toplink: '&raquo; Home',
 				extensions: CoreUtilities.getAdminMenu()
 			},
 			// markdownpages: req.controllerData.markdownpages,

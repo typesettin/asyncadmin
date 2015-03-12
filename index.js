@@ -32,6 +32,9 @@ module.exports = function (periodic) {
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
+	console.log('adminExtSettings', adminExtSettings);
+	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
+
 	periodic.app.controller.extension.admin = {
 		adminExtSettings: adminExtSettings
 	};
@@ -108,6 +111,7 @@ module.exports = function (periodic) {
 	// adminRouter.get('/mailer', adminController.mail_index);
 	// adminRouter.get('/check_periodic_version', adminController.check_periodic_version);
 
+	console.log('periodic.app.locals.adminPath', periodic.app.locals.adminPath);
 	adminRouter.use('/asset', mediaAdminRouter);
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);
@@ -123,6 +127,6 @@ module.exports = function (periodic) {
 	periodic.app.use('/category', categoryRouter);
 	periodic.app.use('/contenttype', contenttypeRouter);
 	periodic.app.use('/mediaasset', mediaRouter);
-	periodic.app.use('/p-admin', adminRouter);
+	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
 	return periodic;
 };
