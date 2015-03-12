@@ -1,28 +1,19 @@
-	<footer>
-		<div class="_pea-container">
-			<div class="_pea-row _pea-text-small">
-				<div class="_pea-col-span6">Thank you for curating with <a href="http://getperiodic.org" target="_blank">Periodic</a></div>
-				<div class="_pea-col-span6 _pea-text-right">
-					Version <%= periodic.version %>
-				</div>
-			</div>
+			<footer class="ts-row ts-serif-clean">
+			  <div class="ts-col-span6 ts-text-sm">
+			    Curated with <a href="http://getperiodic.org" target="_blank">Periodic</a>
+			  </div>
+			  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
+			    Version <%= periodic.version %>
+						<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
+			    <%var d=new Date();%>
+			      <%- d.getFullYear() %>
+			  </div>
+			</footer>
 		</div>
-	</footer>
-	<script type="text/javascript">
-	window.addEventListener("load",function(e){
-		<%
-			var delayMultiplier=0;
-			for(x in flash_messages){
-				if(delayMultiplier === 0){
-					%>
-					ribbonNotification.showRibbon( '<%=flash_messages[x].join(". ") %>',4000,'<%= x %>');
-						
-					<%
-				}
-				delayMultiplier++;
-			};
-		%>
-	},false);
-	</script>
+	</main>
+	<nav id="ts-pushmenu-mp-menu" class="ts-pushmenu-mp-menu ">
+	  <% include _nav %>
+	</nav>
+	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
 </body>
 </html>

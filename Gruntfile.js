@@ -97,7 +97,7 @@ module.exports = function (grunt) {
 				cwd: 'public',
 				expand: true,
 				src: '**/*.*',
-				dest: '../../public/extensions/periodicjs.ext.login',
+				dest: '../../public/extensions/periodicjs.ext.asyncadmin',
 			},
 		},
 		watch: {
