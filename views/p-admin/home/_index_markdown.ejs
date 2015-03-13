@@ -1,0 +1,22 @@
+<div class="ts-text-xs">
+	<h1>What's new</h1>
+	<div class="ts-row">
+		<% markdownpages.forEach( function(mdhtml){%>
+			<div class="ts-col-span4 ts-screensm-col-span12">
+				<div class="ts-no-heading-margin ts-document">
+					<div class="ts-mardown-document">
+						<%- mdhtml %>
+					</div>
+				</div>
+			</div>
+		<%} );%>
+	</div>
+	<div class="ts-row">
+		<div class="ts-col-span12 ts-document">
+			<h3>More Updates</h3>
+				<p class="extra-padding">
+					Check out the <a href="https://github.com/typesettin/periodicjs/tree/master/releases" target="_blank">release history on github.</a>
+				</p>
+		</div>
+	</div>
+</div>

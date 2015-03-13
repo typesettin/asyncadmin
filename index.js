@@ -95,8 +95,8 @@ module.exports = function (periodic) {
 	/**
 	 * admin routes
 	 */
-	adminRouter.get('/', adminController.admin_index);
-	// adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.index);
+	// adminRouter.get('/', adminController.admin_index);
+	adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.admin_index);
 	adminRouter.get('/content/items', itemController.loadItemsWithCount, itemController.loadItemsWithDefaultLimit, itemController.loadItems, adminController.items_index);
 	adminRouter.get('/content/collections', collectionController.loadCollectionsWithCount, collectionController.loadCollectionsWithDefaultLimit, collectionController.loadCollections, adminController.collections_index);
 	adminRouter.get('/content/compliations', compilationController.loadCompilationsWithCount, compilationController.loadCompilationsWithDefaultLimit, compilationController.loadCompilations, adminController.compilations_index);

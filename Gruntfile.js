@@ -92,14 +92,6 @@ module.exports = function (grunt) {
 				}]
 			}
 		},
-		copy: {
-			main: {
-				cwd: 'public',
-				expand: true,
-				src: '**/*.*',
-				dest: '../../public/extensions/periodicjs.ext.asyncadmin',
-			},
-		},
 		less: {
 			development: {
 				options: {
@@ -113,6 +105,14 @@ module.exports = function (grunt) {
 				}
 			}
 		},
+		copy: {
+			main: {
+				cwd: 'public',
+				expand: true,
+				src: '**/*.*',
+				dest: '../../public/extensions/periodicjs.ext.asyncadmin',
+			},
+		},
 		watch: {
 			scripts: {
 				// files: '**/*.js',
@@ -124,7 +124,7 @@ module.exports = function (grunt) {
 					'resources/**/*.js',
 					'test/**/*.js',
 				],
-				tasks: ['lint', 'packagejs', 'copy', 'less', 'test'],
+				tasks: ['lint', 'packagejs', 'less', 'copy', 'test'],
 				options: {
 					interrupt: true
 				}
