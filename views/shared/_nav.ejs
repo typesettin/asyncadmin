@@ -8,33 +8,40 @@ var menu_content = {
   links:[{
     label:'Items',
     link: '/'+locals.adminPath+'/content/items',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Collections',
     link: '/'+locals.adminPath+'/content/collections',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Compliations',
     link: '/'+locals.adminPath+'/content/compliations',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Contenttypes',
     link: '/'+locals.adminPath+'/content/contenttypes',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Categories',
     link: '/'+locals.adminPath+'/content/categories',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Tags',
     link: '/'+locals.adminPath+'/content/tags',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Assets',
     link: '/'+locals.adminPath+'/content/assets',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   }]
 };
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.Content){
+  for (var x in pagedata.extensions.menu.Content){
+    menu_extensions.links.push(pagedata.extensions.menu.Content[x]);
+  }
+}
+
 var menu_themes = {
   labelheading:true,
   backlink:true,
@@ -44,13 +51,19 @@ var menu_themes = {
   links:[{
     label:'Manage Themes',
     link: '/'+locals.adminPath+'/themes/edit',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   },{
     label:'Theme Settings',
     link: '/'+locals.adminPath+'/themes/settings',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   }]
 };
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.Themes){
+  for (var x in pagedata.extensions.menu.Themes){
+    menu_extensions.links.push(pagedata.extensions.menu.Themes[x]);
+  }
+}
 
 var menu_extensions = {
   labelheading:true,
@@ -61,9 +74,15 @@ var menu_extensions = {
   links:[{
     label:'Manage Extensions',
     link: '/'+locals.adminPath+'/extensions/edit',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   }]
 };
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.Extensions){
+  for (var x in pagedata.extensions.menu.Extensions){
+    menu_extensions.links.push(pagedata.extensions.menu.Extensions[x]);
+  }
+}
 
 var menu_settings = {
   labelheading:true,
@@ -80,15 +99,15 @@ var menu_settings = {
     links:[{
       label:'Application Settings',
       link: '/'+locals.adminPath+'/settings',
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     },{
       label:'Theme Settings',
       link: '/'+locals.adminPath+'/themes/settings',
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     },{
       label:'Restart Application',
       link: '/'+locals.adminPath+'/settings/restart',      
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     }]
   },{
     labelheading:true,
@@ -99,24 +118,31 @@ var menu_settings = {
     links:[{
       label:'Manage User',
       link: '/'+locals.adminPath+'/settings/users',
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     },{
       label:'Manage User Roles',
       link: '/'+locals.adminPath+'/settings/userroles',
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     },{
       label:'Manage User Privileges',
       link: '/'+locals.adminPath+'/settings/userprivileges',
-      linkclass:''
+      linkclass:'async-admin-ajax-link'
     }]
   },{
     labelheading:false,
     backlink:false,
     label:'Help',
     link: '/'+locals.adminPath+'/settings/help',
-    linkclass:''
+    linkclass:'async-admin-ajax-link'
   }]
 };
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.Settings){
+  for (var x in pagedata.extensions.menu.Settings){
+    menu_extensions.links.push(pagedata.extensions.menu.Settings[x]);
+  }
+}
+
 
 var display_account_name = user.username || user.email
 var display_account_link = user.username || user._id
@@ -126,29 +152,23 @@ var menu_account = {
   backlink:true,
   label: display_account_name, 
   link: '/'+locals.adminPath+'/user/'+display_account_link+'/edit',
-  linkclass:'',
+  linkclass:'async-admin-ajax-link',
   links:[{
-    label:'Visibility',
-    link:'responsive-visibility',
-    linkclass:''
+    label:'Edit User Account',
+    link: '/'+locals.adminPath+'/user/'+display_account_link+'/edit',
+    linkclass:'async-admin-ajax-link'
   },{
-    label:'Grid',
-    link:'responsive-grid',
-    linkclass:''
-  },{
-    label:'Layout',
-    link:'responsive-layout',
-    linkclass:''
-  },{
-    label:'Headings',
-    link:'responsive-headings',
-    linkclass:''
-  },{
-    label:'Nav Elements',
-    link:'responsive-navelements',
-    linkclass:''
+    label: 'Log Out', 
+    link: '/logout',
+    linkclass:'ts-force-link'
   }]
 };
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.User){
+  for (var x in pagedata.extensions.menu.User){
+    menu_extensions.links.push(pagedata.extensions.menu.User[x]);
+  }
+}
 
 var menu_logout = {
   labelheading:false,
@@ -159,25 +179,41 @@ var menu_logout = {
 };
 
 
+var globalNavLinks =[];
+
+if(pagedata.extensions.menu && pagedata.extensions.menu.Global){
+  for (var x in pagedata.extensions.menu.Global){
+    globalNavLinks.push(pagedata.extensions.menu.Global[x]);
+  }
+}
+
+if(user.privileges['110'] || user.accounttype==='admin'){
+  globalNavLinks.push(menu_content);
+}
+if(user.privileges['120'] || user.accounttype==='admin'){
+  globalNavLinks.push(menu_themes);
+}
+if(user.privileges['130'] || user.accounttype==='admin'){
+  globalNavLinks.push(menu_extensions);
+}
+if(user.privileges['140'] || user.accounttype==='admin'){
+  globalNavLinks.push(menu_settings);
+}
+  globalNavLinks.push(menu_account);
+  globalNavLinks.push(menu_logout);
+
 var heading = { 
   labelheading:true,
   label: 'Admin', 
   link: '/'+locals.adminPath,
-  linkclass:'navlinks-section',
-  links:[
-    menu_content,
-    menu_themes,
-    menu_extensions,
-    menu_settings,
-    menu_account,
-    menu_logout
-  ] 
+  linkclass:'async-admin-ajax-link',
+  links:globalNavLinks 
 } ;
 
   var getNavHtml = function(nav){ %>
 <div class="ts-pushmenu-mp-level">
   <%if(nav.labelheading == true){%>
-    <h4 class="" data-href="#<%- nav.link %>" ><%- nav.label %></h4>
+    <h4 class=""  ><a href="<%- nav.link %>" class=" linkclkass <%- nav.linkclass %>"><%- nav.label %></a></h4>
   <%}%>
   <% if(typeof nav !=='undefined' && nav.links && nav.links.length>0){%>
   <%if(nav.backlink == true){%>
@@ -185,9 +221,11 @@ var heading = {
   <%}%>
   <ul>
     <%nav.links.forEach(function(navlinkobj,i){ %>
-        <li class="icon icon-arrow-left"><a class="" 
-
-<% if(!navlinkobj.backlink){%>data-href="#<%- navlinkobj.link %>"<%}%> ><%- navlinkobj.label%></a>
+      <li class="icon icon-arrow-left">
+        <a class=" linkclkass <%- navlinkobj.linkclass %>"
+          <% if(!navlinkobj.backlink){%> href="<%- navlinkobj.link.replace('%locals.adminPath%',locals.adminPath) %>"<%}%> >
+          <%- navlinkobj.label%>
+        </a>
         <%if(navlinkobj.links){
             getNavHtml(navlinkobj);
           }%>

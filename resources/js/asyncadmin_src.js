@@ -1,53 +1,181 @@
 'use strict';
-var navlinks,
+var ajaxlinks,
+	navlinks,
 	PushMenu = require('stylie.pushmenu'),
-	// classie = require('classie'),
+	Pushie = require('pushie'),
+	asyncAdminPushie,
+	async = require('async'),
+	classie = require('classie'),
+	StylieNotification = require('stylie.notifications'),
 	StyliePushMenu,
+	asyncHTMLWrapper,
+	asyncHTMLContentContainer,
+	asyncContentSelector = '#ts-asyncadmin-content-container',
+	flashMessageArray = [],
+	asyncFlashFunctions = [],
+	request = require('superagent'),
 	mtpms,
-	closeMenuElements,
 	menuElement,
 	menuTriggerElement,
 	nav_header;
 
-var navlinkclickhandler = function (e) {
-	// console.log('e', e);
-	var etarget = e.target,
-		etargethref = etarget.getAttribute('data-href'),
-		anchorlink,
-		anchorlinkTop;
+var preventDefaultClick = function (e) {
+	e.preventDefault();
+	return;
+};
 
-	if (etargethref && etargethref.charAt(0) === '#') {
-		anchorlink = document.querySelector('a[name="' + etargethref + '"]');
-		if (anchorlink) {
-			anchorlinkTop = anchorlink.getBoundingClientRect().top;
-			// console.log('anchorlinkTop', anchorlinkTop);
-			// console.log('document.querySelector("main.ts-pushmenu-scroller").scrollTop', document.querySelector('main.ts-pushmenu-scroller').scrollTop);
-			// console.log('mtpms.scrollY', mtpms.scrollTop);
-			mtpms.scrollTop = (anchorlinkTop + mtpms.scrollTop);
-			StyliePushMenu._resetMenu();
+var loadAjaxPage = function (options) {
+	var htmlDivElement = document.createElement('div'),
+		newPageTitle,
+		newPageContent;
+	request
+		.get(options.datahref)
+		.set('Accept', 'text/html')
+		.end(function (error, res) {
+			// console.log('error', error);
+			// console.log('res', res);
+			if (error) {
+				window.showErrorNotificaton({
+					message: error.message
+				});
+			}
+			else if (res.error) {
+				window.showErrorNotificaton({
+					message: 'Status [' + res.error.status + ']: ' + res.error.message
+				});
+			}
+			else {
+				htmlDivElement.innerHTML = res.text;
+				newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
+				newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
+				asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
+				document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
+				asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+				if (options.pushState) {
+					asyncAdminPushie.pushHistory({
+						data: {
+							datahref: options.datahref
+						},
+						title: 'Title:' + options.datahref,
+						href: options.datahref
+					});
+				}
+			}
+		});
+};
+
+var navlinkclickhandler = function (e) {
+	var etarget = e.target,
+		etargethref = etarget.href;
+
+	if (classie.has(etarget, 'async-admin-ajax-link')) {
+		e.preventDefault();
+		// console.log('etargethref', etargethref);
+		loadAjaxPage({
+			datahref: etargethref,
+			pushState: true
+		});
+		StyliePushMenu._resetMenu();
+		return false;
+	}
+};
+
+var statecallback = function (data) {
+	console.log('data', data);
+	loadAjaxPage({
+		datahref: data.datahref,
+		pushState: false
+	});
+};
+var pushstatecallback = function (data) {
+	console.log('data', data);
+};
+
+window.getAsyncCallback = function (functiondata) {
+	return function (asyncCB) {
+		new StylieNotification({
+			message: functiondata.message,
+			ttl: functiondata.ttl,
+			wrapper: functiondata.wrapper,
+			layout: 'growl',
+			effect: 'jelly',
+			type: functiondata.type, // notice, warning, error or success
+			onClose: function () {
+				asyncCB(null, 'shown notification');
+			}
+		}).show();
+	};
+};
+
+window.showFlashNotifications = function (options) {
+	if (options.flash_messages) {
+		for (var x in options.flash_messages) {
+			if (options.flash_messages[x]) {
+				for (var y in options.flash_messages[x]) {
+					flashMessageArray.push({
+						type: x,
+						message: options.flash_messages[x][y]
+					});
+					asyncFlashFunctions.push(window.getAsyncCallback({
+						type: x,
+						ttl: options.ttl,
+						message: options.flash_messages[x][y],
+						wrapper: options.wrapper
+					}));
+				}
+			}
+		}
+		if (asyncFlashFunctions.length > 0) {
+			async.series(asyncFlashFunctions, function (err /*,result*/ ) {
+				if (err) {
+					console.error(err);
+				}
+				else if (options.callback) {
+					options.callback();
+				}
+				// else {
+				// 	console.log(result);
+				// }
+			});
 		}
 	}
-
 };
 
-var closeNavMenu = function () {
-	StyliePushMenu._resetMenu();
+window.showErrorNotificaton = function (options) {
+	options.layout = 'growl';
+	options.effect = 'jelly';
+	options.ttl = false;
+	options.type = 'error';
+	window.showStylieNotification(options);
 };
 
+window.showStylieNotification = function (options) {
+	new StylieNotification({
+		message: options.message,
+		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
+		wrapper: options.wrapper || document.querySelector('main'),
+		layout: options.layout || 'growl',
+		effect: options.effect || 'jelly',
+		type: options.type, // notice, warning, error or success
+		onClose: options.onClose || function () {}
+	}).show();
+};
 
 
 window.addEventListener('load', function () {
+	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
+	asyncHTMLContentContainer = document.querySelector(asyncContentSelector);
 	navlinks = document.querySelector('#ts-pushmenu-mp-menu');
 	menuElement = document.getElementById('ts-pushmenu-mp-menu');
 	menuTriggerElement = document.getElementById('trigger');
-	closeMenuElements = document.querySelectorAll('.closemenu');
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
+	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
 
-
-	for (var x = 0; x < closeMenuElements.length; x++) {
-		closeMenuElements[x].addEventListener('click', closeNavMenu, false);
+	for (var u = 0; u < ajaxlinks.length; u++) {
+		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
 	}
+
 	if (navlinks) {
 		navlinks.addEventListener('mousedown', navlinkclickhandler, false);
 	}
@@ -56,6 +184,17 @@ window.addEventListener('load', function () {
 		trigger: menuTriggerElement,
 		type: 'overlap', // 'overlap', // 'cover',
 		// position: 'right'
+	});
+	asyncAdminPushie = new Pushie({
+		replacecallback: pushstatecallback,
+		pushcallback: pushstatecallback,
+		popcallback: statecallback
+	});
+	window.asyncHTMLWrapper = asyncHTMLWrapper;
+	window.showFlashNotifications({
+		flash_messages: window.periodic_flash_messages,
+		ttl: 7000,
+		wrapper: document.querySelector('.ts-pushmenu-scroller-inner')
 	});
 	window.StyliePushMenu = StyliePushMenu;
 });

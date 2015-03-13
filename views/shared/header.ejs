@@ -10,6 +10,9 @@
 	<meta name="Resource-type" content="Document" />
 	<link rel="stylesheet" type="text/css" href="/stylesheets/default/periodic.css" />
 	<link rel="stylesheet" type="text/css" href="<%= locals.themehelper.extensionPublicResourcePath('periodicjs.ext.asyncadmin','stylesheets') %>asyncadmin.css" />
+	<script type="text/javascript">
+		<%- locals.viewhelper.passObjToClient(flash_messages,"periodic_flash_messages") %>
+	</script>
 	<link rel="icon" type="image/png" href="/favicon.png">
 	<script type="text/javascript" src="<%= locals.themehelper.extensionPublicResourcePath('periodicjs.ext.asyncadmin','js') %>asyncadmin.min.js"></script>
 	<% var headertags = locals.viewhelper.includeJavaScripts(pagedata.headerjs); %><%- headertags %>
@@ -20,3 +23,5 @@
     <main class="ts-pushmenu-scroller ts-height-100 ">
       <div class="ts-pushmenu-scroller-inner ts-height-100 ">
       <% include _menu %>
+      <div id="ts-asyncadmin-content-wrapper">
+        <div id="ts-asyncadmin-content-container">

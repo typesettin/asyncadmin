@@ -21,8 +21,8 @@
     "test": "mocha"
   },
   "dependencies": {
-    "periodicjs.core.mailer": "~4.0.0",
-    "periodicjs.core.utilities": "~3.1.1"
+    "classie": "^0.1.0",
+    "pushie": "^1.0.2"
   },
   "devDependencies": {
     "browserify": "~6.3.2",

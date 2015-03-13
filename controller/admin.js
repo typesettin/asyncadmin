@@ -18,12 +18,52 @@ var admin_index = function (req, res) {
 		},
 		viewdata = {
 			pagedata: {
-				title: 'admin',
+				title: 'Admin',
 				toplink: '&raquo; Home',
 				extensions: CoreUtilities.getAdminMenu()
 			},
 			// markdownpages: req.controllerData.markdownpages,
 			// contentcounts: req.controllerData.contentcounts,
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+var items_index = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/items/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'Item Admin',
+				toplink: '&raquo; Items',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			items: req.controllerData.items,
+			itemscount: req.controllerData.itemscount,
+			itempages: Math.ceil(req.controllerData.itemscount / req.query.limit),
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+var collections_index = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/collections/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'Collection Admin',
+				toplink: '&raquo; Collections',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			collections: req.controllerData.collections,
+			collectionscount: req.controllerData.collectionscount,
+			collectionpages: Math.ceil(req.controllerData.collectionscount / req.query.limit),
 			user: req.user
 		};
 	CoreController.renderView(req, res, viewtemplate, viewdata);
@@ -54,6 +94,8 @@ var controller = function (resources) {
 
 	return {
 		admin_index: admin_index,
+		items_index: items_index,
+		collections_index: collections_index,
 		adminExtSettings: adminExtSettings,
 	};
 };

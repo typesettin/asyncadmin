@@ -32,7 +32,6 @@ module.exports = function (periodic) {
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
-	console.log('adminExtSettings', adminExtSettings);
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 
 	periodic.app.controller.extension.admin = {
@@ -98,8 +97,8 @@ module.exports = function (periodic) {
 	 */
 	adminRouter.get('/', adminController.admin_index);
 	// adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.index);
-	// adminRouter.get('/items', itemController.loadItemsWithCount, itemController.loadItemsWithDefaultLimit, itemController.loadItems, adminController.items_index);
-	// adminRouter.get('/collections', collectionController.loadCollectionsWithCount, collectionController.loadCollectionsWithDefaultLimit, collectionController.loadCollections, adminController.collections_index);
+	adminRouter.get('/content/items', itemController.loadItemsWithCount, itemController.loadItemsWithDefaultLimit, itemController.loadItems, adminController.items_index);
+	adminRouter.get('/content/collections', collectionController.loadCollectionsWithCount, collectionController.loadCollectionsWithDefaultLimit, collectionController.loadCollections, adminController.collections_index);
 	// adminRouter.get('/compilations', compilationController.loadCompilationsWithCount, compilationController.loadCompilationsWithDefaultLimit, compilationController.loadCompilations, adminController.compilations_index);
 	// adminRouter.get('/contenttypes', contenttypeController.loadContenttypeWithCount, contenttypeController.loadContenttypeWithDefaultLimit, contenttypeController.loadContenttypes, adminController.contenttypes_index);
 	// adminRouter.get('/tags', tagController.loadTagsWithCount, tagController.loadTagsWithDefaultLimit, tagController.loadTags, adminController.tags_index);
@@ -111,13 +110,12 @@ module.exports = function (periodic) {
 	// adminRouter.get('/mailer', adminController.mail_index);
 	// adminRouter.get('/check_periodic_version', adminController.check_periodic_version);
 
-	console.log('periodic.app.locals.adminPath', periodic.app.locals.adminPath);
-	adminRouter.use('/asset', mediaAdminRouter);
+	adminRouter.use('/content/asset', mediaAdminRouter);
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);
-	adminRouter.use('/contenttype', contenttypeAdminRouter);
-	adminRouter.use('/tag', tagAdminRouter);
-	adminRouter.use('/category', categoryAdminRouter);
+	adminRouter.use('/content/contenttype', contenttypeAdminRouter);
+	adminRouter.use('/content/tag', tagAdminRouter);
+	adminRouter.use('/content/category', categoryAdminRouter);
 	adminRouter.use('/user', userAdminRouter);
 	adminRouter.use('/settings', settingsAdminRouter);
 	periodic.app.use('/item', itemRouter);
