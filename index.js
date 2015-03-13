@@ -99,7 +99,7 @@ module.exports = function (periodic) {
 	// adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.index);
 	adminRouter.get('/content/items', itemController.loadItemsWithCount, itemController.loadItemsWithDefaultLimit, itemController.loadItems, adminController.items_index);
 	adminRouter.get('/content/collections', collectionController.loadCollectionsWithCount, collectionController.loadCollectionsWithDefaultLimit, collectionController.loadCollections, adminController.collections_index);
-	// adminRouter.get('/compilations', compilationController.loadCompilationsWithCount, compilationController.loadCompilationsWithDefaultLimit, compilationController.loadCompilations, adminController.compilations_index);
+	adminRouter.get('/content/compliations', compilationController.loadCompilationsWithCount, compilationController.loadCompilationsWithDefaultLimit, compilationController.loadCompilations, adminController.compilations_index);
 	// adminRouter.get('/contenttypes', contenttypeController.loadContenttypeWithCount, contenttypeController.loadContenttypeWithDefaultLimit, contenttypeController.loadContenttypes, adminController.contenttypes_index);
 	// adminRouter.get('/tags', tagController.loadTagsWithCount, tagController.loadTagsWithDefaultLimit, tagController.loadTags, adminController.tags_index);
 	// adminRouter.get('/categories', categoryController.loadCategoriesWithCount, categoryController.loadCategoriesWithDefaultLimit, categoryController.loadCategories, adminController.categories_index);

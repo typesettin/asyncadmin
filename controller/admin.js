@@ -50,6 +50,7 @@ var items_index = function (req, res) {
 };
 
 var collections_index = function (req, res) {
+	req.flash('info', 'testing flash now');
 	var viewtemplate = {
 			viewname: 'p-admin/collections/index',
 			themefileext: appSettings.templatefileextension,
@@ -64,6 +65,26 @@ var collections_index = function (req, res) {
 			collections: req.controllerData.collections,
 			collectionscount: req.controllerData.collectionscount,
 			collectionpages: Math.ceil(req.controllerData.collectionscount / req.query.limit),
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+var compilations_index = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/compilations/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'Compilation Admin',
+				toplink: '&raquo; Compilations',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			compilations: req.controllerData.compilations,
+			compilationscount: req.controllerData.compilationscount,
+			compilationpages: Math.ceil(req.controllerData.compilationscount / req.query.limit),
 			user: req.user
 		};
 	CoreController.renderView(req, res, viewtemplate, viewdata);
@@ -96,6 +117,7 @@ var controller = function (resources) {
 		admin_index: admin_index,
 		items_index: items_index,
 		collections_index: collections_index,
+		compilations_index: compilations_index,
 		adminExtSettings: adminExtSettings,
 	};
 };

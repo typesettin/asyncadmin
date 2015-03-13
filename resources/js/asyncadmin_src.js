@@ -27,7 +27,8 @@ var preventDefaultClick = function (e) {
 var loadAjaxPage = function (options) {
 	var htmlDivElement = document.createElement('div'),
 		newPageTitle,
-		newPageContent;
+		newPageContent,
+		newJavascripts;
 	request
 		.get(options.datahref)
 		.set('Accept', 'text/html')
@@ -51,6 +52,27 @@ var loadAjaxPage = function (options) {
 				asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
 				document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
 				asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+
+				// console.log('htmlDivElement', htmlDivElement);
+				newJavascripts = htmlDivElement.querySelectorAll('script');
+				for (var j = 0; j < newJavascripts.length; j++) {
+					if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
+						var newJSScript = document.createElement('script');
+						if (newJavascripts[j].src) {
+							newJSScript.src = newJavascripts[j].src;
+						}
+						if (newJavascripts[j].id) {
+							newJSScript.id = newJavascripts[j].id;
+						}
+						if (newJavascripts[j].type) {
+							newJSScript.type = newJavascripts[j].type;
+						}
+						// newJSScript.class = newJavascripts[j].class;
+						newJSScript.innerHTML = newJavascripts[j].innerHTML;
+						asyncHTMLWrapper.appendChild(newJSScript);
+					}
+				}
+				initFlashMessage();
 				if (options.pushState) {
 					asyncAdminPushie.pushHistory({
 						data: {
@@ -81,14 +103,22 @@ var navlinkclickhandler = function (e) {
 };
 
 var statecallback = function (data) {
-	console.log('data', data);
+	// console.log('data', data);
 	loadAjaxPage({
 		datahref: data.datahref,
 		pushState: false
 	});
 };
-var pushstatecallback = function (data) {
-	console.log('data', data);
+var pushstatecallback = function ( /*data*/ ) {
+	// console.log('data', data);
+};
+
+var initFlashMessage = function () {
+	window.showFlashNotifications({
+		flash_messages: window.periodic_flash_messages,
+		ttl: 7000,
+		wrapper: document.querySelector('.ts-pushmenu-scroller-inner')
+	});
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -191,10 +221,6 @@ window.addEventListener('load', function () {
 		popcallback: statecallback
 	});
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
-	window.showFlashNotifications({
-		flash_messages: window.periodic_flash_messages,
-		ttl: 7000,
-		wrapper: document.querySelector('.ts-pushmenu-scroller-inner')
-	});
+	initFlashMessage();
 	window.StyliePushMenu = StyliePushMenu;
 });
