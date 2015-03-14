@@ -124,7 +124,7 @@ var getMarkdownReleases = function (req, res, next) {
 		else {
 			if (files.length > 0) {
 				files.reverse();
-				console.log('files', files);
+				// console.log('files', files);
 				markdownfiles = files.slice(0, 9);
 			}
 			async.eachSeries(
