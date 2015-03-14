@@ -34,7 +34,7 @@ var loadAjaxPage = function (options) {
 		.set('Accept', 'text/html')
 		.end(function (error, res) {
 			// console.log('error', error);
-			// console.log('res', res);
+			console.log('res', res);
 			if (error) {
 				window.showErrorNotificaton({
 					message: error.message
