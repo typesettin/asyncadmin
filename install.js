@@ -7,7 +7,7 @@ var Extensions = require('periodicjs.core.extensions'),
 
 ExtensionCore.install({
 		// enabled:false,
-		movebefore:'periodicjs.ext.user_access_control'
+		moveafter:'periodicjs.ext.user_access_control'
 	},
 	function(err,status){
 		if(err){
