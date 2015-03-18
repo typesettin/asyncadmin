@@ -1,46 +1,4 @@
 <% 
-var menu_content = {
-  labelheading:true,
-  backlink:true,
-  label: 'Content', 
-  link: '/'+locals.adminPath+'/content',
-  linkclass:'',
-  links:[{
-    label:'Items',
-    link: '/'+locals.adminPath+'/content/items',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Collections',
-    link: '/'+locals.adminPath+'/content/collections',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Compliations',
-    link: '/'+locals.adminPath+'/content/compliations',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Contenttypes',
-    link: '/'+locals.adminPath+'/content/contenttypes',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Categories',
-    link: '/'+locals.adminPath+'/content/categories',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Tags',
-    link: '/'+locals.adminPath+'/content/tags',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label:'Assets',
-    link: '/'+locals.adminPath+'/content/assets',
-    linkclass:'async-admin-ajax-link'
-  }]
-};
-
-if(pagedata.extensions.menu && pagedata.extensions.menu.Content){
-  for (var x in pagedata.extensions.menu.Content){
-    menu_extensions.links.push(pagedata.extensions.menu.Content[x]);
-  }
-}
 
 var menu_themes = {
   labelheading:true,
@@ -61,7 +19,7 @@ var menu_themes = {
 
 if(pagedata.extensions.menu && pagedata.extensions.menu.Themes){
   for (var x in pagedata.extensions.menu.Themes){
-    menu_extensions.links.push(pagedata.extensions.menu.Themes[x]);
+    menu_themes.links.push(pagedata.extensions.menu.Themes[x]);
   }
 }
 
@@ -139,34 +97,7 @@ var menu_settings = {
 
 if(pagedata.extensions.menu && pagedata.extensions.menu.Settings){
   for (var x in pagedata.extensions.menu.Settings){
-    menu_extensions.links.push(pagedata.extensions.menu.Settings[x]);
-  }
-}
-
-
-var display_account_name = user.username || user.email
-var display_account_link = user.username || user._id
-
-var menu_account = {
-  labelheading:true,
-  backlink:true,
-  label: display_account_name, 
-  link: '/'+locals.adminPath+'/user/'+display_account_link+'/edit',
-  linkclass:'async-admin-ajax-link',
-  links:[{
-    label:'Edit User Account',
-    link: '/'+locals.adminPath+'/user/'+display_account_link+'/edit',
-    linkclass:'async-admin-ajax-link'
-  },{
-    label: 'Log Out', 
-    link: '/logout',
-    linkclass:'ts-force-link'
-  }]
-};
-
-if(pagedata.extensions.menu && pagedata.extensions.menu.User){
-  for (var x in pagedata.extensions.menu.User){
-    menu_extensions.links.push(pagedata.extensions.menu.User[x]);
+    menu_settings.links.push(pagedata.extensions.menu.Settings[x]);
   }
 }
 
@@ -183,13 +114,20 @@ var globalNavLinks =[];
 
 if(pagedata.extensions.menu && pagedata.extensions.menu.Global){
   for (var x in pagedata.extensions.menu.Global){
-    globalNavLinks.push(pagedata.extensions.menu.Global[x]);
+    if(typeof pagedata.extensions.menu.Global[x].userprivilege !=='undefined'){
+      if(user.privileges[pagedata.extensions.menu.Global[x].userprivilege] || user.accounttype==='admin'){
+        globalNavLinks.push(pagedata.extensions.menu.Global[x]);
+      }
+    }
+    else{
+      globalNavLinks.push(pagedata.extensions.menu.Global[x]);
+    }
   }
 }
 
-if(user.privileges['110'] || user.accounttype==='admin'){
-  globalNavLinks.push(menu_content);
-}
+// if(user.privileges['110'] || user.accounttype==='admin'){
+//   globalNavLinks.push(menu_content);
+// }
 if(user.privileges['120'] || user.accounttype==='admin'){
   globalNavLinks.push(menu_themes);
 }
@@ -199,7 +137,7 @@ if(user.privileges['130'] || user.accounttype==='admin'){
 if(user.privileges['140'] || user.accounttype==='admin'){
   globalNavLinks.push(menu_settings);
 }
-  globalNavLinks.push(menu_account);
+  // globalNavLinks.push(menu_account);
   globalNavLinks.push(menu_logout);
 
 var heading = { 
@@ -213,7 +151,7 @@ var heading = {
   var getNavHtml = function(nav){ %>
 <div class="ts-pushmenu-mp-level">
   <%if(nav.labelheading == true){%>
-    <h4 class=""  ><a href="<%- nav.link %>" class=" linkclkass <%- nav.linkclass %>"><%- nav.label %></a></h4>
+    <h4 class=""  ><a href="<%- nav.link.replace('%locals.adminPath%',locals.adminPath) %>" class=" linkclkass <%- nav.linkclass %>"><%- nav.label %></a></h4>
   <%}%>
   <% if(typeof nav !=='undefined' && nav.links && nav.links.length>0){%>
   <%if(nav.backlink == true){%>
