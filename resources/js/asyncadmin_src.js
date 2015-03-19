@@ -7,6 +7,7 @@ var ajaxlinks,
 	async = require('async'),
 	classie = require('classie'),
 	StylieNotification = require('stylie.notifications'),
+	StylieTable = require('stylie.tables'),
 	StyliePushMenu,
 	asyncHTMLWrapper,
 	asyncHTMLContentContainer,
@@ -17,18 +18,49 @@ var ajaxlinks,
 	mtpms,
 	menuElement,
 	menuTriggerElement,
-	nav_header;
+	nav_header,
+	preloaderElement;
+
+window.createAdminTable = function (options) {
+	return new StylieTable(options);
+};
 
 var preventDefaultClick = function (e) {
 	e.preventDefault();
 	return;
 };
 
+var initFlashMessage = function () {
+	window.showFlashNotifications({
+		flash_messages: window.periodic_flash_messages,
+		ttl: 7000,
+		wrapper: document.querySelector('.ts-pushmenu-scroller-inner')
+	});
+};
+
+var showPreloader = function (element) {
+	var plElement = element || preloaderElement;
+	classie.remove(plElement, 'hide');
+	classie.remove(plElement, 'hide-preloading');
+};
+window.showPreloader = showPreloader;
+
+var endPreloader = function (element) {
+	var plElement = element || preloaderElement;
+	classie.add(plElement, 'hide-preloading');
+	var t = setTimeout(function () {
+		clearTimeout(t);
+		classie.add(plElement, 'hide');
+	}, 400);
+};
+window.endPreloader = endPreloader;
+
 var loadAjaxPage = function (options) {
 	var htmlDivElement = document.createElement('div'),
 		newPageTitle,
 		newPageContent,
 		newJavascripts;
+	showPreloader();
 	request
 		.get(options.datahref)
 		.set('Accept', 'text/html')
@@ -82,6 +114,7 @@ var loadAjaxPage = function (options) {
 						href: options.datahref
 					});
 				}
+				endPreloader();
 			}
 		});
 };
@@ -113,13 +146,6 @@ var pushstatecallback = function ( /*data*/ ) {
 	// console.log('data', data);
 };
 
-var initFlashMessage = function () {
-	window.showFlashNotifications({
-		flash_messages: window.periodic_flash_messages,
-		ttl: 7000,
-		wrapper: document.querySelector('.ts-pushmenu-scroller-inner')
-	});
-};
 
 window.getAsyncCallback = function (functiondata) {
 	return function (asyncCB) {
@@ -201,6 +227,7 @@ window.addEventListener('load', function () {
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
+	preloaderElement = document.querySelector('#ts-preloading');
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);

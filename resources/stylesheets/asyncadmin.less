@@ -35,4 +35,31 @@
 			}
 		}
 	}
+	#ts-pushmenu-mp-menu{
+		a{
+			cursor: pointer;
+		}
+	}
+	.ts-preloading{
+		position: absolute;
+		height:100%;
+		width:100%;
+		background-color: rgba(255, 255, 255, 0.8);
+		text-align: center;
+		vertical-align: middle;
+		background-image: url('../img/preloader/128x128/Preloader_3/Preloader_3.gif');
+ 		background-position: 50% 40%;
+ 		background-repeat: no-repeat;
+ 		transition: opacity .3s ease-in-out;
+ 		opacity: 1;
+ 		&.hide{
+ 			display: none;
+ 		}
+ 		&.hide-preloading{
+ 			opacity: 0;
+ 		}
+ 		&.show-preloading{
+ 			opacity: 1;
+ 		}
+ 	}
 }
