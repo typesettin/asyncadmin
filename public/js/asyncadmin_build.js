@@ -3381,11 +3381,11 @@ StylieTable.prototype._createTable = function () {
 			var tr = options.tbl.insertRow();
 			for (var j = 0; j < options.tableRowData[i].length; ++j) {
 				var td = tr.insertCell();
-				if (options.tableRowData[i][j].filterOptions.colstyle) {
+				if (typeof options.tableRowData[i][j].filterOptions !== 'undefined' && options.tableRowData[i][j].filterOptions.colstyle) {
 					td.setAttribute('style', options.tableRowData[i][j].filterOptions.colstyle);
 				}
 				//td.innerHTML = 'k';
-				console.log('options.tableRowData[i][j]', options.tableRowData[i][j]);
+				console.log('options.tableRowData[i][j].filterOptions', options.tableRowData[i][j].filterOptions);
 				td.innerHTML = (typeof options.tableRowData[i][j].val !== 'undefined') ? options.tableRowData[i][j].val.toString() : '';
 
 				////options.tableRowData[i][j].val.toString(); //(document.createTextNode(options.tableRowData[i][j].toString()));
@@ -3442,19 +3442,19 @@ StylieTable.prototype._createTable = function () {
 			if (typeof this.options.keyfilters[key] === 'undefined' || this.options.keyfilters[key].ignorekey !== true) {
 				cells.push({
 					val: dataObject[key] || '',
-					filterOptions: typeof this.options.keyfilters[key]
+					filterOptions: this.options.keyfilters[key]
 				});
 				if (this.options.createTableHead && i === 0) {
 					if (this.options.keyfilters[key] && typeof this.options.keyfilters[key].label !== 'undefined') {
 						tHeadCells.push({
 							val: this.options.keyfilters[key].label,
-							filterOptions: typeof this.options.keyfilters[key]
+							filterOptions: this.options.keyfilters[key]
 						});
 					}
 					else {
 						tHeadCells.push({
 							val: key,
-							filterOptions: typeof this.options.keyfilters[key]
+							filterOptions: this.options.keyfilters[key]
 						});
 					}
 				}
