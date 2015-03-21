@@ -1125,7 +1125,7 @@
 }());
 
 }).call(this,require('_process'))
-},{"_process":6}],2:[function(require,module,exports){
+},{"_process":15}],2:[function(require,module,exports){
 /*
  * classie
  * http://github.amexpub.com/modules/classie
@@ -1219,6 +1219,1983 @@ module.exports = require('./lib/classie');
     window.classie = classie;
   }
 },{}],4:[function(require,module,exports){
+/*
+ * formie
+ * http://github.amexpub.com/modules/formie
+ *
+ * Copyright (c) 2013 AmexPub. All rights reserved.
+ */
+
+'use strict';
+
+module.exports = require('./lib/formie');
+
+},{"./lib/formie":5}],5:[function(require,module,exports){
+/*
+ * formie
+ * http://github.com/yawetse/formie
+ *
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+'use strict';
+
+var async = require('async'),
+	classie = require('classie'),
+	events = require('events'),
+	forbject = require('forbject'),
+	querystring = require('querystring'),
+	request = require('superagent'),
+	util = require('util'),
+	extend = require('util-extend'),
+	jsonpscript,
+	documentHeadElement;
+
+/**
+ * A module that represents a formie object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/formie}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor formie
+ * @requires module:async
+ * @requires module:classie
+ * @requires module:events
+ * @requires module:forbject
+ * @requires module:querystring
+ * @requires module:superagent
+ * @requires module:util-extend
+ * @requires module:util
+ * @param {object} options configuration options
+ * @example 
+		ajaxsubmitclassname: 'formie',
+		ajaxsubmitfileuploadclassname: 'formie-file',
+		ajaxformselector: '#formie',
+		jsonp: false,
+		autosubmitselectors: '.autoFormSubmit',
+		autosubmitelements: [],
+		preventsubmitselectors: '.noFormSubmit',
+		preventsubmitelements: [],
+		headers: {},
+		queryparameters: {},
+		postdata: {},
+		beforesubmitcallback: null,
+		errorcallback: null,
+		successcallback: null
+ */
+var formie = function (options) {
+	events.EventEmitter.call(this);
+
+	var defaultOptions = {
+		//ajaxsubmitclassname: 'formie',
+		ajaxsubmitfileuploadclassname: 'formie-file',
+		ajaxformselector: '#formie',
+		autosubmitselectors: '.autoFormSubmit',
+		autosubmitelements: [],
+		preventsubmitselectors: '.noFormSubmit',
+		preventsubmitelements: [],
+		headers: {},
+		queryparameters: {},
+		postdata: {},
+		beforesubmitcallback: null,
+		errorcallback: null,
+		successcallback: null
+	};
+	this.options = extend(defaultOptions, options);
+
+	this.init = this._init;
+	this.ajaxSubmitFormie = this.__ajaxSubmitFormie;
+	this.submitOnChangeListeners = this.__submitOnChangeListeners;
+	this.autoSubmitFormOnChange = this.__autoSubmitFormOnChange;
+	this.preventEnterSubmitListeners = this.__preventEnterSubmitListeners;
+	this.preventSubmitOnEnter = this.__preventSubmitOnEnter;
+	this.ajaxFormEventListers = this.__ajaxFormEventListers;
+	this.submit = this.__submit;
+	this.init();
+	// this.render = this._render;
+	// this.addBinder = this._addBinder;
+};
+
+util.inherits(formie, events.EventEmitter);
+
+/**
+ * asynchronously submit from data, supports, POST, GET, and GET JSONP
+ * @param  {object} e       form submit event
+ * @param  {object} element form html element
+ * @return {Function} ajaxResponseHandler(error, response)
+ * @emits submitted(formieData)
+ */
+formie.prototype.__ajaxSubmitFormie = function (e, element) {
+
+	if (e) {
+		e.preventDefault();
+	}
+	var f = (element) ? element : e.target,
+		beforefn,
+		errorfn,
+		successfn,
+		formieDataFromForm,
+		formieData,
+		ajaxResponseHandler = function (err, response) {
+			if (err && this.options.errorcallback) {
+				errorfn = this.options.errorcallback;
+				if (typeof errorfn === 'function') {
+					errorfn(err, response);
+				}
+				else if (typeof window[errorfn] === 'function') {
+					errorfn = window[errorfn];
+					errorfn(err, response);
+				}
+			}
+			else if (this.options.successcallback) {
+				successfn = this.options.successcallback;
+				if (typeof successfn === 'function') {
+					successfn(response);
+				}
+				else if (typeof window[successfn] === 'function') {
+					successfn = window[successfn];
+					successfn(response);
+				}
+			}
+			this.emit('submitted', formieData);
+		}.bind(this);
+
+	if (this.options.beforesubmitcallback) {
+		beforefn = this.options.beforesubmitcallback;
+		if (typeof beforefn === 'function') {
+			beforefn(e, f);
+		}
+		else if (typeof window[beforefn] === 'function') {
+			beforefn = window[beforefn];
+			beforefn(e, f);
+		}
+	}
+
+	formieDataFromForm = new forbject(f).getObject();
+	// console.log('f.getAttribute("enctype")', f.getAttribute('enctype'));
+
+	this.options.method = (f.getAttribute('method')) ? f.getAttribute('method').toLowerCase() : this.options.method.toLowerCase();
+	this.options.action = (f.getAttribute('action')) ? f.getAttribute('action') : (this.options.action) ? this.options.action : window.location.href;
+
+	if (this.options.jsonp) {
+		formieData = extend(formieDataFromForm, this.options.queryparameters);
+		// head element
+		documentHeadElement = (documentHeadElement) ? documentHeadElement : document.getElementsByTagName('head')[0];
+
+		// remove existing 
+		if (document.querySelector('#formie-jsonp')) {
+			documentHeadElement.removeChild(document.querySelector('#formie-jsonp'));
+		}
+
+		// Create a new script element
+		jsonpscript = document.createElement('script');
+
+		// Set its source to the JSONP API
+		jsonpscript.src = this.options.action + '?' + querystring.stringify(formieData);
+		jsonpscript.id = 'formie-jsonp';
+
+		window[formieData.callback] = this.options.successcallback;
+
+		// Stick the script element in the page <head>
+		documentHeadElement.appendChild(jsonpscript);
+	}
+	else if (f.getAttribute('enctype') === 'multipart/form-data') {
+		var formData = new FormData(f),
+			fileInputs = f.querySelectorAll('input[type="file"]'),
+			// reader = new FileReader(),
+			client = new XMLHttpRequest(),
+			asyncFunctions = [],
+			asyncFileReaderCB = function (fileinputname, file) {
+				return function (cb) {
+					var filereader = new FileReader();
+					filereader.readAsDataURL(file);
+					filereader.onload = function () {
+						// console.log('e', e);
+						// console.log('filereader', filereader);
+						formData.append(fileinputname, filereader.result, file.name);
+						cb(null, file);
+					};
+				};
+			};
+
+		formieData = formieDataFromForm;
+		//loop through file inputs and append files to formData
+		if (fileInputs) {
+			for (var r = 0; r < fileInputs.length; r++) {
+				if (fileInputs[r].files.length > 0) {
+					for (var s = 0; s < fileInputs[r].files.length; s++) {
+						// reader.readAsDataURL(fileInputs[r].files[s]);
+						asyncFunctions.push(asyncFileReaderCB(fileInputs[r].name, fileInputs[r].files[s]));
+					}
+				}
+			}
+			async.parallel(
+				asyncFunctions,
+				function (err) { //, results) {
+					// console.log('async results', results);
+					try {
+						client.open(this.options.method, this.options.action + '?' + querystring.stringify(this.options.queryparameters), true);
+						if (this.options.headers) {
+							for (var i in this.options.headers) {
+								client.setRequestHeader(i, this.options.headers[i]);
+							}
+						}
+						client.send(formData); /* Send to server */
+						// client.onreadystatechange = function () {}
+						client.onabort = function (err) {
+							ajaxResponseHandler(err);
+						};
+						client.onerror = function (err) {
+							ajaxResponseHandler(err);
+						};
+						client.onloadend = function () {
+							if (client.readyState === 4) {
+								if (client.status !== 200) {
+									ajaxResponseHandler(client.statusText, client);
+								}
+								else {
+									var res = {};
+									res.body = JSON.parse(client.response);
+									ajaxResponseHandler(null, res);
+								}
+							}
+						};
+					}
+					catch (e) {
+						ajaxResponseHandler(e);
+					}
+				}.bind(this)
+			);
+
+		}
+		// console.log('fileInputs', fileInputs, f, formData);
+	}
+	else if (this.options.method === 'get') {
+		formieData = extend(formieDataFromForm, this.options.queryparameters);
+		request
+			.get(this.options.action)
+			.set(this.options.headers)
+			.query(formieData)
+			.end(ajaxResponseHandler);
+	}
+	else if (this.options.method === 'delete' || this.options.method === 'del') {
+		formieData = extend(formieDataFromForm, this.options.queryparameters);
+		request
+			.del(this.options.action)
+			.set(this.options.headers)
+			.send(formieData)
+			.end(ajaxResponseHandler);
+	}
+	else if (this.options.method === 'post') {
+		formieData = extend(formieDataFromForm, this.options.postdata);
+		request
+			.post(this.options.action)
+			.set(this.options.headers)
+			.query(this.options.queryparameters)
+			.send(formieData)
+			.end(ajaxResponseHandler);
+	}
+	return false;
+};
+
+/**
+ * submit formie via ajax
+ */
+formie.prototype.__submit = function () {
+	this.ajaxSubmitFormie(null, this.options.form);
+};
+
+/**
+ * submit current form if html element has ajaxsubmitclassname class
+ * @emits autosubmitelement(element)
+ */
+formie.prototype.__autoSubmitFormOnChange = function () {
+	var formElement = (this.form) ? this.form : this.options.form;
+
+	this.ajaxSubmitFormie(null, formElement);
+	this.emit('autosubmitelement', formElement);
+	/*
+	// console.log('formElement', formElement);
+	if (classie.hasClass(formElement, this.options.ajaxsubmitclassname)) {
+		this.ajaxSubmitFormie(null, formElement);
+		this.emit('autosubmitelement', formElement);
+	}
+	else {
+		formElement.submit();
+	}
+	*/
+};
+
+/**
+ * add change listener for form elements with autosubmitselectors class
+ */
+formie.prototype.__submitOnChangeListeners = function () {
+	this.options.autosubmitelements = this.options.form.querySelectorAll(this.options.autosubmitselectors);
+
+	for (var x in this.options.autosubmitelements) {
+		if (typeof this.options.autosubmitelements[x] === 'object') {
+			this.options.autosubmitelements[x].addEventListener('change', this.autoSubmitFormOnChange.bind(this), false);
+		}
+	}
+};
+
+/**
+ * prevent element from submitting form when pressing enter key
+ * @param  {object} e keypress event
+ * @return {boolean}   also e.preventDefault();
+ * @emits prevententer(e.target)
+ */
+formie.prototype.__preventSubmitOnEnter = function (e) {
+	if (e.which === 13 || e.keyCode === 13) {
+		e.preventDefault();
+		this.emit('prevententer', e.target);
+		return false;
+	}
+};
+
+/**
+ * add keypress listeners to form elements that have preventsubmitselectors class to prevent submitting form on enter key
+ */
+formie.prototype.__preventEnterSubmitListeners = function () {
+
+	this.options.preventsubmitelements = this.options.form.querySelectorAll(this.options.preventsubmitselectors);
+	// console.log(this.options.preventsubmitelements);
+	for (var x in this.options.preventsubmitelements) {
+		if (typeof this.options.preventsubmitelements[x] === 'object') {
+			this.options.preventsubmitelements[x].addEventListener('keypress', this.preventSubmitOnEnter.bind(this), false);
+			this.options.preventsubmitelements[x].addEventListener('keydown', this.preventSubmitOnEnter.bind(this), false);
+		}
+	}
+	// document.addEventListener('keypress', preventSubmitOnEnter, false);
+};
+
+/**
+ * add submit event listener to formie form
+ */
+formie.prototype.__ajaxFormEventListers = function () {
+	this.options.form.addEventListener('submit', this.ajaxSubmitFormie.bind(this), false);
+};
+
+/**
+ * sets this.options.form, also adds event listener for formie form [this.ajaxFormEventListers()], adds auto submit form listeners [this.submitOnChangeListeners()], and prevent submit listeners [this.preventEnterSubmitListeners()]
+ * @emits initialized
+ */
+formie.prototype._init = function () {
+	this.options.form = (this.options.form) ? this.options.form : document.querySelector(this.options.ajaxformselector);
+
+	this.ajaxFormEventListers();
+	this.submitOnChangeListeners();
+	this.preventEnterSubmitListeners();
+	this.emit('initialized');
+};
+module.exports = formie;
+
+},{"async":6,"classie":2,"events":13,"forbject":7,"querystring":18,"superagent":9,"util":20,"util-extend":12}],6:[function(require,module,exports){
+arguments[4][1][0].apply(exports,arguments)
+},{"_process":15,"dup":1}],7:[function(require,module,exports){
+/*
+ * forbject
+ * http://github.amexpub.com/modules/forbject
+ *
+ * Copyright (c) 2013 AmexPub. All rights reserved.
+ */
+
+'use strict';
+
+module.exports = require('./lib/forbject');
+
+},{"./lib/forbject":8}],8:[function(require,module,exports){
+/*
+ * forbject
+ * http://github.com/yawetse/forbject
+ * inspired by: https://github.com/serbanghita/formToObject.js
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+'use strict';
+
+var events = require('events'),
+	extend = require('util-extend'),
+	util = require('util');
+
+/**
+ * A module that represents a forbject object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/forbject}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor forbject
+ * @requires module:events
+ * @requires module:util
+ * @param {object} formRef element selector of form element or actual form element
+ */
+var forbject = function (formRef, options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		autorefresh: false,
+		addelementsonrefresh: true,
+		valuefilter: false
+	},
+	testValuefilterReturn;
+	this.options = extend(defaultOptions, options);
+	if (!formRef) {
+		return false;
+	}
+
+	if(this.options.valuefilter){
+		testValuefilterReturn = this.options.valuefilter('test value');
+		if(typeof testValuefilterReturn === 'undefined'){
+			throw new Error('valuefilter must return a value');
+		}
+	}
+	this.formRef = formRef;
+	this.keyRegex = /[^\[\]]+/g;
+	this.$form = null;
+	this.$formElements = [];
+	this.formObj = {};
+	this.refresh = this._refresh;
+	this.getObject = this._getObject;
+	if (!this.setForm()) {
+		return false;
+	}
+	if (!this.setFormElements()) {
+		return false;
+	}
+	this.setFormObj();
+};
+
+util.inherits(forbject, events.EventEmitter);
+
+/**
+ * refresh form object key/value pair mapping
+ * @return {object} form object
+ * @emits refresh
+ */
+forbject.prototype._refresh = function () {
+	this.formObj = {};
+	if(this.options.addelementsonrefresh){
+		this.setFormElements();
+	}
+	this.setFormObj();
+	this.emit('refresh', this.formObj);
+};
+
+/**
+ * returns form object
+ * @return {object} form object
+ */
+forbject.prototype._getObject = function () {
+	return this.formObj;
+};
+
+/**
+ * Set the main form object we are working on.
+ * @return {object} Form Element Object
+ */
+forbject.prototype.setForm = function () {
+	try {
+		switch (typeof this.formRef) {
+		case 'string':
+			this.$form = document.querySelector(this.formRef);
+			break;
+		case 'object':
+			if (this.isDomNode(this.formRef)) {
+				this.$form = this.formRef;
+			}
+			break;
+		}
+		this.emit('init');
+		return this.$form;
+	}
+	catch (e) {
+		throw new Error(e);
+	}
+};
+
+
+/**
+ * Set the elements we need to parse.
+ * @return {number} number of form elements
+ */
+forbject.prototype.setFormElements = function () {
+	var autoRefreshOnValChange = function () {
+		this.refresh();
+		this.emit('autoRefreshOnValChange',this.getObject());
+	}.bind(this);
+	this.$formElements = this.$form.querySelectorAll('input, button, textarea, select');
+	if (this.options.autorefresh === true) {
+		for (var x = 0; x < this.$formElements.length; x++) {
+			this.$formElements[x].addEventListener('change', autoRefreshOnValChange, false);
+		}
+	}
+	return this.$formElements.length;
+};
+
+/**
+ * Check to see if the object is a HTML node.
+ * @param  {object}  node dom element
+ * @return {Boolean} if object is a dom node
+ */
+forbject.prototype.isDomNode = function (node) {
+	return typeof node === 'object' && 'nodeType' in node && node.nodeType === 1;
+};
+
+/**
+ * Iteration through arrays and objects. Compatible with IE.
+ * @param  {Array}   arr      array to iterate through
+ * @param  {Function} callback async callback
+ */
+forbject.prototype.forEach = function (arr, callback) {
+	if ([].forEach) {
+		return [].forEach.call(arr, callback);
+	}
+
+	var i;
+	for (i in arr) {
+		// Object.prototype.hasOwnProperty instead of arr.hasOwnProperty for IE8 compatibility.
+		if (Object.prototype.hasOwnProperty.call(arr, i)) {
+			callback.call(arr, arr[i]);
+		}
+	}
+
+	return;
+};
+
+/**
+ * Recursive method that adds keys and values of the corresponding fields.
+ * @param {object} result  form object
+ * @param {object} domNode element in form object
+ * @param {string} keys    regex result of form elements
+ * @param {object} value   value of domNode
+ */
+forbject.prototype.addChild = function (result, domNode, keys, value) {
+	value = (this.options.valuefilter) ? this.options.valuefilter(value) : value; 
+
+	// #1 - Single dimensional array.
+	if (keys.length === 1) {
+
+		// We're only interested in the radio that is checked.
+		if (domNode.nodeName === 'INPUT' && domNode.type === 'radio') {
+			if (domNode.checked) {
+				return result[keys] = value;
+			}
+			else {
+				return;
+			}
+		}
+
+		// Checkboxes are a special case. We have to grab each checked values
+		// and put them into an array.
+		if (domNode.nodeName === 'INPUT' && domNode.type === 'checkbox') {
+
+			if (domNode.checked) {
+
+				if (!result[keys]) {
+					result[keys] = [];
+				}
+				return result[keys].push(value);
+
+			}
+			else {
+				return;
+			}
+
+		}
+
+		// Multiple select is a special case.
+		// We have to grab each selected option and put them into an array.
+		if (domNode.nodeName === 'SELECT' && domNode.type === 'select-multiple') {
+
+			result[keys] = [];
+			var DOMchilds = domNode.querySelectorAll('option[selected]');
+			if (DOMchilds) {
+				this.forEach(DOMchilds, function (child) {
+					child.value = (this.options.valuefilter) ? this.options.valuefilter(child.value) : child.value; 
+
+					result[keys].push(child.value);
+				});
+			}
+			return;
+
+		}
+
+
+		// Fallback. The default one to one assign.
+		result[keys] = value;
+
+	}
+
+	// #2 - Multi dimensional array.
+	if (keys.length > 1) {
+
+		if (!result[keys[0]]) {
+			result[keys[0]] = {};
+		}
+
+		return this.addChild(result[keys[0]], domNode, keys.splice(1, keys.length), value);
+
+	}
+
+	return result;
+};
+
+/**
+ * iterate through form element items and append enabled elements to form object
+ */
+forbject.prototype.setFormObj = function () {
+	var test, i = 0;
+
+	for (i = 0; i < this.$formElements.length; i++) {
+		// Ignore the element if the 'name' attribute is empty.
+		// Ignore the 'disabled' elements.
+		if (this.$formElements[i].name && !this.$formElements[i].disabled) {
+			test = this.$formElements[i].name.match(this.keyRegex);
+			this.addChild(this.formObj, this.$formElements[i], test, this.$formElements[i].value);
+		}
+	}
+	this.emit('serialized', this.formObj);
+	return this.formObj;
+};
+module.exports = forbject;
+
+},{"events":13,"util":20,"util-extend":12}],9:[function(require,module,exports){
+/**
+ * Module dependencies.
+ */
+
+var Emitter = require('emitter');
+var reduce = require('reduce');
+
+/**
+ * Root reference for iframes.
+ */
+
+var root = 'undefined' == typeof window
+  ? this
+  : window;
+
+/**
+ * Noop.
+ */
+
+function noop(){};
+
+/**
+ * Check if `obj` is a host object,
+ * we don't want to serialize these :)
+ *
+ * TODO: future proof, move to compoent land
+ *
+ * @param {Object} obj
+ * @return {Boolean}
+ * @api private
+ */
+
+function isHost(obj) {
+  var str = {}.toString.call(obj);
+
+  switch (str) {
+    case '[object File]':
+    case '[object Blob]':
+    case '[object FormData]':
+      return true;
+    default:
+      return false;
+  }
+}
+
+/**
+ * Determine XHR.
+ */
+
+request.getXHR = function () {
+  if (root.XMLHttpRequest
+    && ('file:' != root.location.protocol || !root.ActiveXObject)) {
+    return new XMLHttpRequest;
+  } else {
+    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch(e) {}
+    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch(e) {}
+    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch(e) {}
+    try { return new ActiveXObject('Msxml2.XMLHTTP'); } catch(e) {}
+  }
+  return false;
+};
+
+/**
+ * Removes leading and trailing whitespace, added to support IE.
+ *
+ * @param {String} s
+ * @return {String}
+ * @api private
+ */
+
+var trim = ''.trim
+  ? function(s) { return s.trim(); }
+  : function(s) { return s.replace(/(^\s*|\s*$)/g, ''); };
+
+/**
+ * Check if `obj` is an object.
+ *
+ * @param {Object} obj
+ * @return {Boolean}
+ * @api private
+ */
+
+function isObject(obj) {
+  return obj === Object(obj);
+}
+
+/**
+ * Serialize the given `obj`.
+ *
+ * @param {Object} obj
+ * @return {String}
+ * @api private
+ */
+
+function serialize(obj) {
+  if (!isObject(obj)) return obj;
+  var pairs = [];
+  for (var key in obj) {
+    if (null != obj[key]) {
+      pairs.push(encodeURIComponent(key)
+        + '=' + encodeURIComponent(obj[key]));
+    }
+  }
+  return pairs.join('&');
+}
+
+/**
+ * Expose serialization method.
+ */
+
+ request.serializeObject = serialize;
+
+ /**
+  * Parse the given x-www-form-urlencoded `str`.
+  *
+  * @param {String} str
+  * @return {Object}
+  * @api private
+  */
+
+function parseString(str) {
+  var obj = {};
+  var pairs = str.split('&');
+  var parts;
+  var pair;
+
+  for (var i = 0, len = pairs.length; i < len; ++i) {
+    pair = pairs[i];
+    parts = pair.split('=');
+    obj[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
+  }
+
+  return obj;
+}
+
+/**
+ * Expose parser.
+ */
+
+request.parseString = parseString;
+
+/**
+ * Default MIME type map.
+ *
+ *     superagent.types.xml = 'application/xml';
+ *
+ */
+
+request.types = {
+  html: 'text/html',
+  json: 'application/json',
+  xml: 'application/xml',
+  urlencoded: 'application/x-www-form-urlencoded',
+  'form': 'application/x-www-form-urlencoded',
+  'form-data': 'application/x-www-form-urlencoded'
+};
+
+/**
+ * Default serialization map.
+ *
+ *     superagent.serialize['application/xml'] = function(obj){
+ *       return 'generated xml here';
+ *     };
+ *
+ */
+
+ request.serialize = {
+   'application/x-www-form-urlencoded': serialize,
+   'application/json': JSON.stringify
+ };
+
+ /**
+  * Default parsers.
+  *
+  *     superagent.parse['application/xml'] = function(str){
+  *       return { object parsed from str };
+  *     };
+  *
+  */
+
+request.parse = {
+  'application/x-www-form-urlencoded': parseString,
+  'application/json': JSON.parse
+};
+
+/**
+ * Parse the given header `str` into
+ * an object containing the mapped fields.
+ *
+ * @param {String} str
+ * @return {Object}
+ * @api private
+ */
+
+function parseHeader(str) {
+  var lines = str.split(/\r?\n/);
+  var fields = {};
+  var index;
+  var line;
+  var field;
+  var val;
+
+  lines.pop(); // trailing CRLF
+
+  for (var i = 0, len = lines.length; i < len; ++i) {
+    line = lines[i];
+    index = line.indexOf(':');
+    field = line.slice(0, index).toLowerCase();
+    val = trim(line.slice(index + 1));
+    fields[field] = val;
+  }
+
+  return fields;
+}
+
+/**
+ * Return the mime type for the given `str`.
+ *
+ * @param {String} str
+ * @return {String}
+ * @api private
+ */
+
+function type(str){
+  return str.split(/ *; */).shift();
+};
+
+/**
+ * Return header field parameters.
+ *
+ * @param {String} str
+ * @return {Object}
+ * @api private
+ */
+
+function params(str){
+  return reduce(str.split(/ *; */), function(obj, str){
+    var parts = str.split(/ *= */)
+      , key = parts.shift()
+      , val = parts.shift();
+
+    if (key && val) obj[key] = val;
+    return obj;
+  }, {});
+};
+
+/**
+ * Initialize a new `Response` with the given `xhr`.
+ *
+ *  - set flags (.ok, .error, etc)
+ *  - parse header
+ *
+ * Examples:
+ *
+ *  Aliasing `superagent` as `request` is nice:
+ *
+ *      request = superagent;
+ *
+ *  We can use the promise-like API, or pass callbacks:
+ *
+ *      request.get('/').end(function(res){});
+ *      request.get('/', function(res){});
+ *
+ *  Sending data can be chained:
+ *
+ *      request
+ *        .post('/user')
+ *        .send({ name: 'tj' })
+ *        .end(function(res){});
+ *
+ *  Or passed to `.send()`:
+ *
+ *      request
+ *        .post('/user')
+ *        .send({ name: 'tj' }, function(res){});
+ *
+ *  Or passed to `.post()`:
+ *
+ *      request
+ *        .post('/user', { name: 'tj' })
+ *        .end(function(res){});
+ *
+ * Or further reduced to a single call for simple cases:
+ *
+ *      request
+ *        .post('/user', { name: 'tj' }, function(res){});
+ *
+ * @param {XMLHTTPRequest} xhr
+ * @param {Object} options
+ * @api private
+ */
+
+function Response(req, options) {
+  options = options || {};
+  this.req = req;
+  this.xhr = this.req.xhr;
+  // responseText is accessible only if responseType is '' or 'text' and on older browsers
+  this.text = ((this.req.method !='HEAD' && (this.xhr.responseType === '' || this.xhr.responseType === 'text')) || typeof this.xhr.responseType === 'undefined')
+     ? this.xhr.responseText
+     : null;
+  this.statusText = this.req.xhr.statusText;
+  this.setStatusProperties(this.xhr.status);
+  this.header = this.headers = parseHeader(this.xhr.getAllResponseHeaders());
+  // getAllResponseHeaders sometimes falsely returns "" for CORS requests, but
+  // getResponseHeader still works. so we get content-type even if getting
+  // other headers fails.
+  this.header['content-type'] = this.xhr.getResponseHeader('content-type');
+  this.setHeaderProperties(this.header);
+  this.body = this.req.method != 'HEAD'
+    ? this.parseBody(this.text ? this.text : this.xhr.response)
+    : null;
+}
+
+/**
+ * Get case-insensitive `field` value.
+ *
+ * @param {String} field
+ * @return {String}
+ * @api public
+ */
+
+Response.prototype.get = function(field){
+  return this.header[field.toLowerCase()];
+};
+
+/**
+ * Set header related properties:
+ *
+ *   - `.type` the content type without params
+ *
+ * A response of "Content-Type: text/plain; charset=utf-8"
+ * will provide you with a `.type` of "text/plain".
+ *
+ * @param {Object} header
+ * @api private
+ */
+
+Response.prototype.setHeaderProperties = function(header){
+  // content-type
+  var ct = this.header['content-type'] || '';
+  this.type = type(ct);
+
+  // params
+  var obj = params(ct);
+  for (var key in obj) this[key] = obj[key];
+};
+
+/**
+ * Parse the given body `str`.
+ *
+ * Used for auto-parsing of bodies. Parsers
+ * are defined on the `superagent.parse` object.
+ *
+ * @param {String} str
+ * @return {Mixed}
+ * @api private
+ */
+
+Response.prototype.parseBody = function(str){
+  var parse = request.parse[this.type];
+  return parse && str && (str.length || str instanceof Object)
+    ? parse(str)
+    : null;
+};
+
+/**
+ * Set flags such as `.ok` based on `status`.
+ *
+ * For example a 2xx response will give you a `.ok` of __true__
+ * whereas 5xx will be __false__ and `.error` will be __true__. The
+ * `.clientError` and `.serverError` are also available to be more
+ * specific, and `.statusType` is the class of error ranging from 1..5
+ * sometimes useful for mapping respond colors etc.
+ *
+ * "sugar" properties are also defined for common cases. Currently providing:
+ *
+ *   - .noContent
+ *   - .badRequest
+ *   - .unauthorized
+ *   - .notAcceptable
+ *   - .notFound
+ *
+ * @param {Number} status
+ * @api private
+ */
+
+Response.prototype.setStatusProperties = function(status){
+  var type = status / 100 | 0;
+
+  // status / class
+  this.status = status;
+  this.statusType = type;
+
+  // basics
+  this.info = 1 == type;
+  this.ok = 2 == type;
+  this.clientError = 4 == type;
+  this.serverError = 5 == type;
+  this.error = (4 == type || 5 == type)
+    ? this.toError()
+    : false;
+
+  // sugar
+  this.accepted = 202 == status;
+  this.noContent = 204 == status || 1223 == status;
+  this.badRequest = 400 == status;
+  this.unauthorized = 401 == status;
+  this.notAcceptable = 406 == status;
+  this.notFound = 404 == status;
+  this.forbidden = 403 == status;
+};
+
+/**
+ * Return an `Error` representative of this response.
+ *
+ * @return {Error}
+ * @api public
+ */
+
+Response.prototype.toError = function(){
+  var req = this.req;
+  var method = req.method;
+  var url = req.url;
+
+  var msg = 'cannot ' + method + ' ' + url + ' (' + this.status + ')';
+  var err = new Error(msg);
+  err.status = this.status;
+  err.method = method;
+  err.url = url;
+
+  return err;
+};
+
+/**
+ * Expose `Response`.
+ */
+
+request.Response = Response;
+
+/**
+ * Initialize a new `Request` with the given `method` and `url`.
+ *
+ * @param {String} method
+ * @param {String} url
+ * @api public
+ */
+
+function Request(method, url) {
+  var self = this;
+  Emitter.call(this);
+  this._query = this._query || [];
+  this.method = method;
+  this.url = url;
+  this.header = {};
+  this._header = {};
+  this.on('end', function(){
+    var err = null;
+    var res = null;
+
+    try {
+      res = new Response(self);
+    } catch(e) {
+      err = new Error('Parser is unable to parse the response');
+      err.parse = true;
+      err.original = e;
+      return self.callback(err);
+    }
+
+    self.emit('response', res);
+
+    if (err) {
+      return self.callback(err, res);
+    }
+
+    if (res.status >= 200 && res.status < 300) {
+      return self.callback(err, res);
+    }
+
+    var new_err = new Error(res.statusText || 'Unsuccessful HTTP response');
+    new_err.original = err;
+    new_err.response = res;
+    new_err.status = res.status;
+
+    self.callback(err || new_err, res);
+  });
+}
+
+/**
+ * Mixin `Emitter`.
+ */
+
+Emitter(Request.prototype);
+
+/**
+ * Allow for extension
+ */
+
+Request.prototype.use = function(fn) {
+  fn(this);
+  return this;
+}
+
+/**
+ * Set timeout to `ms`.
+ *
+ * @param {Number} ms
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.timeout = function(ms){
+  this._timeout = ms;
+  return this;
+};
+
+/**
+ * Clear previous timeout.
+ *
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.clearTimeout = function(){
+  this._timeout = 0;
+  clearTimeout(this._timer);
+  return this;
+};
+
+/**
+ * Abort the request, and clear potential timeout.
+ *
+ * @return {Request}
+ * @api public
+ */
+
+Request.prototype.abort = function(){
+  if (this.aborted) return;
+  this.aborted = true;
+  this.xhr.abort();
+  this.clearTimeout();
+  this.emit('abort');
+  return this;
+};
+
+/**
+ * Set header `field` to `val`, or multiple fields with one object.
+ *
+ * Examples:
+ *
+ *      req.get('/')
+ *        .set('Accept', 'application/json')
+ *        .set('X-API-Key', 'foobar')
+ *        .end(callback);
+ *
+ *      req.get('/')
+ *        .set({ Accept: 'application/json', 'X-API-Key': 'foobar' })
+ *        .end(callback);
+ *
+ * @param {String|Object} field
+ * @param {String} val
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.set = function(field, val){
+  if (isObject(field)) {
+    for (var key in field) {
+      this.set(key, field[key]);
+    }
+    return this;
+  }
+  this._header[field.toLowerCase()] = val;
+  this.header[field] = val;
+  return this;
+};
+
+/**
+ * Remove header `field`.
+ *
+ * Example:
+ *
+ *      req.get('/')
+ *        .unset('User-Agent')
+ *        .end(callback);
+ *
+ * @param {String} field
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.unset = function(field){
+  delete this._header[field.toLowerCase()];
+  delete this.header[field];
+  return this;
+};
+
+/**
+ * Get case-insensitive header `field` value.
+ *
+ * @param {String} field
+ * @return {String}
+ * @api private
+ */
+
+Request.prototype.getHeader = function(field){
+  return this._header[field.toLowerCase()];
+};
+
+/**
+ * Set Content-Type to `type`, mapping values from `request.types`.
+ *
+ * Examples:
+ *
+ *      superagent.types.xml = 'application/xml';
+ *
+ *      request.post('/')
+ *        .type('xml')
+ *        .send(xmlstring)
+ *        .end(callback);
+ *
+ *      request.post('/')
+ *        .type('application/xml')
+ *        .send(xmlstring)
+ *        .end(callback);
+ *
+ * @param {String} type
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.type = function(type){
+  this.set('Content-Type', request.types[type] || type);
+  return this;
+};
+
+/**
+ * Set Accept to `type`, mapping values from `request.types`.
+ *
+ * Examples:
+ *
+ *      superagent.types.json = 'application/json';
+ *
+ *      request.get('/agent')
+ *        .accept('json')
+ *        .end(callback);
+ *
+ *      request.get('/agent')
+ *        .accept('application/json')
+ *        .end(callback);
+ *
+ * @param {String} accept
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.accept = function(type){
+  this.set('Accept', request.types[type] || type);
+  return this;
+};
+
+/**
+ * Set Authorization field value with `user` and `pass`.
+ *
+ * @param {String} user
+ * @param {String} pass
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.auth = function(user, pass){
+  var str = btoa(user + ':' + pass);
+  this.set('Authorization', 'Basic ' + str);
+  return this;
+};
+
+/**
+* Add query-string `val`.
+*
+* Examples:
+*
+*   request.get('/shoes')
+*     .query('size=10')
+*     .query({ color: 'blue' })
+*
+* @param {Object|String} val
+* @return {Request} for chaining
+* @api public
+*/
+
+Request.prototype.query = function(val){
+  if ('string' != typeof val) val = serialize(val);
+  if (val) this._query.push(val);
+  return this;
+};
+
+/**
+ * Write the field `name` and `val` for "multipart/form-data"
+ * request bodies.
+ *
+ * ``` js
+ * request.post('/upload')
+ *   .field('foo', 'bar')
+ *   .end(callback);
+ * ```
+ *
+ * @param {String} name
+ * @param {String|Blob|File} val
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.field = function(name, val){
+  if (!this._formData) this._formData = new root.FormData();
+  this._formData.append(name, val);
+  return this;
+};
+
+/**
+ * Queue the given `file` as an attachment to the specified `field`,
+ * with optional `filename`.
+ *
+ * ``` js
+ * request.post('/upload')
+ *   .attach(new Blob(['<a id="a"><b id="b">hey!</b></a>'], { type: "text/html"}))
+ *   .end(callback);
+ * ```
+ *
+ * @param {String} field
+ * @param {Blob|File} file
+ * @param {String} filename
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.attach = function(field, file, filename){
+  if (!this._formData) this._formData = new root.FormData();
+  this._formData.append(field, file, filename);
+  return this;
+};
+
+/**
+ * Send `data`, defaulting the `.type()` to "json" when
+ * an object is given.
+ *
+ * Examples:
+ *
+ *       // querystring
+ *       request.get('/search')
+ *         .end(callback)
+ *
+ *       // multiple data "writes"
+ *       request.get('/search')
+ *         .send({ search: 'query' })
+ *         .send({ range: '1..5' })
+ *         .send({ order: 'desc' })
+ *         .end(callback)
+ *
+ *       // manual json
+ *       request.post('/user')
+ *         .type('json')
+ *         .send('{"name":"tj"})
+ *         .end(callback)
+ *
+ *       // auto json
+ *       request.post('/user')
+ *         .send({ name: 'tj' })
+ *         .end(callback)
+ *
+ *       // manual x-www-form-urlencoded
+ *       request.post('/user')
+ *         .type('form')
+ *         .send('name=tj')
+ *         .end(callback)
+ *
+ *       // auto x-www-form-urlencoded
+ *       request.post('/user')
+ *         .type('form')
+ *         .send({ name: 'tj' })
+ *         .end(callback)
+ *
+ *       // defaults to x-www-form-urlencoded
+  *      request.post('/user')
+  *        .send('name=tobi')
+  *        .send('species=ferret')
+  *        .end(callback)
+ *
+ * @param {String|Object} data
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.send = function(data){
+  var obj = isObject(data);
+  var type = this.getHeader('Content-Type');
+
+  // merge
+  if (obj && isObject(this._data)) {
+    for (var key in data) {
+      this._data[key] = data[key];
+    }
+  } else if ('string' == typeof data) {
+    if (!type) this.type('form');
+    type = this.getHeader('Content-Type');
+    if ('application/x-www-form-urlencoded' == type) {
+      this._data = this._data
+        ? this._data + '&' + data
+        : data;
+    } else {
+      this._data = (this._data || '') + data;
+    }
+  } else {
+    this._data = data;
+  }
+
+  if (!obj || isHost(data)) return this;
+  if (!type) this.type('json');
+  return this;
+};
+
+/**
+ * Invoke the callback with `err` and `res`
+ * and handle arity check.
+ *
+ * @param {Error} err
+ * @param {Response} res
+ * @api private
+ */
+
+Request.prototype.callback = function(err, res){
+  var fn = this._callback;
+  this.clearTimeout();
+  fn(err, res);
+};
+
+/**
+ * Invoke callback with x-domain error.
+ *
+ * @api private
+ */
+
+Request.prototype.crossDomainError = function(){
+  var err = new Error('Origin is not allowed by Access-Control-Allow-Origin');
+  err.crossDomain = true;
+  this.callback(err);
+};
+
+/**
+ * Invoke callback with timeout error.
+ *
+ * @api private
+ */
+
+Request.prototype.timeoutError = function(){
+  var timeout = this._timeout;
+  var err = new Error('timeout of ' + timeout + 'ms exceeded');
+  err.timeout = timeout;
+  this.callback(err);
+};
+
+/**
+ * Enable transmission of cookies with x-domain requests.
+ *
+ * Note that for this to work the origin must not be
+ * using "Access-Control-Allow-Origin" with a wildcard,
+ * and also must set "Access-Control-Allow-Credentials"
+ * to "true".
+ *
+ * @api public
+ */
+
+Request.prototype.withCredentials = function(){
+  this._withCredentials = true;
+  return this;
+};
+
+/**
+ * Initiate request, invoking callback `fn(res)`
+ * with an instanceof `Response`.
+ *
+ * @param {Function} fn
+ * @return {Request} for chaining
+ * @api public
+ */
+
+Request.prototype.end = function(fn){
+  var self = this;
+  var xhr = this.xhr = request.getXHR();
+  var query = this._query.join('&');
+  var timeout = this._timeout;
+  var data = this._formData || this._data;
+
+  // store callback
+  this._callback = fn || noop;
+
+  // state change
+  xhr.onreadystatechange = function(){
+    if (4 != xhr.readyState) return;
+
+    // In IE9, reads to any property (e.g. status) off of an aborted XHR will
+    // result in the error "Could not complete the operation due to error c00c023f"
+    var status;
+    try { status = xhr.status } catch(e) { status = 0; }
+
+    if (0 == status) {
+      if (self.timedout) return self.timeoutError();
+      if (self.aborted) return;
+      return self.crossDomainError();
+    }
+    self.emit('end');
+  };
+
+  // progress
+  try {
+    if (xhr.upload && this.hasListeners('progress')) {
+      xhr.upload.onprogress = function(e){
+        e.percent = e.loaded / e.total * 100;
+        self.emit('progress', e);
+      };
+    }
+  } catch(e) {
+    // Accessing xhr.upload fails in IE from a web worker, so just pretend it doesn't exist.
+    // Reported here:
+    // https://connect.microsoft.com/IE/feedback/details/837245/xmlhttprequest-upload-throws-invalid-argument-when-used-from-web-worker-context
+  }
+
+  // timeout
+  if (timeout && !this._timer) {
+    this._timer = setTimeout(function(){
+      self.timedout = true;
+      self.abort();
+    }, timeout);
+  }
+
+  // querystring
+  if (query) {
+    query = request.serializeObject(query);
+    this.url += ~this.url.indexOf('?')
+      ? '&' + query
+      : '?' + query;
+  }
+
+  // initiate request
+  xhr.open(this.method, this.url, true);
+
+  // CORS
+  if (this._withCredentials) xhr.withCredentials = true;
+
+  // body
+  if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !isHost(data)) {
+    // serialize stuff
+    var serialize = request.serialize[this.getHeader('Content-Type')];
+    if (serialize) data = serialize(data);
+  }
+
+  // set header fields
+  for (var field in this.header) {
+    if (null == this.header[field]) continue;
+    xhr.setRequestHeader(field, this.header[field]);
+  }
+
+  // send stuff
+  this.emit('request', this);
+  xhr.send(data);
+  return this;
+};
+
+/**
+ * Expose `Request`.
+ */
+
+request.Request = Request;
+
+/**
+ * Issue a request:
+ *
+ * Examples:
+ *
+ *    request('GET', '/users').end(callback)
+ *    request('/users').end(callback)
+ *    request('/users', callback)
+ *
+ * @param {String} method
+ * @param {String|Function} url or callback
+ * @return {Request}
+ * @api public
+ */
+
+function request(method, url) {
+  // callback
+  if ('function' == typeof url) {
+    return new Request('GET', method).end(url);
+  }
+
+  // url first
+  if (1 == arguments.length) {
+    return new Request('GET', method);
+  }
+
+  return new Request(method, url);
+}
+
+/**
+ * GET `url` with optional callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Mixed|Function} data or fn
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.get = function(url, data, fn){
+  var req = request('GET', url);
+  if ('function' == typeof data) fn = data, data = null;
+  if (data) req.query(data);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * HEAD `url` with optional callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Mixed|Function} data or fn
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.head = function(url, data, fn){
+  var req = request('HEAD', url);
+  if ('function' == typeof data) fn = data, data = null;
+  if (data) req.send(data);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * DELETE `url` with optional callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.del = function(url, fn){
+  var req = request('DELETE', url);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * PATCH `url` with optional `data` and callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Mixed} data
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.patch = function(url, data, fn){
+  var req = request('PATCH', url);
+  if ('function' == typeof data) fn = data, data = null;
+  if (data) req.send(data);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * POST `url` with optional `data` and callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Mixed} data
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.post = function(url, data, fn){
+  var req = request('POST', url);
+  if ('function' == typeof data) fn = data, data = null;
+  if (data) req.send(data);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * PUT `url` with optional `data` and callback `fn(res)`.
+ *
+ * @param {String} url
+ * @param {Mixed|Function} data or fn
+ * @param {Function} fn
+ * @return {Request}
+ * @api public
+ */
+
+request.put = function(url, data, fn){
+  var req = request('PUT', url);
+  if ('function' == typeof data) fn = data, data = null;
+  if (data) req.send(data);
+  if (fn) req.end(fn);
+  return req;
+};
+
+/**
+ * Expose `request`.
+ */
+
+module.exports = request;
+
+},{"emitter":10,"reduce":11}],10:[function(require,module,exports){
+
+/**
+ * Expose `Emitter`.
+ */
+
+module.exports = Emitter;
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks[event] = this._callbacks[event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  var self = this;
+  this._callbacks = this._callbacks || {};
+
+  function on() {
+    self.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks[event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks[event];
+    return this;
+  }
+
+  // remove specific handler
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks[event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks[event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+},{}],11:[function(require,module,exports){
+
+/**
+ * Reduce `arr` with `fn`.
+ *
+ * @param {Array} arr
+ * @param {Function} fn
+ * @param {Mixed} initial
+ *
+ * TODO: combatible error handling?
+ */
+
+module.exports = function(arr, fn, initial){  
+  var idx = 0;
+  var len = arr.length;
+  var curr = arguments.length == 3
+    ? initial
+    : arr[idx++];
+
+  while (idx < len) {
+    curr = fn.call(null, curr, arr[idx], ++idx, arr);
+  }
+  
+  return curr;
+};
+},{}],12:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+module.exports = extend;
+function extend(origin, add) {
+  // Don't do anything if add isn't an object
+  if (!add || typeof add !== 'object') return origin;
+
+  var keys = Object.keys(add);
+  var i = keys.length;
+  while (i--) {
+    origin[keys[i]] = add[keys[i]];
+  }
+  return origin;
+}
+
+},{}],13:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -1521,7 +3498,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],5:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -1546,7 +3523,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],6:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -1605,14 +3582,193 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],7:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+// If obj.hasOwnProperty has been overridden, then calling
+// obj.hasOwnProperty(prop) will break.
+// See: https://github.com/joyent/node/issues/1707
+function hasOwnProperty(obj, prop) {
+  return Object.prototype.hasOwnProperty.call(obj, prop);
+}
+
+module.exports = function(qs, sep, eq, options) {
+  sep = sep || '&';
+  eq = eq || '=';
+  var obj = {};
+
+  if (typeof qs !== 'string' || qs.length === 0) {
+    return obj;
+  }
+
+  var regexp = /\+/g;
+  qs = qs.split(sep);
+
+  var maxKeys = 1000;
+  if (options && typeof options.maxKeys === 'number') {
+    maxKeys = options.maxKeys;
+  }
+
+  var len = qs.length;
+  // maxKeys <= 0 means that we should not limit keys count
+  if (maxKeys > 0 && len > maxKeys) {
+    len = maxKeys;
+  }
+
+  for (var i = 0; i < len; ++i) {
+    var x = qs[i].replace(regexp, '%20'),
+        idx = x.indexOf(eq),
+        kstr, vstr, k, v;
+
+    if (idx >= 0) {
+      kstr = x.substr(0, idx);
+      vstr = x.substr(idx + 1);
+    } else {
+      kstr = x;
+      vstr = '';
+    }
+
+    k = decodeURIComponent(kstr);
+    v = decodeURIComponent(vstr);
+
+    if (!hasOwnProperty(obj, k)) {
+      obj[k] = v;
+    } else if (isArray(obj[k])) {
+      obj[k].push(v);
+    } else {
+      obj[k] = [obj[k], v];
+    }
+  }
+
+  return obj;
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+},{}],17:[function(require,module,exports){
+// Copyright Joyent, Inc. and other Node contributors.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a
+// copy of this software and associated documentation files (the
+// "Software"), to deal in the Software without restriction, including
+// without limitation the rights to use, copy, modify, merge, publish,
+// distribute, sublicense, and/or sell copies of the Software, and to permit
+// persons to whom the Software is furnished to do so, subject to the
+// following conditions:
+//
+// The above copyright notice and this permission notice shall be included
+// in all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
+// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
+// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
+// USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+'use strict';
+
+var stringifyPrimitive = function(v) {
+  switch (typeof v) {
+    case 'string':
+      return v;
+
+    case 'boolean':
+      return v ? 'true' : 'false';
+
+    case 'number':
+      return isFinite(v) ? v : '';
+
+    default:
+      return '';
+  }
+};
+
+module.exports = function(obj, sep, eq, name) {
+  sep = sep || '&';
+  eq = eq || '=';
+  if (obj === null) {
+    obj = undefined;
+  }
+
+  if (typeof obj === 'object') {
+    return map(objectKeys(obj), function(k) {
+      var ks = encodeURIComponent(stringifyPrimitive(k)) + eq;
+      if (isArray(obj[k])) {
+        return map(obj[k], function(v) {
+          return ks + encodeURIComponent(stringifyPrimitive(v));
+        }).join(sep);
+      } else {
+        return ks + encodeURIComponent(stringifyPrimitive(obj[k]));
+      }
+    }).join(sep);
+
+  }
+
+  if (!name) return '';
+  return encodeURIComponent(stringifyPrimitive(name)) + eq +
+         encodeURIComponent(stringifyPrimitive(obj));
+};
+
+var isArray = Array.isArray || function (xs) {
+  return Object.prototype.toString.call(xs) === '[object Array]';
+};
+
+function map (xs, f) {
+  if (xs.map) return xs.map(f);
+  var res = [];
+  for (var i = 0; i < xs.length; i++) {
+    res.push(f(xs[i], i));
+  }
+  return res;
+}
+
+var objectKeys = Object.keys || function (obj) {
+  var res = [];
+  for (var key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) res.push(key);
+  }
+  return res;
+};
+
+},{}],18:[function(require,module,exports){
+'use strict';
+
+exports.decode = exports.parse = require('./decode');
+exports.encode = exports.stringify = require('./encode');
+
+},{"./decode":16,"./encode":17}],19:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],8:[function(require,module,exports){
+},{}],20:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -2202,7 +4358,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":7,"_process":6,"inherits":5}],9:[function(require,module,exports){
+},{"./support/isBuffer":19,"_process":15,"inherits":14}],21:[function(require,module,exports){
 /*
  * pushie
  * http://github.amexpub.com/modules/pushie
@@ -2214,7 +4370,7 @@ function hasOwnProperty(obj, prop) {
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":10}],10:[function(require,module,exports){
+},{"./lib/pushie":22}],22:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -2385,47 +4541,15 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":4,"util":8,"util-extend":11}],11:[function(require,module,exports){
-// Copyright Joyent, Inc. and other Node contributors.
-//
-// Permission is hereby granted, free of charge, to any person obtaining a
-// copy of this software and associated documentation files (the
-// "Software"), to deal in the Software without restriction, including
-// without limitation the rights to use, copy, modify, merge, publish,
-// distribute, sublicense, and/or sell copies of the Software, and to permit
-// persons to whom the Software is furnished to do so, subject to the
-// following conditions:
-//
-// The above copyright notice and this permission notice shall be included
-// in all copies or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
-// OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN
-// NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
-// OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE
-// USE OR OTHER DEALINGS IN THE SOFTWARE.
-
-module.exports = extend;
-function extend(origin, add) {
-  // Don't do anything if add isn't an object
-  if (!add || typeof add !== 'object') return origin;
-
-  var keys = Object.keys(add);
-  var i = keys.length;
-  while (i--) {
-    origin[keys[i]] = add[keys[i]];
-  }
-  return origin;
-}
-
-},{}],12:[function(require,module,exports){
+},{"events":13,"util":20,"util-extend":23}],23:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],24:[function(require,module,exports){
 'use strict';
 var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
 	Pushie = require('pushie'),
+	Formie = require('formie'),
 	asyncAdminPushie,
 	async = require('async'),
 	classie = require('classie'),
@@ -2443,6 +4567,8 @@ var ajaxlinks,
 	menuTriggerElement,
 	nav_header,
 	preloaderElement;
+
+window.Formie = Formie;
 
 window.createAdminTable = function (options) {
 	return new StylieTable(options);
@@ -2675,7 +4801,7 @@ window.addEventListener('load', function () {
 	window.StyliePushMenu = StyliePushMenu;
 });
 
-},{"async":1,"classie":2,"pushie":9,"stylie.notifications":13,"stylie.pushmenu":20,"stylie.tables":27,"superagent":34}],13:[function(require,module,exports){
+},{"async":1,"classie":2,"formie":4,"pushie":21,"stylie.notifications":25,"stylie.pushmenu":32,"stylie.tables":39,"superagent":46}],25:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -2687,7 +4813,7 @@ window.addEventListener('load', function () {
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":14}],14:[function(require,module,exports){
+},{"./lib/stylie.notifications":26}],26:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -2884,11 +5010,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":15,"detectcss":17,"events":4,"util":8,"util-extend":19}],15:[function(require,module,exports){
+},{"classie":27,"detectcss":29,"events":13,"util":20,"util-extend":31}],27:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
-},{"./lib/classie":16,"dup":2}],16:[function(require,module,exports){
+},{"./lib/classie":28,"dup":2}],28:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
-},{"dup":3}],17:[function(require,module,exports){
+},{"dup":3}],29:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -2898,7 +5024,7 @@ arguments[4][3][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":18}],18:[function(require,module,exports){
+},{"./lib/detectCSS":30}],30:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -2937,9 +5063,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],19:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],20:[function(require,module,exports){
+},{}],31:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],32:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -2951,7 +5077,7 @@ arguments[4][11][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.pushmenu');
 
-},{"./lib/stylie.pushmenu":21}],21:[function(require,module,exports){
+},{"./lib/stylie.pushmenu":33}],33:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -3257,17 +5383,17 @@ PushMenu.prototype._toggleLevels = function () {
 
 module.exports = PushMenu;
 
-},{"classie":22,"detectcss":24,"events":4,"util":8,"util-extend":26}],22:[function(require,module,exports){
+},{"classie":34,"detectcss":36,"events":13,"util":20,"util-extend":38}],34:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
-},{"./lib/classie":23,"dup":2}],23:[function(require,module,exports){
+},{"./lib/classie":35,"dup":2}],35:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
-},{"dup":3}],24:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"./lib/detectCSS":25,"dup":17}],25:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],26:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],27:[function(require,module,exports){
+},{"dup":3}],36:[function(require,module,exports){
+arguments[4][29][0].apply(exports,arguments)
+},{"./lib/detectCSS":37,"dup":29}],37:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"dup":30}],38:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],39:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin/stylie.tables
@@ -3279,7 +5405,7 @@ arguments[4][11][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tables');
 
-},{"./lib/stylie.tables":28}],28:[function(require,module,exports){
+},{"./lib/stylie.tables":40}],40:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin
@@ -3478,17 +5604,17 @@ if (typeof module === 'object') {
 	module.exports = StylieTable;
 }
 
-},{"classie":29,"detectcss":31,"events":4,"util":8,"util-extend":33}],29:[function(require,module,exports){
+},{"classie":41,"detectcss":43,"events":13,"util":20,"util-extend":45}],41:[function(require,module,exports){
 arguments[4][2][0].apply(exports,arguments)
-},{"./lib/classie":30,"dup":2}],30:[function(require,module,exports){
+},{"./lib/classie":42,"dup":2}],42:[function(require,module,exports){
 arguments[4][3][0].apply(exports,arguments)
-},{"dup":3}],31:[function(require,module,exports){
-arguments[4][17][0].apply(exports,arguments)
-},{"./lib/detectCSS":32,"dup":17}],32:[function(require,module,exports){
-arguments[4][18][0].apply(exports,arguments)
-},{"dup":18}],33:[function(require,module,exports){
-arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],34:[function(require,module,exports){
+},{"dup":3}],43:[function(require,module,exports){
+arguments[4][29][0].apply(exports,arguments)
+},{"./lib/detectCSS":44,"dup":29}],44:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"dup":30}],45:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],46:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -4571,195 +6697,8 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":35,"reduce":36}],35:[function(require,module,exports){
-
-/**
- * Expose `Emitter`.
- */
-
-module.exports = Emitter;
-
-/**
- * Initialize a new `Emitter`.
- *
- * @api public
- */
-
-function Emitter(obj) {
-  if (obj) return mixin(obj);
-};
-
-/**
- * Mixin the emitter properties.
- *
- * @param {Object} obj
- * @return {Object}
- * @api private
- */
-
-function mixin(obj) {
-  for (var key in Emitter.prototype) {
-    obj[key] = Emitter.prototype[key];
-  }
-  return obj;
-}
-
-/**
- * Listen on the given `event` with `fn`.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.on =
-Emitter.prototype.addEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-  (this._callbacks[event] = this._callbacks[event] || [])
-    .push(fn);
-  return this;
-};
-
-/**
- * Adds an `event` listener that will be invoked a single
- * time then automatically removed.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.once = function(event, fn){
-  var self = this;
-  this._callbacks = this._callbacks || {};
-
-  function on() {
-    self.off(event, on);
-    fn.apply(this, arguments);
-  }
-
-  on.fn = fn;
-  this.on(event, on);
-  return this;
-};
-
-/**
- * Remove the given callback for `event` or all
- * registered callbacks.
- *
- * @param {String} event
- * @param {Function} fn
- * @return {Emitter}
- * @api public
- */
-
-Emitter.prototype.off =
-Emitter.prototype.removeListener =
-Emitter.prototype.removeAllListeners =
-Emitter.prototype.removeEventListener = function(event, fn){
-  this._callbacks = this._callbacks || {};
-
-  // all
-  if (0 == arguments.length) {
-    this._callbacks = {};
-    return this;
-  }
-
-  // specific event
-  var callbacks = this._callbacks[event];
-  if (!callbacks) return this;
-
-  // remove all handlers
-  if (1 == arguments.length) {
-    delete this._callbacks[event];
-    return this;
-  }
-
-  // remove specific handler
-  var cb;
-  for (var i = 0; i < callbacks.length; i++) {
-    cb = callbacks[i];
-    if (cb === fn || cb.fn === fn) {
-      callbacks.splice(i, 1);
-      break;
-    }
-  }
-  return this;
-};
-
-/**
- * Emit `event` with the given args.
- *
- * @param {String} event
- * @param {Mixed} ...
- * @return {Emitter}
- */
-
-Emitter.prototype.emit = function(event){
-  this._callbacks = this._callbacks || {};
-  var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks[event];
-
-  if (callbacks) {
-    callbacks = callbacks.slice(0);
-    for (var i = 0, len = callbacks.length; i < len; ++i) {
-      callbacks[i].apply(this, args);
-    }
-  }
-
-  return this;
-};
-
-/**
- * Return array of callbacks for `event`.
- *
- * @param {String} event
- * @return {Array}
- * @api public
- */
-
-Emitter.prototype.listeners = function(event){
-  this._callbacks = this._callbacks || {};
-  return this._callbacks[event] || [];
-};
-
-/**
- * Check if this emitter has `event` handlers.
- *
- * @param {String} event
- * @return {Boolean}
- * @api public
- */
-
-Emitter.prototype.hasListeners = function(event){
-  return !! this.listeners(event).length;
-};
-
-},{}],36:[function(require,module,exports){
-
-/**
- * Reduce `arr` with `fn`.
- *
- * @param {Array} arr
- * @param {Function} fn
- * @param {Mixed} initial
- *
- * TODO: combatible error handling?
- */
-
-module.exports = function(arr, fn, initial){  
-  var idx = 0;
-  var len = arr.length;
-  var curr = arguments.length == 3
-    ? initial
-    : arr[idx++];
-
-  while (idx < len) {
-    curr = fn.call(null, curr, arr[idx], ++idx, arr);
-  }
-  
-  return curr;
-};
-},{}]},{},[12]);
+},{"emitter":47,"reduce":48}],47:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],48:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"dup":11}]},{},[24]);

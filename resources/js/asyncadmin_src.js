@@ -3,6 +3,7 @@ var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
 	Pushie = require('pushie'),
+	Formie = require('formie'),
 	asyncAdminPushie,
 	async = require('async'),
 	classie = require('classie'),
@@ -20,6 +21,8 @@ var ajaxlinks,
 	menuTriggerElement,
 	nav_header,
 	preloaderElement;
+
+window.Formie = Formie;
 
 window.createAdminTable = function (options) {
 	return new StylieTable(options);

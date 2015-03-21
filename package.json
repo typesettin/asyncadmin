@@ -22,6 +22,7 @@
   },
   "dependencies": {
     "classie": "^0.1.0",
+    "formie": "^1.0.0",
     "pushie": "^1.0.2"
   },
   "devDependencies": {
