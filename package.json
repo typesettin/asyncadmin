@@ -21,6 +21,7 @@
     "test": "mocha"
   },
   "dependencies": {
+    "bindie": "^2.1.0",
     "classie": "^0.1.0",
     "formie": "^1.0.0",
     "pushie": "^1.0.2"
