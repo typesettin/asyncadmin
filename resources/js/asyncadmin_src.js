@@ -3,6 +3,7 @@ var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
 	path = require('path'),
+	moment = require('moment'),
 	Pushie = require('pushie'),
 	Formie = require('formie'),
 	Bindie = require('bindie'),
@@ -193,7 +194,7 @@ var logToAdminConsole = function (data) {
 		acc = document.querySelector('#ts-admin-console-content');
 	classie.add(adminMessageMeta, 'ts-sans-serif');
 
-	adminMessageLevel.innerHTML = '(' + data.level + ') : ';
+	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + data.level + ') : ';
 	adminMessageMessage.innerHTML = data.msg;
 	adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
 	logInfoElement.appendChild(adminMessageLevel);
@@ -203,14 +204,14 @@ var logToAdminConsole = function (data) {
 	acp.scrollTop = acp.scrollHeight;
 
 	if (acc.childNodes.length > 10) {
-		console.log('isClearingConsole', isClearingConsole);
+		//console.log('isClearingConsole', isClearingConsole);
 		isClearingConsole = true;
 		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
 			acc.removeChild(acc.childNodes[x]);
 		}
 		var t = setTimeout(function () {
 			isClearingConsole = false;
-			console.log('setTimeout isClearingConsole', isClearingConsole);
+			//console.log('setTimeout isClearingConsole', isClearingConsole);
 			clearTimeout(t);
 		}, 5000);
 	}
