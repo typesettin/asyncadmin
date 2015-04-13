@@ -5325,6 +5325,675 @@ function hasOwnProperty(obj, prop) {
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./support/isBuffer":26,"_process":22,"inherits":20}],28:[function(require,module,exports){
 /*
+ * platter
+ * http://github.com/typesettin/platter
+ *
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+
+module.exports = require('./lib/platter');
+
+},{"./lib/platter":29}],29:[function(require,module,exports){
+/*
+ * manuscript
+ * http://github.com/typesettin/platter
+ *
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+
+'use strict';
+
+var classie = require('classie'),
+	extend = require('util-extend'),
+	events = require('events'),
+	domhelper = require('domhelper'),
+	util = require('util');
+
+/**
+ * A module that represents a platter.
+ * @{@link https://github.com/typesettin/platter}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @module platter
+ * @requires module:classie
+ * @requires module:util-extent
+ * @requires module:util
+ * @requires module:domhelper
+ * @requires module:events
+ * @todo to do later
+ */
+var platter = function(config_options){
+	/** module default configuration */
+	var options,
+		defaults = {
+			idSelector : 'platter',
+			name : null,
+			title : null,
+			fullIdSelector: null,
+			platterContentElement: null,
+			notifications: 0,
+			windowObjectReference: null,
+			element: null,
+			isPlatterContainerOpen: false
+		};//,
+		//container;
+
+	//extend default options
+	options = extend( defaults,config_options );
+
+	/** Returns the configuration object 
+	 * @return {object} the module configuration
+	 */
+	this.config = function(){
+		return options;
+	};
+
+	/** 
+	 * The element to clone in child window
+	 * @param {object} element - html element to clone
+	 */
+	this.setPlatterContentElement = function(element){
+		options.platterContentElement = element;
+	};
+
+	/** makes sure create unique dom elements */
+	this.isSelectorUnique = function(){
+		if(document.querySelector('#'+options.idSelector+'_pltr') === null){
+			options.fullIdSelector = options.idSelector+'_pltr';
+			options.name = options.idSelector;
+			options.title = (options.title) ? options.title : options.name;
+			return true;
+		}
+		else{
+			return false;
+		}
+	};
+
+	/**
+	 * intialize a new platter
+	 */
+	this.init = function(){
+		if(this.isSelectorUnique() === false){
+			throw new Error('idSelector must be unique');
+		}
+		else{
+			if(document.querySelector('#_pltrContainer')){
+				this.createPlatter(options.fullIdSelector);
+			}
+			else{
+				this.createContainer();
+				this.createPlatter(options.fullIdSelector);
+			}
+			options.element = document.getElementById(options.fullIdSelector);
+			options.element.addEventListener('click',platterClickEventHandler,false);
+			this.emit('intializedPlatter',true);
+		}
+		platterWindowResizeEventHandler();
+	}.bind(this);
+
+	/**
+	 * create platter html container
+	 */
+	this.createContainer = function(){
+		var platterContainer = document.createElement('div');
+		platterContainer.setAttribute('id','_pltrContainer');
+		classie.addClass(platterContainer,'_pltr-bottom');
+		document.body.appendChild(platterContainer);
+		this.emit('platterContainerCreated',platterContainer);
+
+		var platterElementsContainer = document.createElement('div');
+		platterElementsContainer.setAttribute('id','_pltr-elementsContainer');
+		classie.addClass(platterElementsContainer,'_pltr-right');
+		platterElementsContainer.innerHTML='<div id="_pltr-ecmc"><span id="_pltr-ecmc-button">[+]</span></div>';
+		platterContainer.appendChild(platterElementsContainer);
+		this.emit('platterElementContainerCreated',platterContainer);
+
+		document.getElementById('_pltr-ecmc').addEventListener('click',platterButtonPaneClickEventHandler,false);
+	};
+
+	/**
+	 * create platter html
+	 * @param {string} id name for platter selector id
+	 */
+	this.createPlatter = function(id){
+		/** create platter tab html */
+		var platterHTML = document.createElement('div');
+		platterHTML.setAttribute('id',id);
+		classie.addClass(platterHTML,'_pltr-tab');
+		classie.addClass(platterHTML,'_pltr-item');
+		platterHTML.innerHTML =options.title+'<span class="_pltr-open-window">[~]</span>';
+		/** add platter tab to tab bar */
+		document.querySelector('#_pltrContainer').appendChild(platterHTML);
+		this.emit('platterCreated',platterHTML);
+
+		/** create platter pane html */
+		var panePanalWrapper = document.createElement('div');
+		panePanalWrapper.setAttribute('id',id+'-pane-wrapper');
+
+		function setUpPlatterAttributes(){
+			options.platterContentElement.setAttribute('id',id+'-pane');
+			classie.addClass(options.platterContentElement,'_pltr-elementItem');
+			classie.addClass(options.platterContentElement,id);
+			panePanalWrapper.appendChild(options.platterContentElement);
+			document.querySelector('#_pltr-elementsContainer').appendChild(panePanalWrapper);
+		}
+
+		/** add platter element to pane */
+		if(options.platterContentElement){
+			setUpPlatterAttributes();
+		}
+		else{
+			options.platterContentElement = document.createElement('div');
+			options.platterContentElement.innerHTML =options.title+' pane';
+			setUpPlatterAttributes();
+		}
+
+		this.emit('platterCreatedPaneElement',options.platterContentElement);
+	};
+
+	/** hides platter in bar */
+	this.hidePlatterTab = function(){
+		classie.addClass(document.getElementById(options.fullIdSelector),'_pltr-hide');
+	};
+
+	/** show platter in bar */
+	this.showPlatterTab = function(callback){
+		classie.removeClass(document.getElementById(options.fullIdSelector),'_pltr-hide');
+		callCallBack(callback);
+	};
+
+	/** show platter pane */
+	this.showPlatterPane = function(callback){
+		var paneSelector = document.getElementById('_pltr-elementsContainer'),
+			paneButton = document.getElementById('_pltr-ecmc');
+
+		if(paneSelector.style.width!=='0' || paneSelector.style.width!=='0%'){
+			paneSelector.style.width = '50%';
+			if(paneButton){
+				classie.addClass(paneButton,'_pltr-expanded');
+				paneButton.querySelector('span').innerHTML='[ - ]';
+			}
+			this.emit('openedPlatterPane',true);
+		}
+		callCallBack(callback);
+	};
+
+	/** hide platter pane */
+	this.hidePlatterPane = function(){
+		var paneSelector = document.getElementById('_pltr-elementsContainer'),
+			paneButton = document.getElementById('_pltr-ecmc');
+
+		paneSelector.style.width = '0%';
+		if(paneButton){
+			classie.removeClass(document.getElementById('_pltr-ecmc'),'_pltr-expanded');
+				paneButton.querySelector('span').innerHTML='[+]';
+		}
+		this.emit('closedPlatterPane',true);
+	};
+
+	/**
+	 * opens platter in new window
+	 * @throws {ERROR} If cannot open new window
+	 * @fires eventEmitter event for opened window
+	 */
+	this.open = function(link,callback){
+		var strWindowFeatures = 'menubar=no, location=no, resizable=yes,scrollbars=yes, status=yes, dependent=yes, alwaysRaised=yes ',
+			linkurl = (link) ? link : 'assets/platter.html';
+
+		options.windowObjectReference = window.open('', options.name, strWindowFeatures);
+		// options.windowObjectReference.document.write('working: '+options.name);
+		options.windowObjectReference.document.body.appendChild(options.platterContentElement);
+		options.windowObjectReference.document.title = options.title;
+
+		options.windowObjectReference.addEventListener('unload',closePlatterWindowEventHandler,false);
+		options.windowObjectReference.addEventListener('click',this.childPlatterWindowClickEventHandler,false);
+		callCallBack(callback);
+	}.bind(this);
+
+	/** resizes platter html elements */
+	function platterWindowResizeEventHandler(e){
+		var paneElementsContainer = document.getElementById('_pltr-elementsContainer');
+		paneElementsContainer.style.height=window.innerHeight+'px';
+	}
+
+	/** listen for window resizes */
+	window.addEventListener('resize',platterWindowResizeEventHandler, false);
+
+	/** listen for orientation change */
+	window.addEventListener('orientationchange', platterWindowResizeEventHandler, false);
+
+	/** handles click events on the tab */
+	var platterClickEventHandler = function(e){
+		var etarget = e.target;
+		if(classie.hasClass(etarget,'_pltr-open-window')){
+			if(options.windowObjectReference === null || options.windowObjectReference.closed){
+				this.open(
+					null,
+					function(){
+						this.hidePlatterTab();
+					}.bind(this)
+				);
+				this.emit('openedPlatterWindow',true);
+			}
+			else{
+				options.windowObjectReference.focus();
+				this.emit('focusedPlatterWindow',true);
+			}
+		}
+		else{
+			this.showPlatterPane(function(){
+				var elec = document.getElementById('_pltr-elementsContainer');
+				// elec.scrollTop = 0;
+				elec.scrollTop = elec.scrollTop + domhelper.getPosition(document.getElementById(options.fullIdSelector+'-pane-wrapper')).top;
+			});
+		}
+	}.bind(this);
+
+	var closePlatterWindowEventHandler = function(e){
+		var wrapperToInsert = document.getElementById(options.fullIdSelector+'-pane-wrapper');
+		wrapperToInsert.appendChild(options.platterContentElement);
+		// console.log('closed window');
+		// console.log(options.windowObjectReference.document.body);
+		this.showPlatterTab();
+	}.bind(this);
+
+	/** makes sure create unique dom elements */
+	this.childPlatterWindowClickEventHandler = function(e){
+		// console.log(e);
+	};
+
+	var platterButtonPaneClickEventHandler = function(e){
+		var paneButton = document.getElementById('_pltr-ecmc');
+		if(classie.hasClass(paneButton,'_pltr-expanded')){
+			this.hidePlatterPane();
+		}
+		else{
+			this.showPlatterPane();
+		}
+	}.bind(this);
+
+	function callCallBack(callback){
+		if(typeof callback ==='function'){
+			callback();
+		}
+	}
+
+	this.testWriteToChild = function(html){
+		options.windowObjectReference.document.write('writing more:'+html);
+	};
+};
+
+util.inherits(platter,events.EventEmitter);
+platter.prototype.testfunc = function() {
+	console.log('teeestie');
+};
+
+module.exports = platter;
+
+// If there is a window object, that at least has a document property,
+// define linotype
+if ( typeof window === 'object' && typeof window.document === 'object' ) {
+	window.platter = platter;
+}
+},{"classie":30,"domhelper":32,"events":19,"util":27,"util-extend":34}],30:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"./lib/classie":31,"dup":7}],31:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"dup":8}],32:[function(require,module,exports){
+/*
+ * domhelper
+ * http://github.com/yawetse/domhelper
+ *
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+
+module.exports = require('./lib/domhelper');
+
+},{"./lib/domhelper":33}],33:[function(require,module,exports){
+/*
+ * linotype
+ * https://github.com/typesettin/linotype
+ * @author yaw joseph etse
+ * Copyright (c) 2014 Typesettin. All rights reserved.
+ */
+
+'use strict';
+
+var classie = require('classie');
+// 	extend = require('util-extend'),
+// 	events = require('events'),
+// 	util = require('util');
+
+/**
+ * A module that adds simple dom utility functionality.
+ * @author yaw joseph etse
+ * @constructor
+ */
+
+var domhelper = {
+
+	/**
+	 * returns the highest zindex
+	 * @param {string} selector - query selector
+	 * @return {number} highest z-index
+	 * @public
+	 */
+	getHighIndex: function(selector){
+		if (!selector) {
+			selector = "*";
+		}
+
+		var elements = document.querySelectorAll(selector),
+			i = 0,
+			e, s,
+			max = elements.length,
+			found = [];
+
+		for (; i < max; i += 1) {
+			e = elements[i].style.zIndex;
+			s = elements[i].style.position;
+			if (e && s !== "static") {
+				found.push(parseInt(e, 10));
+			}
+		}
+
+		return found.length ? Math.max.apply(null, found) : 0;
+	},
+
+	/**
+	 * toggles class across nodelist/elementcollection
+	 * @param {object} elementCollection - html dom element
+	 * @param {object} element - html dom element
+	 * @param {string} name of class!
+	 * @public
+	 */
+	removeAllClassAndToggle: function(element,elementCollection,toggleClass){
+		//updating the active class
+		for(var h =0; h <elementCollection.length; h++){
+			classie.removeClass(elementCollection[h],toggleClass);
+		}
+		classie.addClass(element,toggleClass);
+	},
+	/**
+	 * removes element from dom
+	 * @param {object} elementCollection - html dom element
+	 * @public
+	 */
+	removeElement: function(element){
+		//updating the active class
+		element.parentNode.removeChild(element);
+	},
+	/**
+	 * converts idnex of node in nodelist
+	 * @param {object} nodelist - html dom element
+	 * @param {object} element - html dom element
+	 * @return {number} index of element in nodelist
+	 * @method
+	 */
+	nodeIndexOfNodeList: function(nodelist,element){
+		return domhelper.nodelistToArray(nodelist,true).indexOf(element.outerHTML);
+    },
+
+	/**
+	 * converts nodelists to arrays
+	 * @param {node} nl - html dom element
+	 * @return { array} array of html nodes
+	 * @method
+	 */
+	nodelistToArray: function(nl,useStrings){
+		var arr = [];
+		for (var i = 0, ref = arr.length = nl.length; i < ref; i++) {
+			arr[i] = (useStrings) ? nl[i].outerHTML : nl[i];
+		}
+		return arr;
+    },
+
+	/**
+	 * Returns cloaset DOM element.
+	 * @param {node} element - html dom element
+	 * @return {node} - closet node element
+	 * @method
+	 */
+    closetElement: function(element){
+		if(typeof element.length === 'number'){
+			return undefined;
+		}
+		var matches = domhelper.nodelistToArray(document.querySelectorAll(element.nodeName+'.'+element.className.trim().split(" ").join("."))),
+			cleanMatches = [];
+		// console.log("matches",matches.length,matches);
+
+		for (var x =0; x < matches.length; x++){
+			// console.log('x',x,'element',element,'matches[x]',matches[x],'isEqualNode',matches[x].isEqualNode(element),'compareDocumentPosition',element.compareDocumentPosition(matches[x]));
+			if(element.compareDocumentPosition(matches[x])<4 && !matches[x].isEqualNode(element)){
+				cleanMatches.push(matches[x]);
+			}
+		}
+
+		function compareNumbers(a, b) {
+			return a.compareDocumentPosition( b ) - b.compareDocumentPosition( a );
+		}
+		// console.log("matches cleaned",cleanMatches.length,cleanMatches);
+		// console.log("matches sorted",cleanMatches.sort(compareNumbers));
+		return cleanMatches[0];
+	},
+
+	/**
+	 * Hides DOM elements.
+	 * @method
+	 * @param {node} element - html dom element
+	 */
+	elementHideCss: function(element){
+		element.style.display="none";
+	},
+
+	/**
+	 * Shows DOM elements.
+	 * @method
+	 * @param {node} element - html dom element
+	 */
+	elementShowCss: function(element){
+		element.setAttribute('style',element.getAttribute('style').replace("display: none;"));
+	},
+
+	/**
+	 * Wraps inner elements
+	 * @method
+	 * @param {node} element - html dom element
+	 * @param {node} innerElement - element to wrap html dom element
+	 */
+	elementContentWrapInner: function(element,innerElement){
+		var wrapper = element,
+			w = innerElement,
+			len = element.childElementCount,
+			wrapper_clone = wrapper.cloneNode(true);
+
+		wrapper.innerHTML='';
+		wrapper.appendChild(w);
+		var newFirstChild = wrapper.firstChild;
+
+		newFirstChild.innerHTML=wrapper_clone.innerHTML;
+	},
+
+	/**
+	 * Wraps element with wrapper
+	 * @method
+	 * @param {node} element - html dom element
+	 * @param {node} wrapperElement - element to wrap html dom element
+	 */
+	elementWrap: function(element,wrapperElement){
+		var elementParent =element.parentNode,
+			element_clone = element.cloneNode(true);
+
+		elementParent.replaceChild(wrapperElement,element);
+		wrapperElement.appendChild(element);
+	},
+
+
+	/**
+	 * get scroll position of element
+	 * @method
+	 * @param {node} element - html dom element
+	 * @return {number} position of scroll
+	 */
+	getScrollTop: function(element){
+		// console.log(typeof element);
+		if(element === window && typeof window.pageYOffset!== 'undefined'){
+			//most browsers except IE before #9
+			return window.pageYOffset;
+		}
+		else if(typeof element ==="object"){
+			return element.scrollTop;
+		}
+		else {
+			var B= document.body; //IE 'quirks'
+			var D= document.documentElement; //IE with doctype
+			D= (D.clientHeight)? D: B;
+			return D.scrollTop;
+		}
+	},
+
+	/**
+	 * get scroll position of element
+	 * @method
+	 * @param {node} element - html dom element
+	 * @return {object} position element
+	 */
+	getPosition: function(element) {
+		var xPosition = 0;
+		var yPosition = 0;
+
+		while(element) {
+			xPosition += (element.offsetLeft - element.scrollLeft + element.clientLeft);
+			yPosition += (element.offsetTop - element.scrollTop + element.clientTop);
+			element = element.offsetParent;
+		}
+		return { x: xPosition, y: yPosition, left: xPosition, top: yPosition };
+	},
+
+	/**
+	 * get element selector
+	 * @method
+	 * @param {node} element - html dom element
+	 * @return {string} query selector string
+	 */
+	getElementSelector: function(element){
+		var tagSelector = (element.tagName) ? element.tagName:'',
+			idSelector = (element.id) ? '#'+element.id+'':'',
+			classSelector='';
+		if(element.classList){
+			for(var x=0; x < element.classList.length; x++){
+				classSelector+='.'+element.classList[x]+"";
+			}
+		}
+		return tagSelector+idSelector+classSelector;
+	},
+
+	/**
+	 * get parent element
+	 * @method
+	 * @param {node} element - html dom element
+	 * @param {string} selector - selector
+	 * @param {string} selectorType - selector type (id or class)
+	 */
+	getParentElement: function(element,selector,selectorType){
+		if(element.tagName==='BODY' || element.tagName==='HTML' || selector==='body' || selector==='html' || selector===undefined){
+			// console.log('body selected');
+			return undefined;
+		}
+		else if( (selectorType==='id' && element.parentNode.id === selector) || element.parentNode.className.match(new RegExp(selector,'g'))){
+			// console.log("parent node");
+			return element.parentNode;
+
+			//new RegExp(pattern,modifiers)
+		}
+		else  {
+			// console.log("look up higher");
+			return domhelper.getParentElement(element.parentNode,selector,selectorType);
+		}
+	},
+
+	getPreviousElements: function(element,returnArray){
+		if(element.previousElementSibling){
+			returnArray.push(element.previousElementSibling);
+			return domhelper.getPreviousElements(element.previousElementSibling,returnArray);
+		}
+		else{
+			return returnArray;
+		}
+	},
+
+
+	getNextElements: function(element,returnArray){
+		if(element.nextElementSibling){
+			returnArray.push(element.nextElementSibling);
+			return domhelper.getNextElements(element.nextElementSibling,returnArray);
+		}
+		else{
+			return returnArray;
+		}
+	},
+
+	insertAllBefore: function(element,elementsToInsert){
+		var parentElement = element.parentNode;
+		// console.log("parentElement",parentElement,"element",element,"elementsToInsert",elementsToInsert);
+		if(elementsToInsert.length){
+			for(var x =0; x<elementsToInsert.length; x++){
+				// console.log(x,"elementsToInsert[x]",elementsToInsert[x])
+				parentElement.insertBefore(elementsToInsert[x],element);
+			}
+		}
+		else{
+			parentElement.insertBefore(elementsToInsert,element);
+		}
+	},
+
+	insertAllAfter: function(element,elementsToInsert){
+		var parentElement = element.parentNode;
+		var nextSibling = element.nextSibling;
+		// console.log("parentElement",parentElement,"element",element,"elementsToInsert",elementsToInsert);
+		if(elementsToInsert.length){
+			for(var x =0; x<elementsToInsert.length; x++){
+				// console.log(x,"elementsToInsert[x]",elementsToInsert[x])
+				// elementsToInsert[x].style.background="green";
+				parentElement.insertBefore(elementsToInsert[x],nextSibling);
+			}
+		}
+		else{
+			parentElement.insertBefore(elementsToInsert,nextSibling);
+		}
+	},
+
+	unwrapElement: function(element){
+		var parentNodeElem = element.parentNode;
+		if(parentNodeElem.nodeName !== "BODY"){
+			var parentParentNodeElem = parentNodeElem.parentNode;
+			parentParentNodeElem.innerHTML='';
+			parentParentNodeElem.appendChild(element);
+		}
+	},
+	onWindowLoaded: function(callback){
+		var readyStateCheckInterval = setInterval(function() {
+		    if (document.readyState === "complete") {
+		        callback();
+		        clearInterval(readyStateCheckInterval);
+		    }
+		}, 10);
+	}
+
+};
+
+module.exports = domhelper;
+
+// If there is a window object, that at least has a document property,
+// define linotype
+if ( typeof window === "object" && typeof window.document === "object" ) {
+	window.domhelper = domhelper;
+}
+},{"classie":30}],34:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"dup":6}],35:[function(require,module,exports){
+/*
  * pushie
  * http://github.amexpub.com/modules/pushie
  *
@@ -5335,7 +6004,7 @@ function hasOwnProperty(obj, prop) {
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":29}],29:[function(require,module,exports){
+},{"./lib/pushie":36}],36:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -5506,13 +6175,13 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":19,"util":27,"util-extend":30}],30:[function(require,module,exports){
+},{"events":19,"util":27,"util-extend":37}],37:[function(require,module,exports){
 arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],31:[function(require,module,exports){
+},{"dup":6}],38:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
-},{"./lib/":32}],32:[function(require,module,exports){
+},{"./lib/":39}],39:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -5601,7 +6270,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":33,"./socket":35,"./url":36,"debug":40,"socket.io-parser":76}],33:[function(require,module,exports){
+},{"./manager":40,"./socket":42,"./url":43,"debug":47,"socket.io-parser":83}],40:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -6106,7 +6775,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":34,"./socket":35,"./url":36,"backo2":37,"component-bind":38,"component-emitter":39,"debug":40,"engine.io-client":41,"indexof":72,"object-component":73,"socket.io-parser":76}],34:[function(require,module,exports){
+},{"./on":41,"./socket":42,"./url":43,"backo2":44,"component-bind":45,"component-emitter":46,"debug":47,"engine.io-client":48,"indexof":79,"object-component":80,"socket.io-parser":83}],41:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -6132,7 +6801,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],35:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -6519,7 +7188,7 @@ Socket.prototype.disconnect = function(){
   return this;
 };
 
-},{"./on":34,"component-bind":38,"component-emitter":39,"debug":40,"has-binary":70,"socket.io-parser":76,"to-array":80}],36:[function(require,module,exports){
+},{"./on":41,"component-bind":45,"component-emitter":46,"debug":47,"has-binary":77,"socket.io-parser":83,"to-array":87}],43:[function(require,module,exports){
 (function (global){
 
 /**
@@ -6596,7 +7265,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":40,"parseuri":74}],37:[function(require,module,exports){
+},{"debug":47,"parseuri":81}],44:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -6683,7 +7352,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],38:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -6708,9 +7377,9 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],39:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],40:[function(require,module,exports){
+},{"dup":15}],47:[function(require,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -6849,11 +7518,11 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],41:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":42}],42:[function(require,module,exports){
+},{"./lib/":49}],49:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -6865,7 +7534,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":43,"engine.io-parser":55}],43:[function(require,module,exports){
+},{"./socket":50,"engine.io-parser":62}],50:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -7574,7 +8243,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":44,"./transports":45,"component-emitter":39,"debug":52,"engine.io-parser":55,"indexof":72,"parsejson":66,"parseqs":67,"parseuri":68}],44:[function(require,module,exports){
+},{"./transport":51,"./transports":52,"component-emitter":46,"debug":59,"engine.io-parser":62,"indexof":79,"parsejson":73,"parseqs":74,"parseuri":75}],51:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -7735,7 +8404,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":39,"engine.io-parser":55}],45:[function(require,module,exports){
+},{"component-emitter":46,"engine.io-parser":62}],52:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -7792,7 +8461,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":46,"./polling-xhr":47,"./websocket":49,"xmlhttprequest":50}],46:[function(require,module,exports){
+},{"./polling-jsonp":53,"./polling-xhr":54,"./websocket":56,"xmlhttprequest":57}],53:[function(require,module,exports){
 (function (global){
 
 /**
@@ -8029,7 +8698,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":48,"component-inherit":51}],47:[function(require,module,exports){
+},{"./polling":55,"component-inherit":58}],54:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -8417,7 +9086,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":48,"component-emitter":39,"component-inherit":51,"debug":52,"xmlhttprequest":50}],48:[function(require,module,exports){
+},{"./polling":55,"component-emitter":46,"component-inherit":58,"debug":59,"xmlhttprequest":57}],55:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -8664,7 +9333,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + this.hostname + port + this.path + query;
 };
 
-},{"../transport":44,"component-inherit":51,"debug":52,"engine.io-parser":55,"parseqs":67,"xmlhttprequest":50}],49:[function(require,module,exports){
+},{"../transport":51,"component-inherit":58,"debug":59,"engine.io-parser":62,"parseqs":74,"xmlhttprequest":57}],56:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -8904,7 +9573,7 @@ WS.prototype.check = function(){
   return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
 };
 
-},{"../transport":44,"component-inherit":51,"debug":52,"engine.io-parser":55,"parseqs":67,"ws":69}],50:[function(require,module,exports){
+},{"../transport":51,"component-inherit":58,"debug":59,"engine.io-parser":62,"parseqs":74,"ws":76}],57:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -8942,7 +9611,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":64}],51:[function(require,module,exports){
+},{"has-cors":71}],58:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -8950,7 +9619,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],52:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -9099,7 +9768,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":53}],53:[function(require,module,exports){
+},{"./debug":60}],60:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -9298,7 +9967,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":54}],54:[function(require,module,exports){
+},{"ms":61}],61:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -9411,7 +10080,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],55:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -10009,7 +10678,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":56,"after":57,"arraybuffer.slice":58,"base64-arraybuffer":59,"blob":60,"has-binary":61,"utf8":63}],56:[function(require,module,exports){
+},{"./keys":63,"after":64,"arraybuffer.slice":65,"base64-arraybuffer":66,"blob":67,"has-binary":68,"utf8":70}],63:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -10030,7 +10699,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],57:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -10060,7 +10729,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],58:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -10091,7 +10760,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],59:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -10152,7 +10821,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],60:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -10205,7 +10874,7 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],61:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 (function (global){
 
 /*
@@ -10267,12 +10936,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":62}],62:[function(require,module,exports){
+},{"isarray":69}],69:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],63:[function(require,module,exports){
+},{}],70:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -10515,7 +11184,7 @@ module.exports = Array.isArray || function (arr) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],64:[function(require,module,exports){
+},{}],71:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -10540,7 +11209,7 @@ try {
   module.exports = false;
 }
 
-},{"global":65}],65:[function(require,module,exports){
+},{"global":72}],72:[function(require,module,exports){
 
 /**
  * Returns `this`. Execute this without a "context" (i.e. without it being
@@ -10550,7 +11219,7 @@ try {
 
 module.exports = (function () { return this; })();
 
-},{}],66:[function(require,module,exports){
+},{}],73:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -10585,7 +11254,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],67:[function(require,module,exports){
+},{}],74:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -10624,7 +11293,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],68:[function(require,module,exports){
+},{}],75:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -10665,7 +11334,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],69:[function(require,module,exports){
+},{}],76:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -10710,7 +11379,7 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],70:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 (function (global){
 
 /*
@@ -10772,9 +11441,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":71}],71:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"dup":62}],72:[function(require,module,exports){
+},{"isarray":78}],78:[function(require,module,exports){
+arguments[4][69][0].apply(exports,arguments)
+},{"dup":69}],79:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -10785,7 +11454,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],73:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 
 /**
  * HOP ref.
@@ -10870,7 +11539,7 @@ exports.length = function(obj){
 exports.isEmpty = function(obj){
   return 0 == exports.length(obj);
 };
-},{}],74:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -10897,7 +11566,7 @@ module.exports = function parseuri(str) {
   return uri;
 };
 
-},{}],75:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -11042,7 +11711,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":77,"isarray":78}],76:[function(require,module,exports){
+},{"./is-buffer":84,"isarray":85}],83:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -11444,7 +12113,7 @@ function error(data){
   };
 }
 
-},{"./binary":75,"./is-buffer":77,"component-emitter":39,"debug":40,"isarray":78,"json3":79}],77:[function(require,module,exports){
+},{"./binary":82,"./is-buffer":84,"component-emitter":46,"debug":47,"isarray":85,"json3":86}],84:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -11461,9 +12130,9 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],78:[function(require,module,exports){
-arguments[4][62][0].apply(exports,arguments)
-},{"dup":62}],79:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
+arguments[4][69][0].apply(exports,arguments)
+},{"dup":69}],86:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -12326,7 +12995,7 @@ arguments[4][62][0].apply(exports,arguments)
   }
 }(this));
 
-},{}],80:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -12341,14 +13010,16 @@ function toArray(list, index) {
     return array
 }
 
-},{}],81:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 'use strict';
 var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
+	path = require('path'),
 	Pushie = require('pushie'),
 	Formie = require('formie'),
 	Bindie = require('bindie'),
+	platterjs = require('platterjs'),
 	io = require('socket.io-client'),
 	socket,
 	asyncAdminPushie,
@@ -12360,13 +13031,18 @@ var ajaxlinks,
 	asyncHTMLWrapper,
 	asyncHTMLContentContainer,
 	asyncContentSelector = '#ts-asyncadmin-content-container',
+	asyncAdminContentElement,
+	adminConsoleElement,
+	adminConsoleElementContent,
 	flashMessageArray = [],
 	asyncFlashFunctions = [],
 	request = require('superagent'),
+	isClearingConsole = false,
 	mtpms,
 	menuElement,
 	menuTriggerElement,
 	nav_header,
+	consolePlatter,
 	preloaderElement;
 
 window.Formie = Formie;
@@ -12497,6 +13173,102 @@ var pushstatecallback = function ( /*data*/ ) {
 	// console.log('data', data);
 };
 
+var adminConsoleWindowResizeEventHandler = function (e) {
+	console.log(e);
+};
+
+var addStyleSheetToChildWindow = function () {
+	var t = setTimeout(function () {
+		var newstylesheet = document.createElement('link');
+		newstylesheet.setAttribute('type', 'text/css');
+		newstylesheet.setAttribute('href', path.dirname(window.location) + '/stylesheets/default/periodic.css');
+		newstylesheet.setAttribute('rel', 'stylesheet');
+		var newstylesheet2 = document.createElement('link');
+		newstylesheet2.setAttribute('type', 'text/css');
+		newstylesheet2.setAttribute('href', path.dirname(window.location) + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
+		newstylesheet2.setAttribute('rel', 'stylesheet');
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+
+		adminConsoleWindowResizeEventHandler();
+		clearTimeout(t);
+	}, 200);
+
+	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
+};
+
+var logToAdminConsole = function (data) {
+	var logInfoElement = document.createElement('div'),
+		adminMessageLevel = document.createElement('span'),
+		adminMessageMessage = document.createElement('span'),
+		adminMessageMeta = document.createElement('pre'),
+		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
+		acc = document.querySelector('#ts-admin-console-content');
+	classie.add(adminMessageMeta, 'ts-sans-serif');
+
+	adminMessageLevel.innerHTML = '(' + data.level + ') : ';
+	adminMessageMessage.innerHTML = data.msg;
+	adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	logInfoElement.appendChild(adminMessageLevel);
+	logInfoElement.appendChild(adminMessageMessage);
+	logInfoElement.appendChild(adminMessageMeta);
+	adminConsoleElementContent.appendChild(logInfoElement);
+	acp.scrollTop = acp.scrollHeight;
+
+	if (acc.childNodes.length > 10) {
+		console.log('isClearingConsole', isClearingConsole);
+		isClearingConsole = true;
+		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+			acc.removeChild(acc.childNodes[x]);
+		}
+		var t = setTimeout(function () {
+			isClearingConsole = false;
+			console.log('setTimeout isClearingConsole', isClearingConsole);
+			clearTimeout(t);
+		}, 5000);
+	}
+};
+
+var asyncAdminContentElementClick = function () {
+	consolePlatter.hidePlatterPane();
+};
+
+var initEventListeners = function () {
+	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
+};
+
+var adminConsolePlatterConfig = function () {
+
+	socket = io(window.location.hostname + ':' + window.socketIoPort);
+	// Whenever the server emits 'user joined', log it in the chat body
+	socket.on('log', function (data) {
+		logToAdminConsole(data);
+	});
+	socket.on('connect', function () {
+		console.log('connect socket');
+	});
+	socket.on('disconnect', function (e) {
+		console.log('disconnect e', e);
+	});
+	socket.on('reconnect', function (e) {
+		console.log('reconnect e', e);
+	});
+	socket.on('error', function (e) {
+		console.log('error e', e);
+	});
+	consolePlatter = new platterjs({
+		idSelector: 'adminConsole',
+		platterContentElement: adminConsoleElement
+	});
+	consolePlatter.init();
+
+	consolePlatter.on('openedPlatterWindow', function (data) {
+		console.log('openedPlatterWindow data', data);
+		addStyleSheetToChildWindow();
+	});
+
+	window.consolePlatter = consolePlatter;
+};
 
 window.getAsyncCallback = function (functiondata) {
 	return function (asyncCB) {
@@ -12570,6 +13342,8 @@ window.showStylieNotification = function (options) {
 
 
 window.addEventListener('load', function () {
+	adminConsoleElement = document.querySelector('#ts-admin-console');
+	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
 	asyncHTMLContentContainer = document.querySelector(asyncContentSelector);
 	navlinks = document.querySelector('#ts-pushmenu-mp-menu');
@@ -12579,6 +13353,7 @@ window.addEventListener('load', function () {
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
 	preloaderElement = document.querySelector('#ts-preloading');
+	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -12598,19 +13373,14 @@ window.addEventListener('load', function () {
 		pushcallback: pushstatecallback,
 		popcallback: statecallback
 	});
-
-	socket = io(window.location.hostname + ':' + window.socketIoPort);
-	// Whenever the server emits 'user joined', log it in the chat body
-	socket.on('log', function (data) {
-		console.log(data);
-	});
-
-	window.asyncHTMLWrapper = asyncHTMLWrapper;
+	adminConsolePlatterConfig();
 	initFlashMessage();
+	initEventListeners();
+	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
 });
 
-},{"async":1,"bindie":2,"classie":7,"formie":9,"pushie":28,"socket.io-client":31,"stylie.notifications":82,"stylie.pushmenu":89,"stylie.tables":96,"superagent":103}],82:[function(require,module,exports){
+},{"async":1,"bindie":2,"classie":7,"formie":9,"path":21,"platterjs":28,"pushie":35,"socket.io-client":38,"stylie.notifications":89,"stylie.pushmenu":96,"stylie.tables":103,"superagent":110}],89:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -12622,7 +13392,7 @@ window.addEventListener('load', function () {
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":83}],83:[function(require,module,exports){
+},{"./lib/stylie.notifications":90}],90:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -12819,11 +13589,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":84,"detectcss":86,"events":19,"util":27,"util-extend":88}],84:[function(require,module,exports){
+},{"classie":91,"detectcss":93,"events":19,"util":27,"util-extend":95}],91:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"./lib/classie":85,"dup":7}],85:[function(require,module,exports){
+},{"./lib/classie":92,"dup":7}],92:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],86:[function(require,module,exports){
+},{"dup":8}],93:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -12833,7 +13603,7 @@ arguments[4][8][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":87}],87:[function(require,module,exports){
+},{"./lib/detectCSS":94}],94:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -12872,9 +13642,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],88:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],89:[function(require,module,exports){
+},{"dup":6}],96:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -12886,7 +13656,7 @@ arguments[4][6][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.pushmenu');
 
-},{"./lib/stylie.pushmenu":90}],90:[function(require,module,exports){
+},{"./lib/stylie.pushmenu":97}],97:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -13192,17 +13962,17 @@ PushMenu.prototype._toggleLevels = function () {
 
 module.exports = PushMenu;
 
-},{"classie":91,"detectcss":93,"events":19,"util":27,"util-extend":95}],91:[function(require,module,exports){
+},{"classie":98,"detectcss":100,"events":19,"util":27,"util-extend":102}],98:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"./lib/classie":92,"dup":7}],92:[function(require,module,exports){
+},{"./lib/classie":99,"dup":7}],99:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],93:[function(require,module,exports){
-arguments[4][86][0].apply(exports,arguments)
-},{"./lib/detectCSS":94,"dup":86}],94:[function(require,module,exports){
-arguments[4][87][0].apply(exports,arguments)
-},{"dup":87}],95:[function(require,module,exports){
+},{"dup":8}],100:[function(require,module,exports){
+arguments[4][93][0].apply(exports,arguments)
+},{"./lib/detectCSS":101,"dup":93}],101:[function(require,module,exports){
+arguments[4][94][0].apply(exports,arguments)
+},{"dup":94}],102:[function(require,module,exports){
 arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],96:[function(require,module,exports){
+},{"dup":6}],103:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin/stylie.tables
@@ -13214,7 +13984,7 @@ arguments[4][6][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tables');
 
-},{"./lib/stylie.tables":97}],97:[function(require,module,exports){
+},{"./lib/stylie.tables":104}],104:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin
@@ -13413,17 +14183,17 @@ if (typeof module === 'object') {
 	module.exports = StylieTable;
 }
 
-},{"classie":98,"detectcss":100,"events":19,"util":27,"util-extend":102}],98:[function(require,module,exports){
+},{"classie":105,"detectcss":107,"events":19,"util":27,"util-extend":109}],105:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"./lib/classie":99,"dup":7}],99:[function(require,module,exports){
+},{"./lib/classie":106,"dup":7}],106:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],100:[function(require,module,exports){
-arguments[4][86][0].apply(exports,arguments)
-},{"./lib/detectCSS":101,"dup":86}],101:[function(require,module,exports){
-arguments[4][87][0].apply(exports,arguments)
-},{"dup":87}],102:[function(require,module,exports){
+},{"dup":8}],107:[function(require,module,exports){
+arguments[4][93][0].apply(exports,arguments)
+},{"./lib/detectCSS":108,"dup":93}],108:[function(require,module,exports){
+arguments[4][94][0].apply(exports,arguments)
+},{"dup":94}],109:[function(require,module,exports){
 arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}],103:[function(require,module,exports){
+},{"dup":6}],110:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -14506,8 +15276,8 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":104,"reduce":105}],104:[function(require,module,exports){
+},{"emitter":111,"reduce":112}],111:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],105:[function(require,module,exports){
+},{"dup":15}],112:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}]},{},[81]);
+},{"dup":16}]},{},[88]);

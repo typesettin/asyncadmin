@@ -14,6 +14,7 @@ var useSocketIOLogger = function () {
 				warn: logger.warn
 			}
 		});
+
 	io.on('connection', function (socket) {
 		socketForLogger = socket;
 		socketForLogger.emit('log', {
@@ -33,9 +34,9 @@ var useSocketIOLogger = function () {
 	CustomLogger.prototype.log = function (level, msg, meta, callback) {
 		try {
 			// console.log('CustomLogger level, msg, meta:', level, msg, meta);
-			// console.log('socketForLogger', socketForLogger);
 			if (socketForLogger) {
-				socketForLogger.emit('log', {
+				// console.log('socketForLogger.conn.server.clientsCount', socketForLogger.conn.server.clientsCount);
+				io.sockets.emit('log', {
 					level: level,
 					msg: msg,
 					meta: meta
@@ -44,6 +45,7 @@ var useSocketIOLogger = function () {
 			callback(null, true);
 		}
 		catch (e) {
+			logger.error('useSocketIOLogger e', e);
 			callback(e, null);
 		}
 	};

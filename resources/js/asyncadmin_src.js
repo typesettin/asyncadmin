@@ -2,9 +2,11 @@
 var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
+	path = require('path'),
 	Pushie = require('pushie'),
 	Formie = require('formie'),
 	Bindie = require('bindie'),
+	platterjs = require('platterjs'),
 	io = require('socket.io-client'),
 	socket,
 	asyncAdminPushie,
@@ -16,13 +18,18 @@ var ajaxlinks,
 	asyncHTMLWrapper,
 	asyncHTMLContentContainer,
 	asyncContentSelector = '#ts-asyncadmin-content-container',
+	asyncAdminContentElement,
+	adminConsoleElement,
+	adminConsoleElementContent,
 	flashMessageArray = [],
 	asyncFlashFunctions = [],
 	request = require('superagent'),
+	isClearingConsole = false,
 	mtpms,
 	menuElement,
 	menuTriggerElement,
 	nav_header,
+	consolePlatter,
 	preloaderElement;
 
 window.Formie = Formie;
@@ -153,6 +160,102 @@ var pushstatecallback = function ( /*data*/ ) {
 	// console.log('data', data);
 };
 
+var adminConsoleWindowResizeEventHandler = function (e) {
+	console.log(e);
+};
+
+var addStyleSheetToChildWindow = function () {
+	var t = setTimeout(function () {
+		var newstylesheet = document.createElement('link');
+		newstylesheet.setAttribute('type', 'text/css');
+		newstylesheet.setAttribute('href', path.dirname(window.location) + '/stylesheets/default/periodic.css');
+		newstylesheet.setAttribute('rel', 'stylesheet');
+		var newstylesheet2 = document.createElement('link');
+		newstylesheet2.setAttribute('type', 'text/css');
+		newstylesheet2.setAttribute('href', path.dirname(window.location) + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
+		newstylesheet2.setAttribute('rel', 'stylesheet');
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+
+		adminConsoleWindowResizeEventHandler();
+		clearTimeout(t);
+	}, 200);
+
+	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
+};
+
+var logToAdminConsole = function (data) {
+	var logInfoElement = document.createElement('div'),
+		adminMessageLevel = document.createElement('span'),
+		adminMessageMessage = document.createElement('span'),
+		adminMessageMeta = document.createElement('pre'),
+		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
+		acc = document.querySelector('#ts-admin-console-content');
+	classie.add(adminMessageMeta, 'ts-sans-serif');
+
+	adminMessageLevel.innerHTML = '(' + data.level + ') : ';
+	adminMessageMessage.innerHTML = data.msg;
+	adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	logInfoElement.appendChild(adminMessageLevel);
+	logInfoElement.appendChild(adminMessageMessage);
+	logInfoElement.appendChild(adminMessageMeta);
+	adminConsoleElementContent.appendChild(logInfoElement);
+	acp.scrollTop = acp.scrollHeight;
+
+	if (acc.childNodes.length > 10) {
+		console.log('isClearingConsole', isClearingConsole);
+		isClearingConsole = true;
+		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+			acc.removeChild(acc.childNodes[x]);
+		}
+		var t = setTimeout(function () {
+			isClearingConsole = false;
+			console.log('setTimeout isClearingConsole', isClearingConsole);
+			clearTimeout(t);
+		}, 5000);
+	}
+};
+
+var asyncAdminContentElementClick = function () {
+	consolePlatter.hidePlatterPane();
+};
+
+var initEventListeners = function () {
+	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
+};
+
+var adminConsolePlatterConfig = function () {
+
+	socket = io(window.location.hostname + ':' + window.socketIoPort);
+	// Whenever the server emits 'user joined', log it in the chat body
+	socket.on('log', function (data) {
+		logToAdminConsole(data);
+	});
+	socket.on('connect', function () {
+		console.log('connect socket');
+	});
+	socket.on('disconnect', function (e) {
+		console.log('disconnect e', e);
+	});
+	socket.on('reconnect', function (e) {
+		console.log('reconnect e', e);
+	});
+	socket.on('error', function (e) {
+		console.log('error e', e);
+	});
+	consolePlatter = new platterjs({
+		idSelector: 'adminConsole',
+		platterContentElement: adminConsoleElement
+	});
+	consolePlatter.init();
+
+	consolePlatter.on('openedPlatterWindow', function (data) {
+		console.log('openedPlatterWindow data', data);
+		addStyleSheetToChildWindow();
+	});
+
+	window.consolePlatter = consolePlatter;
+};
 
 window.getAsyncCallback = function (functiondata) {
 	return function (asyncCB) {
@@ -226,6 +329,8 @@ window.showStylieNotification = function (options) {
 
 
 window.addEventListener('load', function () {
+	adminConsoleElement = document.querySelector('#ts-admin-console');
+	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
 	asyncHTMLContentContainer = document.querySelector(asyncContentSelector);
 	navlinks = document.querySelector('#ts-pushmenu-mp-menu');
@@ -235,6 +340,7 @@ window.addEventListener('load', function () {
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
 	preloaderElement = document.querySelector('#ts-preloading');
+	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -254,14 +360,9 @@ window.addEventListener('load', function () {
 		pushcallback: pushstatecallback,
 		popcallback: statecallback
 	});
-
-	socket = io(window.location.hostname + ':' + window.socketIoPort);
-	// Whenever the server emits 'user joined', log it in the chat body
-	socket.on('log', function (data) {
-		console.log(data);
-	});
-
-	window.asyncHTMLWrapper = asyncHTMLWrapper;
+	adminConsolePlatterConfig();
 	initFlashMessage();
+	initEventListeners();
+	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
 });

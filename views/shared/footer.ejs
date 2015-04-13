@@ -22,6 +22,16 @@
 	<nav id="ts-pushmenu-mp-menu" class="ts-pushmenu-mp-menu ts-admin-menu">
 	  <% include _nav %>
 	</nav>
+	<div class="ts-display-none">
+		<div id="ts-admin-console" >
+			<div id="ts-admin-console-content" class="ts-text-xs ts-padding-lg">
+				<!-- <pre>admin console</pre>
+				<pre>admin console</pre>
+				<pre>admin console</pre>
+				<pre>admin console</pre> -->
+			</div>
+		</div>
+	</div>
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
 	<script type="text/javascript">
 	<%- locals.viewhelper.passObjToClient(locals.socketIoPort,"socketIoPort") %>
