@@ -4525,7 +4525,6 @@ process.browser = true;
 process.env = {};
 process.argv = [];
 process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
 
 function noop() {}
 
@@ -12600,7 +12599,7 @@ window.addEventListener('load', function () {
 		popcallback: statecallback
 	});
 
-	socket = io('localhost:8785');
+	socket = io(window.location.hostname + ':' + window.socketIoPort);
 	// Whenever the server emits 'user joined', log it in the chat body
 	socket.on('log', function (data) {
 		console.log(data);
@@ -12611,7 +12610,7 @@ window.addEventListener('load', function () {
 	window.StyliePushMenu = StyliePushMenu;
 });
 
-},{"async":1,"bindie":2,"classie":7,"formie":9,"pushie":28,"socket.io-client":31,"stylie.notifications":82,"stylie.pushmenu":88,"stylie.tables":94,"superagent":100}],82:[function(require,module,exports){
+},{"async":1,"bindie":2,"classie":7,"formie":9,"pushie":28,"socket.io-client":31,"stylie.notifications":82,"stylie.pushmenu":89,"stylie.tables":96,"superagent":103}],82:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -12820,7 +12819,7 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":84,"detectcss":86,"events":19,"util":27,"util-extend":103}],84:[function(require,module,exports){
+},{"classie":84,"detectcss":86,"events":19,"util":27,"util-extend":88}],84:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"./lib/classie":85,"dup":7}],85:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
@@ -12874,6 +12873,8 @@ exports.prefixed = function(style){
     return false;
 };
 },{}],88:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"dup":6}],89:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -12885,7 +12886,7 @@ exports.prefixed = function(style){
 
 module.exports = require('./lib/stylie.pushmenu');
 
-},{"./lib/stylie.pushmenu":89}],89:[function(require,module,exports){
+},{"./lib/stylie.pushmenu":90}],90:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -13191,15 +13192,17 @@ PushMenu.prototype._toggleLevels = function () {
 
 module.exports = PushMenu;
 
-},{"classie":90,"detectcss":92,"events":19,"util":27,"util-extend":103}],90:[function(require,module,exports){
+},{"classie":91,"detectcss":93,"events":19,"util":27,"util-extend":95}],91:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"./lib/classie":91,"dup":7}],91:[function(require,module,exports){
+},{"./lib/classie":92,"dup":7}],92:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],92:[function(require,module,exports){
+},{"dup":8}],93:[function(require,module,exports){
 arguments[4][86][0].apply(exports,arguments)
-},{"./lib/detectCSS":93,"dup":86}],93:[function(require,module,exports){
+},{"./lib/detectCSS":94,"dup":86}],94:[function(require,module,exports){
 arguments[4][87][0].apply(exports,arguments)
-},{"dup":87}],94:[function(require,module,exports){
+},{"dup":87}],95:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"dup":6}],96:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin/stylie.tables
@@ -13211,7 +13214,7 @@ arguments[4][87][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tables');
 
-},{"./lib/stylie.tables":95}],95:[function(require,module,exports){
+},{"./lib/stylie.tables":97}],97:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin
@@ -13410,15 +13413,17 @@ if (typeof module === 'object') {
 	module.exports = StylieTable;
 }
 
-},{"classie":96,"detectcss":98,"events":19,"util":27,"util-extend":103}],96:[function(require,module,exports){
+},{"classie":98,"detectcss":100,"events":19,"util":27,"util-extend":102}],98:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"./lib/classie":97,"dup":7}],97:[function(require,module,exports){
+},{"./lib/classie":99,"dup":7}],99:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"dup":8}],98:[function(require,module,exports){
+},{"dup":8}],100:[function(require,module,exports){
 arguments[4][86][0].apply(exports,arguments)
-},{"./lib/detectCSS":99,"dup":86}],99:[function(require,module,exports){
+},{"./lib/detectCSS":101,"dup":86}],101:[function(require,module,exports){
 arguments[4][87][0].apply(exports,arguments)
-},{"dup":87}],100:[function(require,module,exports){
+},{"dup":87}],102:[function(require,module,exports){
+arguments[4][6][0].apply(exports,arguments)
+},{"dup":6}],103:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -14501,10 +14506,8 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":101,"reduce":102}],101:[function(require,module,exports){
+},{"emitter":104,"reduce":105}],104:[function(require,module,exports){
 arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],102:[function(require,module,exports){
+},{"dup":15}],105:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],103:[function(require,module,exports){
-arguments[4][6][0].apply(exports,arguments)
-},{"dup":6}]},{},[81]);
+},{"dup":16}]},{},[81]);

@@ -23,5 +23,8 @@
 	  <% include _nav %>
 	</nav>
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
+	<script type="text/javascript">
+	<%- locals.viewhelper.passObjToClient(locals.socketIoPort,"socketIoPort") %>
+	</script>
 </body>
 </html>

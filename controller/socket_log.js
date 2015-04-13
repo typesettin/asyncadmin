@@ -1,23 +1,9 @@
 'use strict';
 
-var async = require('async'),
-	path = require('path'),
-	Utilities = require('periodicjs.core.utilities'),
-	Controller = require('periodicjs.core.controller'),
-	Extensions = require('periodicjs.core.extensions'),
-	ExtensionCore = new Extensions({
-		extensionFilePath: path.resolve(process.cwd(), './content/config/extensions.json')
-	}),
-	CoreUtilities,
-	CoreController,
-	appSettings,
-	mongoose,
-	logger,
-	socketForLogger,
-	appenvironment,
-	adminExtSettings;
+var logger,
+	socketForLogger;
 
-var useSocketIOLogger = function (resources) {
+var useSocketIOLogger = function () {
 	var util = require('util'),
 		winston = require('winston'),
 		io = require('socket.io')(8785, {
@@ -30,58 +16,38 @@ var useSocketIOLogger = function (resources) {
 		});
 	io.on('connection', function (socket) {
 		socketForLogger = socket;
-		// console.log('socket', socket);
+		socketForLogger.emit('log', {
+			level: 'level',
+			msg: 'msg',
+			meta: 'meta'
+		});
 	});
-	// // var cfg = require('./config.json');
-	// var tw = require('node-tweet-stream')(cfg);
-	// tw.track('socket.io');
-	// tw.track('javascript');
-	// tw.on('tweet', function(tweet){
-	//   io.emit('tweet', tweet);
-	// });
 	var CustomLogger = winston.transports.CustomLogger = function (options) {
-		//
 		// Name this logger
-		//
 		this.name = 'customLogger';
-
-		//
 		// Set the level from your options
-		//
 		this.level = options.level || 'silly';
-
-		//
-		// Configure your storage backing as you see fit
-		//
 	};
-
-	//
-	// Inherit from `winston.Transport` so you can take advantage
-	// of the base functionality and `.handleExceptions()`.
-	//
 	util.inherits(CustomLogger, winston.Transport);
 
 	CustomLogger.prototype.log = function (level, msg, meta, callback) {
-		// console.log('CustomLogger level, msg, meta:', level, msg, meta);
-		// console.log('socketForLogger', socketForLogger);
-		if (socketForLogger) {
-			console.log('socketForLogger', socketForLogger);
-			socketForLogger.broadcast.emit('log', {
-				level: level,
-				msg: msg,
-				meta: meta
-			});
-
+		try {
+			// console.log('CustomLogger level, msg, meta:', level, msg, meta);
+			// console.log('socketForLogger', socketForLogger);
+			if (socketForLogger) {
+				socketForLogger.emit('log', {
+					level: level,
+					msg: msg,
+					meta: meta
+				});
+			}
+			callback(null, true);
 		}
-		//
-		// Store this message and metadata, maybe use some custom logic
-		// then callback indicating success.
-		//
-		// callback(null, true);
+		catch (e) {
+			callback(e, null);
+		}
 	};
-
 	logger.add(CustomLogger, {});
-
 };
 
 /**
@@ -99,16 +65,7 @@ var useSocketIOLogger = function (resources) {
  */
 var controller = function (resources) {
 	logger = resources.logger;
-	mongoose = resources.mongoose;
-	appSettings = resources.settings;
-	appenvironment = appSettings.application.environment;
-	CoreController = new Controller(resources);
-	CoreUtilities = new Utilities(resources);
-	// Collection = mongoose.model('Collection');
-	adminExtSettings = resources.app.controller.extension.admin.adminExtSettings;
-
-	useSocketIOLogger(resources);
-
+	useSocketIOLogger();
 	return {
 		// admin_index: admin_index,
 		// getMarkdownReleases: getMarkdownReleases,

@@ -255,7 +255,7 @@ window.addEventListener('load', function () {
 		popcallback: statecallback
 	});
 
-	socket = io('localhost:8785');
+	socket = io(window.location.hostname + ':' + window.socketIoPort);
 	// Whenever the server emits 'user joined', log it in the chat body
 	socket.on('log', function (data) {
 		console.log(data);

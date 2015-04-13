@@ -33,6 +33,7 @@ module.exports = function (periodic) {
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
+	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
 
 	periodic.app.controller.extension.admin = {
 		adminExtSettings: adminExtSettings
