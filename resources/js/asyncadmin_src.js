@@ -169,11 +169,11 @@ var addStyleSheetToChildWindow = function () {
 	var t = setTimeout(function () {
 		var newstylesheet = document.createElement('link');
 		newstylesheet.setAttribute('type', 'text/css');
-		newstylesheet.setAttribute('href', path.dirname(window.location) + '/stylesheets/default/periodic.css');
+		newstylesheet.setAttribute('href', window.location.origin + '/stylesheets/default/periodic.css');
 		newstylesheet.setAttribute('rel', 'stylesheet');
 		var newstylesheet2 = document.createElement('link');
 		newstylesheet2.setAttribute('type', 'text/css');
-		newstylesheet2.setAttribute('href', path.dirname(window.location) + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
+		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
 		newstylesheet2.setAttribute('rel', 'stylesheet');
 		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
 		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
@@ -203,7 +203,7 @@ var logToAdminConsole = function (data) {
 	adminConsoleElementContent.appendChild(logInfoElement);
 	acp.scrollTop = acp.scrollHeight;
 
-	if (acc.childNodes.length > 10) {
+	if (acc && acc.childNodes && acc.childNodes.length > 10) {
 		//console.log('isClearingConsole', isClearingConsole);
 		isClearingConsole = true;
 		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
