@@ -5,6 +5,8 @@ var ajaxlinks,
 	Pushie = require('pushie'),
 	Formie = require('formie'),
 	Bindie = require('bindie'),
+	io = require('socket.io-client'),
+	socket,
 	asyncAdminPushie,
 	async = require('async'),
 	classie = require('classie'),
@@ -252,6 +254,13 @@ window.addEventListener('load', function () {
 		pushcallback: pushstatecallback,
 		popcallback: statecallback
 	});
+
+	socket = io('localhost:8785');
+	// Whenever the server emits 'user joined', log it in the chat body
+	socket.on('log', function (data) {
+		console.log(data);
+	});
+
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	initFlashMessage();
 	window.StyliePushMenu = StyliePushMenu;

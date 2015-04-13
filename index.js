@@ -39,6 +39,7 @@ module.exports = function (periodic) {
 	};
 	periodic.app.controller.extension.admin = {
 		admin: require('./controller/admin')(periodic),
+		socket_log: require('./controller/socket_log')(periodic),
 		// settings: require('./controller/settings')(periodic)
 	};
 
