@@ -162,8 +162,8 @@ var pushstatecallback = function ( /*data*/ ) {
 	// console.log('data', data);
 };
 
-var adminConsoleWindowResizeEventHandler = function (e) {
-	console.log(e);
+var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
+	//console.log(e);
 };
 
 var addStyleSheetToChildWindow = function () {
@@ -241,16 +241,16 @@ var adminConsolePlatterConfig = function () {
 		logToAdminConsole(data);
 	});
 	socket.on('connect', function () {
-		console.log('connect socket');
+		console.log('connected socket');
 	});
-	socket.on('disconnect', function (e) {
-		console.log('disconnect e', e);
+	socket.on('disconnect', function () {
+		console.log('disconnected socket');
 	});
-	socket.on('reconnect', function (e) {
-		console.log('reconnect e', e);
+	socket.on('reconnect', function () {
+		console.log('reconnected socket');
 	});
-	socket.on('error', function (e) {
-		console.log('error e', e);
+	socket.on('error', function () {
+		console.log('socket error');
 	});
 	consolePlatter = new platterjs({
 		idSelector: 'adminConsole',
