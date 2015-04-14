@@ -8422,7 +8422,8 @@ var platter = function(config_options){
 			notifications: 0,
 			windowObjectReference: null,
 			element: null,
-			isPlatterContainerOpen: false
+			isPlatterContainerOpen: false,
+			openWindowHTML:'<span class="_pltr-open-window">[~]</span>'
 		};//,
 		//container;
 
@@ -8460,7 +8461,7 @@ var platter = function(config_options){
 	/**
 	 * intialize a new platter
 	 */
-	this.init = function(){
+	this.init = function(callback){
 		if(this.isSelectorUnique() === false){
 			throw new Error('idSelector must be unique');
 		}
@@ -8477,6 +8478,7 @@ var platter = function(config_options){
 			this.emit('intializedPlatter',true);
 		}
 		platterWindowResizeEventHandler();
+		callback(options);
 	}.bind(this);
 
 	/**
@@ -8509,7 +8511,7 @@ var platter = function(config_options){
 		platterHTML.setAttribute('id',id);
 		classie.addClass(platterHTML,'_pltr-tab');
 		classie.addClass(platterHTML,'_pltr-item');
-		platterHTML.innerHTML =options.title+'<span class="_pltr-open-window">[~]</span>';
+		platterHTML.innerHTML =options.title+options.openWindowHTML;
 		/** add platter tab to tab bar */
 		document.querySelector('#_pltrContainer').appendChild(platterHTML);
 		this.emit('platterCreated',platterHTML);
@@ -8552,8 +8554,10 @@ var platter = function(config_options){
 
 	/** show platter pane */
 	this.showPlatterPane = function(callback){
+		//console.log('show platter pane')
 		var paneSelector = document.getElementById('_pltr-elementsContainer'),
 			paneButton = document.getElementById('_pltr-ecmc');
+		//console.log('paneSelector.style.width',paneSelector.style.width)
 
 		if(paneSelector.style.width!=='0' || paneSelector.style.width!=='0%'){
 			paneSelector.style.width = '50%';
@@ -16087,6 +16091,7 @@ var ajaxlinks,
 	request = require('superagent'),
 	isClearingConsole = false,
 	mtpms,
+	adminButtonElement,
 	menuElement,
 	menuTriggerElement,
 	nav_header,
@@ -16277,17 +16282,24 @@ var logToAdminConsole = function (data) {
 	}
 };
 
-var asyncAdminContentElementClick = function () {
-	consolePlatter.hidePlatterPane();
+var asyncAdminContentElementClick = function (e) {
+	if (!classie.has(e.target, 'ts-open-admin-console')) {
+		consolePlatter.hidePlatterPane();
+	}
+};
+
+var showAdminConsoleElementClick = function () {
+	window.consolePlatter.showPlatterPane();
 };
 
 var initEventListeners = function () {
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
+	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
 };
 
 var adminConsolePlatterConfig = function () {
-
-	socket = io(window.location.hostname + ':' + window.socketIoPort);
+	socket = io();
+	// socket = io(window.location.hostname + ':' + window.socketIoPort);
 	// Whenever the server emits 'user joined', log it in the chat body
 	socket.on('log', function (data) {
 		logToAdminConsole(data);
@@ -16306,13 +16318,25 @@ var adminConsolePlatterConfig = function () {
 	});
 	consolePlatter = new platterjs({
 		idSelector: 'adminConsole',
-		platterContentElement: adminConsoleElement
+		title: ' ',
+		platterContentElement: adminConsoleElement,
+		openWindowHTML: ' <span class="_pltr-open-window"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/new_window.svg" style="height:0.8em;" alt="new window"  class="_pltr-open-window"/></span>'
 	});
-	consolePlatter.init();
+	consolePlatter.init(function (data) {
+		// console.log('consolePlatter init data', data);
+		var spanSeparator = document.createElement('span'),
+			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
 
-	consolePlatter.on('openedPlatterWindow', function (data) {
-		console.log('openedPlatterWindow data', data);
+		spanSeparator.innerHTML = ' | ';
+		adminConsoleSpanContainer.appendChild(adminButtonElement);
+		adminConsoleSpanContainer.appendChild(data.element);
+		adminConsoleSpanContainer.appendChild(spanSeparator);
+	});
+
+	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
+		// console.log('openedPlatterWindow data', data);
 		addStyleSheetToChildWindow();
+		consolePlatter.hidePlatterPane();
 	});
 
 	window.consolePlatter = consolePlatter;
@@ -16388,7 +16412,6 @@ window.showStylieNotification = function (options) {
 	}).show();
 };
 
-
 window.addEventListener('load', function () {
 	adminConsoleElement = document.querySelector('#ts-admin-console');
 	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
@@ -16402,6 +16425,10 @@ window.addEventListener('load', function () {
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
 	preloaderElement = document.querySelector('#ts-preloading');
 	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
+	adminButtonElement = document.createElement('a');
+	adminButtonElement.innerHTML = 'Admin Console';
+	classie.add(adminButtonElement, 'ts-cursor-pointer');
+	classie.add(adminButtonElement, 'ts-open-admin-console');
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);

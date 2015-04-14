@@ -8,6 +8,7 @@
 					    <%- periodic.name %> | <a href="http://getperiodic.org" target="_blank">Periodic</a>
 					  </div>
 					  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
+					    <span id="admin-console-span-container"></span>
 					    Version <%= periodic.version %>
 								<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
 					    <%var d=new Date();%>
@@ -24,17 +25,11 @@
 	</nav>
 	<div class="ts-display-none">
 		<div id="ts-admin-console" >
-			<div id="ts-admin-console-content" class="ts-text-xs ts-padding-lg">
-				<!-- <pre>admin console</pre>
-				<pre>admin console</pre>
-				<pre>admin console</pre>
-				<pre>admin console</pre> -->
+			<div id="ts-admin-console-content" class=" ts-padding-lg">
+				<!-- <pre>admin console</pre> -->
 			</div>
 		</div>
 	</div>
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
-	<script type="text/javascript">
-	<%- locals.viewhelper.passObjToClient(locals.socketIoPort,"socketIoPort") %>
-	</script>
 </body>
 </html>

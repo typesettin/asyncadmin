@@ -1,19 +1,12 @@
 'use strict';
 
 var logger,
-	socketForLogger;
+	socketForLogger,
+	io = global.io;
 
 var useSocketIOLogger = function () {
 	var util = require('util'),
-		winston = require('winston'),
-		io = require('socket.io')(8785, {
-			logger: {
-				debug: logger.debug,
-				info: logger.info,
-				error: logger.error,
-				warn: logger.warn
-			}
-		});
+		winston = require('winston');
 
 	io.on('connection', function (socket) {
 		socketForLogger = socket;
@@ -34,7 +27,7 @@ var useSocketIOLogger = function () {
 	CustomLogger.prototype.log = function (level, msg, meta, callback) {
 		try {
 			// console.log('CustomLogger level, msg, meta:', level, msg, meta);
-			if (socketForLogger) {
+			if (io.engine && (meta.asyncadmin || msg.match(/asyncadmin/gi))) {
 				// console.log('socketForLogger.conn.server.clientsCount', socketForLogger.conn.server.clientsCount);
 				io.sockets.emit('log', {
 					level: level,
