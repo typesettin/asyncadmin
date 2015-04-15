@@ -3,7 +3,47 @@
 
 .ts{
 	body{
-    // background: #f7f7f7;
+		.ts-genericdoc-entry{
+			padding-right:(@sizexl/2);
+		}
+		.ts-genericdoc{
+    	outline: none;
+    	&:focus{
+    		outline: none;
+    	}
+			summary{
+				outline: none;
+				&:focus{
+					outline: none;
+				}
+				margin-bottom: 0;
+			}
+			hr{
+				margin-bottom: 0;
+				border-bottom-color: lighten(@dividerColor, 20%)
+			}
+			aside{
+				background-color:lighten(@lightPrimaryColor, 10%);
+				padding:@sizemd;
+			}
+    }
+    .ts-icon{
+    	height: @sizelg;
+    	margin: @sizexs;
+    }
+    .ts-genericdoc-hoveroptions{
+    	transition: opacity .1s ease-in-out;
+    	opacity: 0;
+    }
+    details:hover,
+    details[open]{
+	    .ts-genericdoc-hoveroptions{
+	    	opacity: 1;
+	    }
+    }
+    .generic-content{
+    	min-height: 15em;
+    }
 	}
 	#ts-admin-console-content{
 		pre{
@@ -13,11 +53,6 @@
 				.ts-sans-serif;
 			}
 		}
-	}
-	footer{
-		&.ts-position-fixed.ts-position-bottom{
-			// z-index: 100;
-		} 
 	}
 	#_pltr-ecmc{
 		display:none;

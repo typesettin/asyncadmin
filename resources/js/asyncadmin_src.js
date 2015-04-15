@@ -2,11 +2,11 @@
 var ajaxlinks,
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
-	path = require('path'),
+	// path = require('path'),
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Formie = require('formie'),
-	Bindie = require('bindie'),
+	Stylie = require('stylie'),
 	platterjs = require('platterjs'),
 	io = require('socket.io-client'),
 	socket,
@@ -35,7 +35,8 @@ var ajaxlinks,
 	preloaderElement;
 
 window.Formie = Formie;
-window.Bindie = Bindie;
+// window.Bindie = Bindie;
+window.Stylie = Stylie;
 
 window.createAdminTable = function (options) {
 	return new StylieTable(options);
@@ -137,7 +138,7 @@ var loadAjaxPage = function (options) {
 
 var navlinkclickhandler = function (e) {
 	var etarget = e.target,
-		etargethref = etarget.href;
+		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
 	if (classie.has(etarget, 'async-admin-ajax-link')) {
 		e.preventDefault();
@@ -231,6 +232,7 @@ var showAdminConsoleElementClick = function () {
 var initEventListeners = function () {
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
+	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
 };
 
 var adminConsolePlatterConfig = function () {
