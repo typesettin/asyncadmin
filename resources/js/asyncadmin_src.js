@@ -1,10 +1,13 @@
 'use strict';
 var ajaxlinks,
+	ajaxforms,
+	ajaxFormies = {},
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
 	// path = require('path'),
 	moment = require('moment'),
 	Pushie = require('pushie'),
+	Bindie = require('bindie'),
 	Formie = require('formie'),
 	Stylie = require('stylie'),
 	platterjs = require('platterjs'),
@@ -34,8 +37,9 @@ var ajaxlinks,
 	consolePlatter,
 	preloaderElement;
 
+window.ajaxFormies = ajaxFormies;
 window.Formie = Formie;
-// window.Bindie = Bindie;
+window.Bindie = Bindie;
 window.Stylie = Stylie;
 
 window.createAdminTable = function (options) {
@@ -280,6 +284,71 @@ var adminConsolePlatterConfig = function () {
 	window.consolePlatter = consolePlatter;
 };
 
+var defaultAjaxFormie = function (formElement) {
+	return new Formie({
+		ajaxformselector: '#' + formElement.getAttribute('id'),
+		// headers: {'customheader':'customvalue'},
+		beforesubmitcallback: function (beforeEvent, formElement) {
+			var beforesubmitFunctionString = formElement.getAttribute('data-beforesubmitfunction'),
+				beforefn = window[beforesubmitFunctionString];
+			// is object a function?
+			if (typeof beforefn === 'function') {
+				beforefn(beforeEvent, formElement);
+			}
+			window.showPreloader();
+		},
+		successcallback: function (response) {
+			window.showStylieNotification({
+				message: 'Saved'
+			});
+			window.endPreloader();
+			logToAdminConsole({
+				msg: 'ajax response',
+				meta: response
+			});
+			var successsubmitFunctionString = formElement.getAttribute('data-successsubmitfunction'),
+				successfn = window[successsubmitFunctionString];
+			// is object a function?
+			if (typeof successfn === 'function') {
+				successfn(response);
+			}
+			window.showPreloader();
+		},
+		errorcallback: function (error, response) {
+			window.showErrorNotificaton({
+				message: error.message
+			});
+			window.endPreloader();
+			logToAdminConsole({
+				msg: error,
+				meta: response
+			});
+			var errorsubmitFunctionString = formElement.getAttribute('data-errorsubmitfunction'),
+				errorfn = window[errorsubmitFunctionString];
+			// is object a function?
+			if (typeof errorfn === 'function') {
+				errorfn(error, response);
+			}
+		}
+	});
+};
+
+var initAjaxFormies = function () {
+	var ajaxForm;
+	try {
+		for (var x = 0; x < ajaxforms.length; x++) {
+			ajaxForm = ajaxforms[x];
+			ajaxFormies[ajaxForm.getAttribute('name')] = defaultAjaxFormie(ajaxForm);
+		}
+	}
+	catch (e) {
+		window.showErrorNotificaton({
+			message: e.message
+		});
+	}
+
+};
+
 window.getAsyncCallback = function (functiondata) {
 	return function (asyncCB) {
 		new StylieNotification({
@@ -361,6 +430,7 @@ window.addEventListener('load', function () {
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
+	ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
 	preloaderElement = document.querySelector('#ts-preloading');
 	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
 	adminButtonElement = document.createElement('a');
@@ -389,6 +459,7 @@ window.addEventListener('load', function () {
 	adminConsolePlatterConfig();
 	initFlashMessage();
 	initEventListeners();
+	initAjaxFormies();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
 });
