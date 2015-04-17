@@ -16064,8 +16064,10 @@ function toArray(list, index) {
 },{}],89:[function(require,module,exports){
 'use strict';
 var ajaxlinks,
-	ajaxforms,
-	ajaxFormies = {},
+	// ajaxforms,
+	// ajaxFormies = {},
+	// summernotes,
+	// summernoteContentEditors = {},
 	navlinks,
 	PushMenu = require('stylie.pushmenu'),
 	// path = require('path'),
@@ -16101,7 +16103,7 @@ var ajaxlinks,
 	consolePlatter,
 	preloaderElement;
 
-window.ajaxFormies = ajaxFormies;
+// window.ajaxFormies = ajaxFormies;
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
@@ -16141,11 +16143,17 @@ var endPreloader = function (element) {
 window.endPreloader = endPreloader;
 
 var loadAjaxPage = function (options) {
+	window.console.clear();
 	var htmlDivElement = document.createElement('div'),
 		newPageTitle,
 		newPageContent,
 		newJavascripts;
 	showPreloader();
+
+	if (document.querySelector('.ts-summernote')) {
+		window.$('.ts-summernote').destroy();
+	}
+
 	request
 		.get(options.datahref)
 		.set('Accept', 'text/html')
@@ -16189,7 +16197,6 @@ var loadAjaxPage = function (options) {
 						asyncHTMLWrapper.appendChild(newJSScript);
 					}
 				}
-				initFlashMessage();
 				if (options.pushState) {
 					asyncAdminPushie.pushHistory({
 						data: {
@@ -16200,6 +16207,10 @@ var loadAjaxPage = function (options) {
 					});
 				}
 				endPreloader();
+
+				initFlashMessage();
+				initSummernote();
+				initAjaxFormies();
 			}
 		});
 };
@@ -16261,12 +16272,19 @@ var logToAdminConsole = function (data) {
 		adminMessageMessage = document.createElement('span'),
 		adminMessageMeta = document.createElement('pre'),
 		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
-		acc = document.querySelector('#ts-admin-console-content');
+		acc = document.querySelector('#ts-admin-console-content'),
+		loglevel = data.level || 'log';
 	classie.add(adminMessageMeta, 'ts-sans-serif');
 
-	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + data.level + ') : ';
-	adminMessageMessage.innerHTML = data.msg;
-	adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
+	if (typeof data === 'string') {
+		adminMessageMessage.innerHTML = data;
+		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
+	}
+	else {
+		adminMessageMessage.innerHTML = data.msg;
+		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	}
 	logInfoElement.appendChild(adminMessageLevel);
 	logInfoElement.appendChild(adminMessageMessage);
 	logInfoElement.appendChild(adminMessageMeta);
@@ -16311,16 +16329,16 @@ var adminConsolePlatterConfig = function () {
 		logToAdminConsole(data);
 	});
 	socket.on('connect', function () {
-		console.log('connected socket');
+		logToAdminConsole('connected socket');
 	});
 	socket.on('disconnect', function () {
-		console.log('disconnected socket');
+		logToAdminConsole('disconnected socket');
 	});
 	socket.on('reconnect', function () {
-		console.log('reconnected socket');
+		logToAdminConsole('reconnected socket');
 	});
 	socket.on('error', function () {
-		console.log('socket error');
+		logToAdminConsole('socket error');
 	});
 	consolePlatter = new platterjs({
 		idSelector: 'adminConsole',
@@ -16349,17 +16367,22 @@ var adminConsolePlatterConfig = function () {
 };
 
 var defaultAjaxFormie = function (formElement) {
+	var $ = window.$;
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
 		// headers: {'customheader':'customvalue'},
 		beforesubmitcallback: function (beforeEvent, formElement) {
 			var beforesubmitFunctionString = formElement.getAttribute('data-beforesubmitfunction'),
-				beforefn = window[beforesubmitFunctionString];
+				beforefn = window[beforesubmitFunctionString],
+				summernoteTextAreas = formElement.querySelectorAll('textarea.ts-summernote');
 			// is object a function?
 			if (typeof beforefn === 'function') {
 				beforefn(beforeEvent, formElement);
 			}
 			window.showPreloader();
+			for (var s = 0; s < summernoteTextAreas.length; s++) {
+				summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
+			}
 		},
 		successcallback: function (response) {
 			window.showStylieNotification({
@@ -16399,10 +16422,15 @@ var defaultAjaxFormie = function (formElement) {
 
 var initAjaxFormies = function () {
 	var ajaxForm;
+	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	console.log('ajaxforms', ajaxforms);
 	try {
-		for (var x = 0; x < ajaxforms.length; x++) {
-			ajaxForm = ajaxforms[x];
-			ajaxFormies[ajaxForm.getAttribute('name')] = defaultAjaxFormie(ajaxForm);
+		if (ajaxforms && ajaxforms.length > 0) {
+			for (var x = 0; x < ajaxforms.length; x++) {
+				ajaxForm = ajaxforms[x];
+				//ajaxFormies[ajaxForm.getAttribute('name')] = 
+				defaultAjaxFormie(ajaxForm);
+			}
 		}
 	}
 	catch (e) {
@@ -16410,7 +16438,31 @@ var initAjaxFormies = function () {
 			message: e.message
 		});
 	}
+};
 
+var initSummernote = function () {
+	var summernoteObj,
+		summernoteObjID,
+		summernoteJQueryObj,
+		$ = window.$;
+	var summernotes = document.querySelectorAll('.ts-summernote');
+
+	try {
+		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
+			for (var x = 0; x < summernotes.length; x++) {
+				summernoteObj = summernotes[x];
+				summernoteObjID = '#' + summernoteObj.getAttribute('id');
+				summernoteJQueryObj = $(summernoteObjID);
+				summernoteJQueryObj.summernote();
+			}
+		}
+	}
+	catch (e) {
+		console.error(e);
+		window.showErrorNotificaton({
+			message: e.message
+		});
+	}
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -16494,7 +16546,8 @@ window.addEventListener('load', function () {
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
-	ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	// summernotes = document.querySelectorAll('.ts-summernote');
 	preloaderElement = document.querySelector('#ts-preloading');
 	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
 	adminButtonElement = document.createElement('a');
@@ -16521,8 +16574,9 @@ window.addEventListener('load', function () {
 		popcallback: statecallback
 	});
 	adminConsolePlatterConfig();
-	initFlashMessage();
 	initEventListeners();
+	initFlashMessage();
+	initSummernote();
 	initAjaxFormies();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
