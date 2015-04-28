@@ -3,6 +3,9 @@
 
 .ts{
 	body{
+		#ts-asyncadmin-content-container{
+			margin-top: @sizexx;
+		}
 		.ts-genericdoc-entry{
 			padding-right:(@sizexl/2);
 		}
@@ -23,7 +26,7 @@
 				border-bottom-color: lighten(@dividerColor, 20%)
 			}
 			aside{
-				background-color:lighten(@lightPrimaryColor, 10%);
+				background-color:lighten(@secondaryColor, 10%);
 				padding:@sizemd;
 			}
 			.ts-form-row{
@@ -37,6 +40,9 @@
     .ts-genericdoc-hoveroptions{
     	transition: opacity .1s ease-in-out;
     	opacity: 0;
+    	&.show-hoveroptions{
+    		opacity: 1;
+    	}
     }
     details:hover,
     details[open]{

@@ -5445,7 +5445,7 @@
       layoutInfo.handle().off();
       layoutInfo.dialog().off();
 
-      if (!options.airMode) {
+      if (options && !options.airMode) {
         layoutInfo.dropzone().off();
         layoutInfo.toolbar().off();
         layoutInfo.statusbar().off();
@@ -6126,23 +6126,23 @@
       var $buttons = $container.find('button');
 
       try{
-        $buttons.each(function (i, elBtn) {
-          var $btn = $(elBtn);
-          var sShortcut = invertedKeyMap[$btn.data('event')];
-          if (sShortcut) {
-            $btn.attr('title', function (i, v) {
-              return v + ' (' + representShortcut(sShortcut) + ')';
-            });
-          }
-        // bootstrap tooltip on btn-group bug
-        // https://github.com/twbs/bootstrap/issues/5687
-        }).tooltip({
-          container: 'body',
-          trigger: 'hover',
-          placement: sPlacement || 'top'
-        }).on('click', function () {
-          $(this).tooltip('hide');
-        });
+        // $buttons.each(function (i, elBtn) {
+        //   var $btn = $(elBtn);
+        //   var sShortcut = invertedKeyMap[$btn.data('event')];
+        //   if (sShortcut) {
+        //     $btn.attr('title', function (i, v) {
+        //       return v + ' (' + representShortcut(sShortcut) + ')';
+        //     });
+        //   }
+        // // bootstrap tooltip on btn-group bug
+        // // https://github.com/twbs/bootstrap/issues/5687
+        // }).tooltip({
+        //   container: 'body',
+        //   trigger: 'hover',
+        //   placement: sPlacement || 'top'
+        // }).on('click', function () {
+        //   $(this).tooltip('hide');
+        // });
       }
       catch(e){
         console.info('createTooltip e',e);
@@ -6356,7 +6356,8 @@
      *
      */
     this.removeLayout = function ($holder, layoutInfo, options) {
-      if (options.airMode) {
+      console.log('options',options);
+      if (options && options.airMode) {
         $holder.removeClass('note-air-editor note-editable')
                .removeAttr('id contentEditable');
 

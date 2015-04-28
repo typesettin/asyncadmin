@@ -16150,7 +16150,7 @@ var loadAjaxPage = function (options) {
 		newJavascripts;
 	showPreloader();
 
-	if (document.querySelector('.ts-summernote')) {
+	if (window.$('.ts-summernote')) {
 		window.$('.ts-summernote').destroy();
 	}
 
@@ -16238,6 +16238,7 @@ var statecallback = function (data) {
 		pushState: false
 	});
 };
+
 var pushstatecallback = function ( /*data*/ ) {
 	// console.log('data', data);
 };
@@ -16453,7 +16454,7 @@ var initSummernote = function () {
 				summernoteObj = summernotes[x];
 				summernoteObjID = '#' + summernoteObj.getAttribute('id');
 				summernoteJQueryObj = $(summernoteObjID);
-				summernoteJQueryObj.summernote();
+				summernoteJQueryObj.summernote({});
 			}
 		}
 	}

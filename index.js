@@ -3,6 +3,7 @@
 var path = require('path'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
+	numeral = require('numeral'),
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
@@ -32,6 +33,7 @@ module.exports = function (periodic) {
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
+	periodic.app.locals.numeral = numeral;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
 
