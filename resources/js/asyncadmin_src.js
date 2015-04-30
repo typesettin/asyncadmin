@@ -19,8 +19,11 @@ var ajaxlinks,
 	async = require('async'),
 	classie = require('classie'),
 	StylieNotification = require('stylie.notifications'),
+	StylieModals = require('stylie.modals'),
 	StylieTable = require('stylie.tables'),
 	StyliePushMenu,
+	AdminModal,
+	open_modal_buttons,
 	asyncHTMLWrapper,
 	asyncHTMLContentContainer,
 	asyncContentSelector = '#ts-asyncadmin-content-container',
@@ -44,8 +47,17 @@ window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
 
+
 window.createAdminTable = function (options) {
 	return new StylieTable(options);
+};
+
+var openModalButtonListener = function (e) {
+	e.preventDefault();
+	// console.log(e.target)
+	// console.log(e.target.getAttribute('data-pfmodal-id'))
+	AdminModal.show(e.target.getAttribute('data-tsmodal-id'));
+	return false;
 };
 
 var preventDefaultClick = function (e) {
@@ -147,6 +159,7 @@ var loadAjaxPage = function (options) {
 				initFlashMessage();
 				initSummernote();
 				initAjaxFormies();
+				initModalWindows();
 			}
 		});
 };
@@ -360,7 +373,7 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	console.log('ajaxforms', ajaxforms);
+	//console.log('ajaxforms', ajaxforms);
 	try {
 		if (ajaxforms && ajaxforms.length > 0) {
 			for (var x = 0; x < ajaxforms.length; x++) {
@@ -399,6 +412,12 @@ var initSummernote = function () {
 		window.showErrorNotificaton({
 			message: e.message
 		});
+	}
+};
+
+var initModalWindows = function () {
+	for (var q = 0; q < open_modal_buttons.length; q++) {
+		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
 	}
 };
 
@@ -491,6 +510,16 @@ window.addEventListener('load', function () {
 	adminButtonElement.innerHTML = 'Admin Console';
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
 	classie.add(adminButtonElement, 'ts-open-admin-console');
+	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
+
+	// open_modal_buttons
+	AdminModal = new StylieModals({});
+	AdminModal.on('showModal', function () {
+		classie.add(document.body, 'ts-modal-showing');
+	});
+	AdminModal.on('hideModal', function () {
+		classie.remove(document.body, 'ts-modal-showing');
+	});
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -515,6 +544,9 @@ window.addEventListener('load', function () {
 	initFlashMessage();
 	initSummernote();
 	initAjaxFormies();
+	initModalWindows();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
+	window.AdminModal = AdminModal;
+	window.logToAdminConsole = logToAdminConsole;
 });

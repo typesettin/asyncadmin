@@ -16083,8 +16083,11 @@ var ajaxlinks,
 	async = require('async'),
 	classie = require('classie'),
 	StylieNotification = require('stylie.notifications'),
+	StylieModals = require('stylie.modals'),
 	StylieTable = require('stylie.tables'),
 	StyliePushMenu,
+	AdminModal,
+	open_modal_buttons,
 	asyncHTMLWrapper,
 	asyncHTMLContentContainer,
 	asyncContentSelector = '#ts-asyncadmin-content-container',
@@ -16108,8 +16111,17 @@ window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
 
+
 window.createAdminTable = function (options) {
 	return new StylieTable(options);
+};
+
+var openModalButtonListener = function (e) {
+	e.preventDefault();
+	// console.log(e.target)
+	// console.log(e.target.getAttribute('data-pfmodal-id'))
+	AdminModal.show(e.target.getAttribute('data-tsmodal-id'));
+	return false;
 };
 
 var preventDefaultClick = function (e) {
@@ -16211,6 +16223,7 @@ var loadAjaxPage = function (options) {
 				initFlashMessage();
 				initSummernote();
 				initAjaxFormies();
+				initModalWindows();
 			}
 		});
 };
@@ -16424,7 +16437,7 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	console.log('ajaxforms', ajaxforms);
+	//console.log('ajaxforms', ajaxforms);
 	try {
 		if (ajaxforms && ajaxforms.length > 0) {
 			for (var x = 0; x < ajaxforms.length; x++) {
@@ -16463,6 +16476,12 @@ var initSummernote = function () {
 		window.showErrorNotificaton({
 			message: e.message
 		});
+	}
+};
+
+var initModalWindows = function () {
+	for (var q = 0; q < open_modal_buttons.length; q++) {
+		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
 	}
 };
 
@@ -16555,6 +16574,16 @@ window.addEventListener('load', function () {
 	adminButtonElement.innerHTML = 'Admin Console';
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
 	classie.add(adminButtonElement, 'ts-open-admin-console');
+	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
+
+	// open_modal_buttons
+	AdminModal = new StylieModals({});
+	AdminModal.on('showModal', function () {
+		classie.add(document.body, 'ts-modal-showing');
+	});
+	AdminModal.on('hideModal', function () {
+		classie.remove(document.body, 'ts-modal-showing');
+	});
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -16579,11 +16608,194 @@ window.addEventListener('load', function () {
 	initFlashMessage();
 	initSummernote();
 	initAjaxFormies();
+	initModalWindows();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.StyliePushMenu = StyliePushMenu;
+	window.AdminModal = AdminModal;
+	window.logToAdminConsole = logToAdminConsole;
 });
 
-},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":111,"stylie.notifications":90,"stylie.pushmenu":97,"stylie.tables":104,"superagent":114}],90:[function(require,module,exports){
+},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":115,"stylie.modals":90,"stylie.notifications":94,"stylie.pushmenu":101,"stylie.tables":108,"superagent":118}],90:[function(require,module,exports){
+/*
+ * stylie.modals
+ * https://github.com/typesettin/stylie.modals
+ *
+ * Copyright (c) 2013 AmexPub. All rights reserved.
+ */
+
+'use strict';
+
+module.exports = require('./lib/stylie.modals');
+
+},{"./lib/stylie.modals":91}],91:[function(require,module,exports){
+/*
+ * stylie.modals
+ * https://github.com/typesettin/component.modals
+ *
+ * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
+ */
+'use strict';
+
+var extend = require('util-extend'),
+	classie = require('classie'),
+	events = require('events'),
+	htmlEl,
+	util = require('util');
+
+/**
+ * A module that represents a StylieModals object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/stylie.modals}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor StylieModals
+ * @requires module:util-extent
+ * @requires module:util
+ * @requires module:events
+ * @param {object} el element of tab container
+ * @param {object} options configuration options
+ */
+var StylieModals = function (options) {
+	events.EventEmitter.call(this);
+
+	// this.el = el;
+	this.options = extend(this.options, options);
+	// console.log(this.options);
+	this._init();
+	this.show = this._show;
+	this.hide = this._hide;
+};
+
+var closeModalOnKeydown = function (e) {
+	if (this.options.close_modal_on_escape_key === true && e.keyCode === 27) {
+		this.hide(this.options.current_modal);
+		document.querySelector('html').removeEventListener('keydown', closeModalOnKeydown, false);
+	}
+};
+
+var closeOverlayOnClick = function () {
+	this.hide(this.options.current_modal);
+};
+
+var closeModalClickHandler = function (e) {
+	if (classie.has(e.target, this.options.modal_close_class)) {
+		this.hide(this.options.current_modal);
+	}
+};
+
+util.inherits(StylieModals, events.EventEmitter);
+
+/** module default configuration */
+StylieModals.prototype.options = {
+	start: 0,
+	modal_overlay_selector: '.ts-modal-overlay',
+	modal_elements: '.ts-modal',
+	modal_body_container_class: 'ts-modal-container',
+	modal_close_class: 'ts-modal-close',
+	modal_default_class: 'ts-modal-effect-1',
+	modals: {},
+	overlay: null,
+	close_modal_on_overlay_click: true,
+	close_modal_on_escape_key: true,
+	current_modal: ''
+};
+/**
+ * initializes modals and shows current tab.
+ * @emits modalsInitialized
+ */
+StylieModals.prototype._init = function () {
+	var body = document.querySelector('body');
+	htmlEl = document.querySelector('html');
+
+	this.options.overlay = document.querySelector(this.options.modal_overlay_selector);
+	this.options.modalEls = document.querySelectorAll(this.options.modal_elements);
+
+	if (!classie.has(body, this.options.modal_body_container_class)) {
+		classie.add(body, this.options.modal_body_container_class);
+	}
+
+	for (var x in this.options.modalEls) {
+		if (typeof this.options.modalEls[x] === 'object') {
+			this.options.modals[this.options.modalEls[x].getAttribute('data-name')] = this.options.modalEls[x];
+		}
+	}
+	this._initEvents();
+	this.emit('modalsInitialized');
+};
+
+/**
+ * handle tab click events.
+ */
+StylieModals.prototype._initEvents = function () {
+	if (this.options.close_modal_on_overlay_click === true) {
+		this.options.overlay.addEventListener('click', closeOverlayOnClick.bind(this), false);
+	}
+	this.emit('modalsEventsInitialized');
+};
+
+/**
+ * Hides a modal component.
+ * @param {string} modal name
+ * @emits showModal
+ */
+StylieModals.prototype._hide = function (modal_name) {
+	var modal = this.options.modals[modal_name];
+	classie.remove(modal, 'ts-modal-show');
+	// this.options.current_modal = '';
+
+	modal.removeEventListener('click', closeModalClickHandler, false);
+
+	if (this.options.close_modal_on_escape_key === true) {
+		htmlEl.removeEventListener('keydown', closeModalOnKeydown.bind(this), false);
+	}
+
+
+	this.emit('hideModal', {
+		modal: modal,
+		modal_name: modal_name
+	});
+};
+
+/**
+ * Shows a modal component.
+ * @param {string} modal name
+ * @emits showModal
+ */
+StylieModals.prototype._show = function (modal_name) {
+	var modal = this.options.modals[modal_name],
+		hasModalEffect = false;
+
+	for (var y = 0; y < modal.classList.length; y++) {
+		if (modal.classList[y].search('ts-modal-effect-') >= 0) {
+			hasModalEffect = true;
+		}
+	}
+
+	if (hasModalEffect === false) {
+		classie.add(modal, this.options.modal_default_class);
+	}
+
+	classie.add(modal, 'ts-modal-show');
+	this.options.current_modal = modal_name;
+
+	modal.addEventListener('click', closeModalClickHandler.bind(this), false);
+
+	if (this.options.close_modal_on_escape_key === true) {
+		htmlEl.addEventListener('keydown', closeModalOnKeydown.bind(this), false);
+	}
+
+	this.emit('showModal', {
+		modal: modal,
+		modal_name: modal_name
+	});
+};
+module.exports = StylieModals;
+
+},{"classie":92,"events":20,"util":28,"util-extend":121}],92:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],94:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -16595,7 +16807,7 @@ window.addEventListener('load', function () {
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":91}],91:[function(require,module,exports){
+},{"./lib/stylie.notifications":95}],95:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -16792,11 +17004,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":92,"detectcss":94,"events":20,"util":28,"util-extend":96}],92:[function(require,module,exports){
+},{"classie":96,"detectcss":98,"events":20,"util":28,"util-extend":100}],96:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
+},{"./lib/classie":97,"dup":8}],97:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],94:[function(require,module,exports){
+},{"dup":9}],98:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -16806,7 +17018,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":95}],95:[function(require,module,exports){
+},{"./lib/detectCSS":99}],99:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -16845,9 +17057,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],96:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],97:[function(require,module,exports){
+},{"dup":7}],101:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -16859,7 +17071,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.pushmenu');
 
-},{"./lib/stylie.pushmenu":98}],98:[function(require,module,exports){
+},{"./lib/stylie.pushmenu":102}],102:[function(require,module,exports){
 /*
  * stylie.pushmenu
  * https://github.com/typesettin/stylie.pushmenu
@@ -17165,17 +17377,17 @@ PushMenu.prototype._toggleLevels = function () {
 
 module.exports = PushMenu;
 
-},{"classie":99,"detectcss":101,"events":20,"util":28,"util-extend":103}],99:[function(require,module,exports){
+},{"classie":103,"detectcss":105,"events":20,"util":28,"util-extend":107}],103:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":100,"dup":8}],100:[function(require,module,exports){
+},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],101:[function(require,module,exports){
-arguments[4][94][0].apply(exports,arguments)
-},{"./lib/detectCSS":102,"dup":94}],102:[function(require,module,exports){
-arguments[4][95][0].apply(exports,arguments)
-},{"dup":95}],103:[function(require,module,exports){
+},{"dup":9}],105:[function(require,module,exports){
+arguments[4][98][0].apply(exports,arguments)
+},{"./lib/detectCSS":106,"dup":98}],106:[function(require,module,exports){
+arguments[4][99][0].apply(exports,arguments)
+},{"dup":99}],107:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],104:[function(require,module,exports){
+},{"dup":7}],108:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin/stylie.tables
@@ -17187,7 +17399,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tables');
 
-},{"./lib/stylie.tables":105}],105:[function(require,module,exports){
+},{"./lib/stylie.tables":109}],109:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin
@@ -17386,17 +17598,17 @@ if (typeof module === 'object') {
 	module.exports = StylieTable;
 }
 
-},{"classie":106,"detectcss":108,"events":20,"util":28,"util-extend":110}],106:[function(require,module,exports){
+},{"classie":110,"detectcss":112,"events":20,"util":28,"util-extend":114}],110:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":107,"dup":8}],107:[function(require,module,exports){
+},{"./lib/classie":111,"dup":8}],111:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],108:[function(require,module,exports){
-arguments[4][94][0].apply(exports,arguments)
-},{"./lib/detectCSS":109,"dup":94}],109:[function(require,module,exports){
-arguments[4][95][0].apply(exports,arguments)
-},{"dup":95}],110:[function(require,module,exports){
+},{"dup":9}],112:[function(require,module,exports){
+arguments[4][98][0].apply(exports,arguments)
+},{"./lib/detectCSS":113,"dup":98}],113:[function(require,module,exports){
+arguments[4][99][0].apply(exports,arguments)
+},{"dup":99}],114:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],111:[function(require,module,exports){
+},{"dup":7}],115:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17408,7 +17620,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":112}],112:[function(require,module,exports){
+},{"./lib/stylie":116}],116:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17508,9 +17720,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":113}],113:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":117}],117:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],114:[function(require,module,exports){
+},{"dup":7}],118:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18593,8 +18805,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":115,"reduce":116}],115:[function(require,module,exports){
+},{"emitter":119,"reduce":120}],119:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],116:[function(require,module,exports){
+},{"dup":16}],120:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}]},{},[89]);
+},{"dup":17}],121:[function(require,module,exports){
+arguments[4][7][0].apply(exports,arguments)
+},{"dup":7}]},{},[89]);
