@@ -16556,6 +16556,7 @@ window.showStylieNotification = function (options) {
 };
 
 window.addEventListener('load', function () {
+	window.domLoadEventFired = true;
 	adminConsoleElement = document.querySelector('#ts-admin-console');
 	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
