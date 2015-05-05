@@ -1,9 +1,39 @@
+@import (inline) "../../public/stylesheets/animate.min.css"; 
 @import "../../../../public/stylesheets/default/periodic.less";
 @import "../../../../node_modules/stylie.modals/resources/stylesheets/ts.component.modals.less";
 @import "../../node_modules/platterjs/client/stylesheets/platter.less";
+@import "../../node_modules/stylie.treeview/resources/stylesheets/stylie.treeview.less";
+
+.animated-fast {
+  -webkit-animation-duration: .250s;
+  animation-duration: .250s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+.animated-medium {
+  -webkit-animation-duration: .5s;
+  animation-duration: .5s;
+  -webkit-animation-fill-mode: both;
+  animation-fill-mode: both;
+}
+
 
 .ts{
 	body{
+		nav#ts-nav-menu{
+			position: fixed;
+			top: 0;
+			height: 100%;
+			z-index: 100;
+			margin-top: @sizelg;
+			padding: @sizelg;
+			background: @textPrimaryColor;
+			min-width: (@sizexx *3);
+			.ts-shadow;
+			&.initialState{
+				display: none;
+			}
+		}
 		#ts-asyncadmin-content-container{
 			margin-top: @sizexx;
 		}

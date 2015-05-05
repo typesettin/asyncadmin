@@ -4,6 +4,7 @@ var path = require('path'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
+	stylietreeview = require('stylie.treeview'),
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
@@ -36,6 +37,7 @@ module.exports = function (periodic) {
 	periodic.app.locals.numeral = numeral;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
+	periodic.app.locals.stylietreeview = stylietreeview;
 
 	periodic.app.controller.extension.admin = {
 		adminExtSettings: adminExtSettings

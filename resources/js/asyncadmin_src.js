@@ -4,9 +4,6 @@ var ajaxlinks,
 	// ajaxFormies = {},
 	// summernotes,
 	// summernoteContentEditors = {},
-	navlinks,
-	PushMenu = require('stylie.pushmenu'),
-	// path = require('path'),
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
@@ -21,7 +18,6 @@ var ajaxlinks,
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
 	StylieTable = require('stylie.tables'),
-	StyliePushMenu,
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -36,7 +32,7 @@ var ajaxlinks,
 	isClearingConsole = false,
 	mtpms,
 	adminButtonElement,
-	menuElement,
+	mobile_nav_menu,
 	menuTriggerElement,
 	nav_header,
 	consolePlatter,
@@ -90,230 +86,55 @@ var endPreloader = function (element) {
 };
 window.endPreloader = endPreloader;
 
-var loadAjaxPage = function (options) {
-	window.console.clear();
-	var htmlDivElement = document.createElement('div'),
-		newPageTitle,
-		newPageContent,
-		newJavascripts;
-	showPreloader();
-
-	if (window.$('.ts-summernote')) {
-		window.$('.ts-summernote').destroy();
-	}
-
-	request
-		.get(options.datahref)
-		.set('Accept', 'text/html')
-		.end(function (error, res) {
-			// console.log('error', error);
-			// console.log('res', res);
-			if (error) {
-				window.showErrorNotificaton({
-					message: error.message
-				});
+var initAjaxFormies = function () {
+	var ajaxForm;
+	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	//console.log('ajaxforms', ajaxforms);
+	try {
+		if (ajaxforms && ajaxforms.length > 0) {
+			for (var x = 0; x < ajaxforms.length; x++) {
+				ajaxForm = ajaxforms[x];
+				//ajaxFormies[ajaxForm.getAttribute('name')] = 
+				defaultAjaxFormie(ajaxForm);
 			}
-			else if (res.error) {
-				window.showErrorNotificaton({
-					message: 'Status [' + res.error.status + ']: ' + res.error.message
-				});
-			}
-			else {
-				htmlDivElement.innerHTML = res.text;
-				newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
-				newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
-				asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
-				document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
-				asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
-
-				// console.log('htmlDivElement', htmlDivElement);
-				newJavascripts = htmlDivElement.querySelectorAll('script');
-				for (var j = 0; j < newJavascripts.length; j++) {
-					if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
-						var newJSScript = document.createElement('script');
-						if (newJavascripts[j].src) {
-							newJSScript.src = newJavascripts[j].src;
-						}
-						if (newJavascripts[j].id) {
-							newJSScript.id = newJavascripts[j].id;
-						}
-						if (newJavascripts[j].type) {
-							newJSScript.type = newJavascripts[j].type;
-						}
-						// newJSScript.class = newJavascripts[j].class;
-						newJSScript.innerHTML = newJavascripts[j].innerHTML;
-						asyncHTMLWrapper.appendChild(newJSScript);
-					}
-				}
-				if (options.pushState) {
-					asyncAdminPushie.pushHistory({
-						data: {
-							datahref: options.datahref
-						},
-						title: 'Title:' + options.datahref,
-						href: options.datahref
-					});
-				}
-				endPreloader();
-
-				initFlashMessage();
-				initSummernote();
-				initAjaxFormies();
-				initModalWindows();
-			}
-		});
-};
-
-var navlinkclickhandler = function (e) {
-	var etarget = e.target,
-		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
-
-	if (classie.has(etarget, 'async-admin-ajax-link')) {
-		e.preventDefault();
-		// console.log('etargethref', etargethref);
-		loadAjaxPage({
-			datahref: etargethref,
-			pushState: true
-		});
-		StyliePushMenu._resetMenu();
-		return false;
-	}
-};
-
-var statecallback = function (data) {
-	// console.log('data', data);
-	loadAjaxPage({
-		datahref: data.datahref,
-		pushState: false
-	});
-};
-
-var pushstatecallback = function ( /*data*/ ) {
-	// console.log('data', data);
-};
-
-var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
-	//console.log(e);
-};
-
-var addStyleSheetToChildWindow = function () {
-	var t = setTimeout(function () {
-		var newstylesheet = document.createElement('link');
-		newstylesheet.setAttribute('type', 'text/css');
-		newstylesheet.setAttribute('href', window.location.origin + '/stylesheets/default/periodic.css');
-		newstylesheet.setAttribute('rel', 'stylesheet');
-		var newstylesheet2 = document.createElement('link');
-		newstylesheet2.setAttribute('type', 'text/css');
-		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
-		newstylesheet2.setAttribute('rel', 'stylesheet');
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
-
-		adminConsoleWindowResizeEventHandler();
-		clearTimeout(t);
-	}, 200);
-
-	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
-};
-
-var logToAdminConsole = function (data) {
-	var logInfoElement = document.createElement('div'),
-		adminMessageLevel = document.createElement('span'),
-		adminMessageMessage = document.createElement('span'),
-		adminMessageMeta = document.createElement('pre'),
-		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
-		acc = document.querySelector('#ts-admin-console-content'),
-		loglevel = data.level || 'log';
-	classie.add(adminMessageMeta, 'ts-sans-serif');
-
-	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
-	if (typeof data === 'string') {
-		adminMessageMessage.innerHTML = data;
-		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
-	}
-	else {
-		adminMessageMessage.innerHTML = data.msg;
-		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
-	}
-	logInfoElement.appendChild(adminMessageLevel);
-	logInfoElement.appendChild(adminMessageMessage);
-	logInfoElement.appendChild(adminMessageMeta);
-	adminConsoleElementContent.appendChild(logInfoElement);
-	acp.scrollTop = acp.scrollHeight;
-
-	if (acc && acc.childNodes && acc.childNodes.length > 10) {
-		//console.log('isClearingConsole', isClearingConsole);
-		isClearingConsole = true;
-		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
-			acc.removeChild(acc.childNodes[x]);
 		}
-		var t = setTimeout(function () {
-			isClearingConsole = false;
-			//console.log('setTimeout isClearingConsole', isClearingConsole);
-			clearTimeout(t);
-		}, 5000);
+	}
+	catch (e) {
+		window.showErrorNotificaton({
+			message: e.message
+		});
 	}
 };
 
-var asyncAdminContentElementClick = function (e) {
-	if (!classie.has(e.target, 'ts-open-admin-console')) {
-		consolePlatter.hidePlatterPane();
+var initSummernote = function () {
+	var summernoteObj,
+		summernoteObjID,
+		summernoteJQueryObj,
+		$ = window.$;
+	var summernotes = document.querySelectorAll('.ts-summernote');
+
+	try {
+		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
+			for (var x = 0; x < summernotes.length; x++) {
+				summernoteObj = summernotes[x];
+				summernoteObjID = '#' + summernoteObj.getAttribute('id');
+				summernoteJQueryObj = $(summernoteObjID);
+				summernoteJQueryObj.summernote({});
+			}
+		}
+	}
+	catch (e) {
+		console.error(e);
+		window.showErrorNotificaton({
+			message: e.message
+		});
 	}
 };
 
-var showAdminConsoleElementClick = function () {
-	window.consolePlatter.showPlatterPane();
-};
-
-var initEventListeners = function () {
-	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
-	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
-	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
-};
-
-var adminConsolePlatterConfig = function () {
-	socket = io();
-	// socket = io(window.location.hostname + ':' + window.socketIoPort);
-	// Whenever the server emits 'user joined', log it in the chat body
-	socket.on('log', function (data) {
-		logToAdminConsole(data);
-	});
-	socket.on('connect', function () {
-		logToAdminConsole('connected socket');
-	});
-	socket.on('disconnect', function () {
-		logToAdminConsole('disconnected socket');
-	});
-	socket.on('reconnect', function () {
-		logToAdminConsole('reconnected socket');
-	});
-	socket.on('error', function () {
-		logToAdminConsole('socket error');
-	});
-	consolePlatter = new platterjs({
-		idSelector: 'adminConsole',
-		title: ' ',
-		platterContentElement: adminConsoleElement,
-		openWindowHTML: ' <span class="_pltr-open-window"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/new_window.svg" style="height:0.8em;" alt="new window"  class="_pltr-open-window"/></span>'
-	});
-	consolePlatter.init(function (data) {
-		// console.log('consolePlatter init data', data);
-		var spanSeparator = document.createElement('span'),
-			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
-
-		spanSeparator.innerHTML = ' | ';
-		adminConsoleSpanContainer.appendChild(adminButtonElement);
-		adminConsoleSpanContainer.appendChild(data.element);
-		adminConsoleSpanContainer.appendChild(spanSeparator);
-	});
-
-	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
-		// console.log('openedPlatterWindow data', data);
-		addStyleSheetToChildWindow();
-		consolePlatter.hidePlatterPane();
-	});
-
-	window.consolePlatter = consolePlatter;
+var initModalWindows = function () {
+	for (var q = 0; q < open_modal_buttons.length; q++) {
+		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
+	}
 };
 
 var defaultAjaxFormie = function (formElement) {
@@ -370,55 +191,273 @@ var defaultAjaxFormie = function (formElement) {
 	});
 };
 
-var initAjaxFormies = function () {
-	var ajaxForm;
-	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	//console.log('ajaxforms', ajaxforms);
-	try {
-		if (ajaxforms && ajaxforms.length > 0) {
-			for (var x = 0; x < ajaxforms.length; x++) {
-				ajaxForm = ajaxforms[x];
-				//ajaxFormies[ajaxForm.getAttribute('name')] = 
-				defaultAjaxFormie(ajaxForm);
-			}
+var logToAdminConsole = function (data) {
+	var logInfoElement = document.createElement('div'),
+		adminMessageLevel = document.createElement('span'),
+		adminMessageMessage = document.createElement('span'),
+		adminMessageMeta = document.createElement('pre'),
+		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
+		acc = document.querySelector('#ts-admin-console-content'),
+		loglevel = data.level || 'log';
+	classie.add(adminMessageMeta, 'ts-sans-serif');
+
+	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
+	if (typeof data === 'string') {
+		adminMessageMessage.innerHTML = data;
+		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
+	}
+	else {
+		adminMessageMessage.innerHTML = data.msg;
+		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	}
+	logInfoElement.appendChild(adminMessageLevel);
+	logInfoElement.appendChild(adminMessageMessage);
+	logInfoElement.appendChild(adminMessageMeta);
+	adminConsoleElementContent.appendChild(logInfoElement);
+	acp.scrollTop = acp.scrollHeight;
+
+	if (acc && acc.childNodes && acc.childNodes.length > 10) {
+		//console.log('isClearingConsole', isClearingConsole);
+		isClearingConsole = true;
+		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+			acc.removeChild(acc.childNodes[x]);
 		}
+		var t = setTimeout(function () {
+			isClearingConsole = false;
+			//console.log('setTimeout isClearingConsole', isClearingConsole);
+			clearTimeout(t);
+		}, 5000);
+	}
+};
+
+var isMobileNavOpen = function () {
+	return classie.has(mobile_nav_menu, 'slideOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+};
+
+var closeMobileNav = function () {
+	classie.add(mobile_nav_menu, 'slideOutLeft');
+	classie.remove(mobile_nav_menu, 'slideInLeft');
+};
+
+var controlMobileNav = function () {
+	if (isMobileNavOpen()) {
+		classie.remove(mobile_nav_menu, 'initialState');
+		classie.add(mobile_nav_menu, 'slideInLeft');
+		classie.remove(mobile_nav_menu, 'slideOutLeft');
+	}
+	else {
+		closeMobileNav();
+	}
+};
+
+var loadAjaxPage = function (options) {
+	// window.console.clear();
+	closeMobileNav();
+	try {
+		var htmlDivElement = document.createElement('div'),
+			newPageTitle,
+			newPageContent,
+			newJavascripts;
+		showPreloader();
+
+		if (window.$('.ts-summernote')) {
+			window.$('.ts-summernote').destroy();
+		}
+
+		request
+			.get(options.datahref)
+			.set('Accept', 'text/html')
+			.end(function (error, res) {
+				// console.log('error', error);
+				// console.log('res', res);
+				if (error) {
+					window.showErrorNotificaton({
+						message: error.message
+					});
+				}
+				else if (res.error) {
+					endPreloader();
+					window.showErrorNotificaton({
+						message: 'Status [' + res.error.status + ']: ' + res.error.message
+					});
+				}
+				else {
+					htmlDivElement.innerHTML = res.text;
+					newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
+					newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
+					asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
+					document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
+					asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+
+					// console.log('htmlDivElement', htmlDivElement);
+					newJavascripts = htmlDivElement.querySelectorAll('script');
+					for (var j = 0; j < newJavascripts.length; j++) {
+						if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
+							var newJSScript = document.createElement('script');
+							if (newJavascripts[j].src) {
+								newJSScript.src = newJavascripts[j].src;
+							}
+							if (newJavascripts[j].id) {
+								newJSScript.id = newJavascripts[j].id;
+							}
+							if (newJavascripts[j].type) {
+								newJSScript.type = newJavascripts[j].type;
+							}
+							// newJSScript.class = newJavascripts[j].class;
+							newJSScript.innerHTML = newJavascripts[j].innerHTML;
+							asyncHTMLWrapper.appendChild(newJSScript);
+						}
+					}
+					if (options.pushState) {
+						console.log('options.datahref', options.datahref);
+						asyncAdminPushie.pushHistory({
+							data: {
+								datahref: options.datahref
+							},
+							title: 'Title:' + options.datahref,
+							href: options.datahref
+						});
+					}
+					endPreloader();
+
+					initFlashMessage();
+					initSummernote();
+					initAjaxFormies();
+					initModalWindows();
+				}
+			});
 	}
 	catch (e) {
+		endPreloader();
+		logToAdminConsole({
+			msg: 'ajax page error',
+			level: 'log',
+			meta: e
+		});
 		window.showErrorNotificaton({
 			message: e.message
 		});
 	}
 };
 
-var initSummernote = function () {
-	var summernoteObj,
-		summernoteObjID,
-		summernoteJQueryObj,
-		$ = window.$;
-	var summernotes = document.querySelectorAll('.ts-summernote');
+var navlinkclickhandler = function (e) {
+	var etarget = e.target,
+		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
-	try {
-		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
-			for (var x = 0; x < summernotes.length; x++) {
-				summernoteObj = summernotes[x];
-				summernoteObjID = '#' + summernoteObj.getAttribute('id');
-				summernoteJQueryObj = $(summernoteObjID);
-				summernoteJQueryObj.summernote({});
-			}
-		}
+	if (classie.has(etarget, 'async-admin-ajax-link')) {
+		e.preventDefault();
+		console.log('etargethref', etargethref);
+		loadAjaxPage({
+			datahref: etargethref,
+			pushState: true
+		});
+		// StyliePushMenu._resetMenu();
+		return false;
 	}
-	catch (e) {
-		console.error(e);
-		window.showErrorNotificaton({
-			message: e.message
+};
+
+var statecallback = function (data) {
+	// console.log('data', data);
+	if (data && data.datahref) {
+		loadAjaxPage({
+			datahref: data.datahref,
+			pushState: false
 		});
 	}
 };
 
-var initModalWindows = function () {
-	for (var q = 0; q < open_modal_buttons.length; q++) {
-		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
+var pushstatecallback = function ( /*data*/ ) {
+	// console.log('data', data);
+};
+
+var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
+	//console.log(e);
+};
+
+var addStyleSheetToChildWindow = function () {
+	var t = setTimeout(function () {
+		var newstylesheet = document.createElement('link');
+		newstylesheet.setAttribute('type', 'text/css');
+		newstylesheet.setAttribute('href', window.location.origin + '/stylesheets/default/periodic.css');
+		newstylesheet.setAttribute('rel', 'stylesheet');
+		var newstylesheet2 = document.createElement('link');
+		newstylesheet2.setAttribute('type', 'text/css');
+		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
+		newstylesheet2.setAttribute('rel', 'stylesheet');
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+
+		adminConsoleWindowResizeEventHandler();
+		clearTimeout(t);
+	}, 200);
+
+	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
+};
+
+var asyncAdminContentElementClick = function (e) {
+	if (!classie.has(e.target, 'ts-open-admin-console')) {
+		consolePlatter.hidePlatterPane();
 	}
+	// if (!isMobileNavOpen()) {
+	// 	closeMobileNav();
+	// }
+};
+
+var showAdminConsoleElementClick = function () {
+	window.consolePlatter.showPlatterPane();
+};
+
+
+var initEventListeners = function () {
+	menuTriggerElement.addEventListener('click', controlMobileNav, false);
+	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
+	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
+	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
+};
+
+var adminConsolePlatterConfig = function () {
+	socket = io();
+	// socket = io(window.location.hostname + ':' + window.socketIoPort);
+	// Whenever the server emits 'user joined', log it in the chat body
+	socket.on('log', function (data) {
+		logToAdminConsole(data);
+	});
+	socket.on('connect', function () {
+		logToAdminConsole('connected socket');
+	});
+	socket.on('disconnect', function () {
+		logToAdminConsole('disconnected socket');
+	});
+	socket.on('reconnect', function () {
+		logToAdminConsole('reconnected socket');
+	});
+	socket.on('error', function () {
+		logToAdminConsole('socket error');
+	});
+	consolePlatter = new platterjs({
+		idSelector: 'adminConsole',
+		title: ' ',
+		platterContentElement: adminConsoleElement,
+		openWindowHTML: ' <span class="_pltr-open-window"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/new_window.svg" style="height:0.8em;" alt="new window"  class="_pltr-open-window"/></span>'
+	});
+	consolePlatter.init(function (data) {
+		// console.log('consolePlatter init data', data);
+		var spanSeparator = document.createElement('span'),
+			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
+
+		spanSeparator.innerHTML = ' | ';
+		adminConsoleSpanContainer.appendChild(adminButtonElement);
+		adminConsoleSpanContainer.appendChild(data.element);
+		adminConsoleSpanContainer.appendChild(spanSeparator);
+	});
+
+	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
+		// console.log('openedPlatterWindow data', data);
+		addStyleSheetToChildWindow();
+		consolePlatter.hidePlatterPane();
+	});
+
+	window.consolePlatter = consolePlatter;
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -497,8 +536,7 @@ window.addEventListener('load', function () {
 	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
 	asyncHTMLContentContainer = document.querySelector(asyncContentSelector);
-	navlinks = document.querySelector('#ts-pushmenu-mp-menu');
-	menuElement = document.getElementById('ts-pushmenu-mp-menu');
+	mobile_nav_menu = document.getElementById('ts-nav-menu');
 	menuTriggerElement = document.getElementById('trigger');
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
@@ -506,7 +544,7 @@ window.addEventListener('load', function () {
 	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
 	// summernotes = document.querySelectorAll('.ts-summernote');
 	preloaderElement = document.querySelector('#ts-preloading');
-	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
+	asyncAdminContentElement = document.querySelector('#ts-main-content');
 	adminButtonElement = document.createElement('a');
 	adminButtonElement.innerHTML = 'Admin Console';
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
@@ -526,15 +564,9 @@ window.addEventListener('load', function () {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
 	}
 
-	if (navlinks) {
-		navlinks.addEventListener('mousedown', navlinkclickhandler, false);
+	if (mobile_nav_menu) {
+		mobile_nav_menu.addEventListener('mousedown', navlinkclickhandler, false);
 	}
-	StyliePushMenu = new PushMenu({
-		el: menuElement,
-		trigger: menuTriggerElement,
-		type: 'overlap', // 'overlap', // 'cover',
-		// position: 'right'
-	});
 	asyncAdminPushie = new Pushie({
 		replacecallback: pushstatecallback,
 		pushcallback: pushstatecallback,
@@ -547,7 +579,6 @@ window.addEventListener('load', function () {
 	initAjaxFormies();
 	initModalWindows();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
-	window.StyliePushMenu = StyliePushMenu;
 	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;
 });

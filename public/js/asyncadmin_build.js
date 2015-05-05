@@ -16068,9 +16068,6 @@ var ajaxlinks,
 	// ajaxFormies = {},
 	// summernotes,
 	// summernoteContentEditors = {},
-	navlinks,
-	PushMenu = require('stylie.pushmenu'),
-	// path = require('path'),
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
@@ -16085,7 +16082,6 @@ var ajaxlinks,
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
 	StylieTable = require('stylie.tables'),
-	StyliePushMenu,
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -16100,7 +16096,7 @@ var ajaxlinks,
 	isClearingConsole = false,
 	mtpms,
 	adminButtonElement,
-	menuElement,
+	mobile_nav_menu,
 	menuTriggerElement,
 	nav_header,
 	consolePlatter,
@@ -16154,230 +16150,55 @@ var endPreloader = function (element) {
 };
 window.endPreloader = endPreloader;
 
-var loadAjaxPage = function (options) {
-	window.console.clear();
-	var htmlDivElement = document.createElement('div'),
-		newPageTitle,
-		newPageContent,
-		newJavascripts;
-	showPreloader();
-
-	if (window.$('.ts-summernote')) {
-		window.$('.ts-summernote').destroy();
-	}
-
-	request
-		.get(options.datahref)
-		.set('Accept', 'text/html')
-		.end(function (error, res) {
-			// console.log('error', error);
-			// console.log('res', res);
-			if (error) {
-				window.showErrorNotificaton({
-					message: error.message
-				});
+var initAjaxFormies = function () {
+	var ajaxForm;
+	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	//console.log('ajaxforms', ajaxforms);
+	try {
+		if (ajaxforms && ajaxforms.length > 0) {
+			for (var x = 0; x < ajaxforms.length; x++) {
+				ajaxForm = ajaxforms[x];
+				//ajaxFormies[ajaxForm.getAttribute('name')] = 
+				defaultAjaxFormie(ajaxForm);
 			}
-			else if (res.error) {
-				window.showErrorNotificaton({
-					message: 'Status [' + res.error.status + ']: ' + res.error.message
-				});
-			}
-			else {
-				htmlDivElement.innerHTML = res.text;
-				newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
-				newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
-				asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
-				document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
-				asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
-
-				// console.log('htmlDivElement', htmlDivElement);
-				newJavascripts = htmlDivElement.querySelectorAll('script');
-				for (var j = 0; j < newJavascripts.length; j++) {
-					if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
-						var newJSScript = document.createElement('script');
-						if (newJavascripts[j].src) {
-							newJSScript.src = newJavascripts[j].src;
-						}
-						if (newJavascripts[j].id) {
-							newJSScript.id = newJavascripts[j].id;
-						}
-						if (newJavascripts[j].type) {
-							newJSScript.type = newJavascripts[j].type;
-						}
-						// newJSScript.class = newJavascripts[j].class;
-						newJSScript.innerHTML = newJavascripts[j].innerHTML;
-						asyncHTMLWrapper.appendChild(newJSScript);
-					}
-				}
-				if (options.pushState) {
-					asyncAdminPushie.pushHistory({
-						data: {
-							datahref: options.datahref
-						},
-						title: 'Title:' + options.datahref,
-						href: options.datahref
-					});
-				}
-				endPreloader();
-
-				initFlashMessage();
-				initSummernote();
-				initAjaxFormies();
-				initModalWindows();
-			}
-		});
-};
-
-var navlinkclickhandler = function (e) {
-	var etarget = e.target,
-		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
-
-	if (classie.has(etarget, 'async-admin-ajax-link')) {
-		e.preventDefault();
-		// console.log('etargethref', etargethref);
-		loadAjaxPage({
-			datahref: etargethref,
-			pushState: true
-		});
-		StyliePushMenu._resetMenu();
-		return false;
-	}
-};
-
-var statecallback = function (data) {
-	// console.log('data', data);
-	loadAjaxPage({
-		datahref: data.datahref,
-		pushState: false
-	});
-};
-
-var pushstatecallback = function ( /*data*/ ) {
-	// console.log('data', data);
-};
-
-var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
-	//console.log(e);
-};
-
-var addStyleSheetToChildWindow = function () {
-	var t = setTimeout(function () {
-		var newstylesheet = document.createElement('link');
-		newstylesheet.setAttribute('type', 'text/css');
-		newstylesheet.setAttribute('href', window.location.origin + '/stylesheets/default/periodic.css');
-		newstylesheet.setAttribute('rel', 'stylesheet');
-		var newstylesheet2 = document.createElement('link');
-		newstylesheet2.setAttribute('type', 'text/css');
-		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
-		newstylesheet2.setAttribute('rel', 'stylesheet');
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
-
-		adminConsoleWindowResizeEventHandler();
-		clearTimeout(t);
-	}, 200);
-
-	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
-};
-
-var logToAdminConsole = function (data) {
-	var logInfoElement = document.createElement('div'),
-		adminMessageLevel = document.createElement('span'),
-		adminMessageMessage = document.createElement('span'),
-		adminMessageMeta = document.createElement('pre'),
-		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
-		acc = document.querySelector('#ts-admin-console-content'),
-		loglevel = data.level || 'log';
-	classie.add(adminMessageMeta, 'ts-sans-serif');
-
-	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
-	if (typeof data === 'string') {
-		adminMessageMessage.innerHTML = data;
-		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
-	}
-	else {
-		adminMessageMessage.innerHTML = data.msg;
-		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
-	}
-	logInfoElement.appendChild(adminMessageLevel);
-	logInfoElement.appendChild(adminMessageMessage);
-	logInfoElement.appendChild(adminMessageMeta);
-	adminConsoleElementContent.appendChild(logInfoElement);
-	acp.scrollTop = acp.scrollHeight;
-
-	if (acc && acc.childNodes && acc.childNodes.length > 10) {
-		//console.log('isClearingConsole', isClearingConsole);
-		isClearingConsole = true;
-		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
-			acc.removeChild(acc.childNodes[x]);
 		}
-		var t = setTimeout(function () {
-			isClearingConsole = false;
-			//console.log('setTimeout isClearingConsole', isClearingConsole);
-			clearTimeout(t);
-		}, 5000);
+	}
+	catch (e) {
+		window.showErrorNotificaton({
+			message: e.message
+		});
 	}
 };
 
-var asyncAdminContentElementClick = function (e) {
-	if (!classie.has(e.target, 'ts-open-admin-console')) {
-		consolePlatter.hidePlatterPane();
+var initSummernote = function () {
+	var summernoteObj,
+		summernoteObjID,
+		summernoteJQueryObj,
+		$ = window.$;
+	var summernotes = document.querySelectorAll('.ts-summernote');
+
+	try {
+		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
+			for (var x = 0; x < summernotes.length; x++) {
+				summernoteObj = summernotes[x];
+				summernoteObjID = '#' + summernoteObj.getAttribute('id');
+				summernoteJQueryObj = $(summernoteObjID);
+				summernoteJQueryObj.summernote({});
+			}
+		}
+	}
+	catch (e) {
+		console.error(e);
+		window.showErrorNotificaton({
+			message: e.message
+		});
 	}
 };
 
-var showAdminConsoleElementClick = function () {
-	window.consolePlatter.showPlatterPane();
-};
-
-var initEventListeners = function () {
-	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
-	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
-	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
-};
-
-var adminConsolePlatterConfig = function () {
-	socket = io();
-	// socket = io(window.location.hostname + ':' + window.socketIoPort);
-	// Whenever the server emits 'user joined', log it in the chat body
-	socket.on('log', function (data) {
-		logToAdminConsole(data);
-	});
-	socket.on('connect', function () {
-		logToAdminConsole('connected socket');
-	});
-	socket.on('disconnect', function () {
-		logToAdminConsole('disconnected socket');
-	});
-	socket.on('reconnect', function () {
-		logToAdminConsole('reconnected socket');
-	});
-	socket.on('error', function () {
-		logToAdminConsole('socket error');
-	});
-	consolePlatter = new platterjs({
-		idSelector: 'adminConsole',
-		title: ' ',
-		platterContentElement: adminConsoleElement,
-		openWindowHTML: ' <span class="_pltr-open-window"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/new_window.svg" style="height:0.8em;" alt="new window"  class="_pltr-open-window"/></span>'
-	});
-	consolePlatter.init(function (data) {
-		// console.log('consolePlatter init data', data);
-		var spanSeparator = document.createElement('span'),
-			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
-
-		spanSeparator.innerHTML = ' | ';
-		adminConsoleSpanContainer.appendChild(adminButtonElement);
-		adminConsoleSpanContainer.appendChild(data.element);
-		adminConsoleSpanContainer.appendChild(spanSeparator);
-	});
-
-	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
-		// console.log('openedPlatterWindow data', data);
-		addStyleSheetToChildWindow();
-		consolePlatter.hidePlatterPane();
-	});
-
-	window.consolePlatter = consolePlatter;
+var initModalWindows = function () {
+	for (var q = 0; q < open_modal_buttons.length; q++) {
+		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
+	}
 };
 
 var defaultAjaxFormie = function (formElement) {
@@ -16434,55 +16255,273 @@ var defaultAjaxFormie = function (formElement) {
 	});
 };
 
-var initAjaxFormies = function () {
-	var ajaxForm;
-	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	//console.log('ajaxforms', ajaxforms);
-	try {
-		if (ajaxforms && ajaxforms.length > 0) {
-			for (var x = 0; x < ajaxforms.length; x++) {
-				ajaxForm = ajaxforms[x];
-				//ajaxFormies[ajaxForm.getAttribute('name')] = 
-				defaultAjaxFormie(ajaxForm);
-			}
+var logToAdminConsole = function (data) {
+	var logInfoElement = document.createElement('div'),
+		adminMessageLevel = document.createElement('span'),
+		adminMessageMessage = document.createElement('span'),
+		adminMessageMeta = document.createElement('pre'),
+		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
+		acc = document.querySelector('#ts-admin-console-content'),
+		loglevel = data.level || 'log';
+	classie.add(adminMessageMeta, 'ts-sans-serif');
+
+	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
+	if (typeof data === 'string') {
+		adminMessageMessage.innerHTML = data;
+		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
+	}
+	else {
+		adminMessageMessage.innerHTML = data.msg;
+		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	}
+	logInfoElement.appendChild(adminMessageLevel);
+	logInfoElement.appendChild(adminMessageMessage);
+	logInfoElement.appendChild(adminMessageMeta);
+	adminConsoleElementContent.appendChild(logInfoElement);
+	acp.scrollTop = acp.scrollHeight;
+
+	if (acc && acc.childNodes && acc.childNodes.length > 10) {
+		//console.log('isClearingConsole', isClearingConsole);
+		isClearingConsole = true;
+		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+			acc.removeChild(acc.childNodes[x]);
 		}
+		var t = setTimeout(function () {
+			isClearingConsole = false;
+			//console.log('setTimeout isClearingConsole', isClearingConsole);
+			clearTimeout(t);
+		}, 5000);
+	}
+};
+
+var isMobileNavOpen = function () {
+	return classie.has(mobile_nav_menu, 'slideOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+};
+
+var closeMobileNav = function () {
+	classie.add(mobile_nav_menu, 'slideOutLeft');
+	classie.remove(mobile_nav_menu, 'slideInLeft');
+};
+
+var controlMobileNav = function () {
+	if (isMobileNavOpen()) {
+		classie.remove(mobile_nav_menu, 'initialState');
+		classie.add(mobile_nav_menu, 'slideInLeft');
+		classie.remove(mobile_nav_menu, 'slideOutLeft');
+	}
+	else {
+		closeMobileNav();
+	}
+};
+
+var loadAjaxPage = function (options) {
+	// window.console.clear();
+	closeMobileNav();
+	try {
+		var htmlDivElement = document.createElement('div'),
+			newPageTitle,
+			newPageContent,
+			newJavascripts;
+		showPreloader();
+
+		if (window.$('.ts-summernote')) {
+			window.$('.ts-summernote').destroy();
+		}
+
+		request
+			.get(options.datahref)
+			.set('Accept', 'text/html')
+			.end(function (error, res) {
+				// console.log('error', error);
+				// console.log('res', res);
+				if (error) {
+					window.showErrorNotificaton({
+						message: error.message
+					});
+				}
+				else if (res.error) {
+					endPreloader();
+					window.showErrorNotificaton({
+						message: 'Status [' + res.error.status + ']: ' + res.error.message
+					});
+				}
+				else {
+					htmlDivElement.innerHTML = res.text;
+					newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
+					newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
+					asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
+					document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
+					asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+
+					// console.log('htmlDivElement', htmlDivElement);
+					newJavascripts = htmlDivElement.querySelectorAll('script');
+					for (var j = 0; j < newJavascripts.length; j++) {
+						if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
+							var newJSScript = document.createElement('script');
+							if (newJavascripts[j].src) {
+								newJSScript.src = newJavascripts[j].src;
+							}
+							if (newJavascripts[j].id) {
+								newJSScript.id = newJavascripts[j].id;
+							}
+							if (newJavascripts[j].type) {
+								newJSScript.type = newJavascripts[j].type;
+							}
+							// newJSScript.class = newJavascripts[j].class;
+							newJSScript.innerHTML = newJavascripts[j].innerHTML;
+							asyncHTMLWrapper.appendChild(newJSScript);
+						}
+					}
+					if (options.pushState) {
+						console.log('options.datahref', options.datahref);
+						asyncAdminPushie.pushHistory({
+							data: {
+								datahref: options.datahref
+							},
+							title: 'Title:' + options.datahref,
+							href: options.datahref
+						});
+					}
+					endPreloader();
+
+					initFlashMessage();
+					initSummernote();
+					initAjaxFormies();
+					initModalWindows();
+				}
+			});
 	}
 	catch (e) {
+		endPreloader();
+		logToAdminConsole({
+			msg: 'ajax page error',
+			level: 'log',
+			meta: e
+		});
 		window.showErrorNotificaton({
 			message: e.message
 		});
 	}
 };
 
-var initSummernote = function () {
-	var summernoteObj,
-		summernoteObjID,
-		summernoteJQueryObj,
-		$ = window.$;
-	var summernotes = document.querySelectorAll('.ts-summernote');
+var navlinkclickhandler = function (e) {
+	var etarget = e.target,
+		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
-	try {
-		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
-			for (var x = 0; x < summernotes.length; x++) {
-				summernoteObj = summernotes[x];
-				summernoteObjID = '#' + summernoteObj.getAttribute('id');
-				summernoteJQueryObj = $(summernoteObjID);
-				summernoteJQueryObj.summernote({});
-			}
-		}
+	if (classie.has(etarget, 'async-admin-ajax-link')) {
+		e.preventDefault();
+		console.log('etargethref', etargethref);
+		loadAjaxPage({
+			datahref: etargethref,
+			pushState: true
+		});
+		// StyliePushMenu._resetMenu();
+		return false;
 	}
-	catch (e) {
-		console.error(e);
-		window.showErrorNotificaton({
-			message: e.message
+};
+
+var statecallback = function (data) {
+	// console.log('data', data);
+	if (data && data.datahref) {
+		loadAjaxPage({
+			datahref: data.datahref,
+			pushState: false
 		});
 	}
 };
 
-var initModalWindows = function () {
-	for (var q = 0; q < open_modal_buttons.length; q++) {
-		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
+var pushstatecallback = function ( /*data*/ ) {
+	// console.log('data', data);
+};
+
+var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
+	//console.log(e);
+};
+
+var addStyleSheetToChildWindow = function () {
+	var t = setTimeout(function () {
+		var newstylesheet = document.createElement('link');
+		newstylesheet.setAttribute('type', 'text/css');
+		newstylesheet.setAttribute('href', window.location.origin + '/stylesheets/default/periodic.css');
+		newstylesheet.setAttribute('rel', 'stylesheet');
+		var newstylesheet2 = document.createElement('link');
+		newstylesheet2.setAttribute('type', 'text/css');
+		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
+		newstylesheet2.setAttribute('rel', 'stylesheet');
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
+		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+
+		adminConsoleWindowResizeEventHandler();
+		clearTimeout(t);
+	}, 200);
+
+	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
+};
+
+var asyncAdminContentElementClick = function (e) {
+	if (!classie.has(e.target, 'ts-open-admin-console')) {
+		consolePlatter.hidePlatterPane();
 	}
+	// if (!isMobileNavOpen()) {
+	// 	closeMobileNav();
+	// }
+};
+
+var showAdminConsoleElementClick = function () {
+	window.consolePlatter.showPlatterPane();
+};
+
+
+var initEventListeners = function () {
+	menuTriggerElement.addEventListener('click', controlMobileNav, false);
+	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
+	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
+	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
+};
+
+var adminConsolePlatterConfig = function () {
+	socket = io();
+	// socket = io(window.location.hostname + ':' + window.socketIoPort);
+	// Whenever the server emits 'user joined', log it in the chat body
+	socket.on('log', function (data) {
+		logToAdminConsole(data);
+	});
+	socket.on('connect', function () {
+		logToAdminConsole('connected socket');
+	});
+	socket.on('disconnect', function () {
+		logToAdminConsole('disconnected socket');
+	});
+	socket.on('reconnect', function () {
+		logToAdminConsole('reconnected socket');
+	});
+	socket.on('error', function () {
+		logToAdminConsole('socket error');
+	});
+	consolePlatter = new platterjs({
+		idSelector: 'adminConsole',
+		title: ' ',
+		platterContentElement: adminConsoleElement,
+		openWindowHTML: ' <span class="_pltr-open-window"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/new_window.svg" style="height:0.8em;" alt="new window"  class="_pltr-open-window"/></span>'
+	});
+	consolePlatter.init(function (data) {
+		// console.log('consolePlatter init data', data);
+		var spanSeparator = document.createElement('span'),
+			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
+
+		spanSeparator.innerHTML = ' | ';
+		adminConsoleSpanContainer.appendChild(adminButtonElement);
+		adminConsoleSpanContainer.appendChild(data.element);
+		adminConsoleSpanContainer.appendChild(spanSeparator);
+	});
+
+	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
+		// console.log('openedPlatterWindow data', data);
+		addStyleSheetToChildWindow();
+		consolePlatter.hidePlatterPane();
+	});
+
+	window.consolePlatter = consolePlatter;
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -16561,8 +16600,7 @@ window.addEventListener('load', function () {
 	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
 	asyncHTMLContentContainer = document.querySelector(asyncContentSelector);
-	navlinks = document.querySelector('#ts-pushmenu-mp-menu');
-	menuElement = document.getElementById('ts-pushmenu-mp-menu');
+	mobile_nav_menu = document.getElementById('ts-nav-menu');
 	menuTriggerElement = document.getElementById('trigger');
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
@@ -16570,7 +16608,7 @@ window.addEventListener('load', function () {
 	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
 	// summernotes = document.querySelectorAll('.ts-summernote');
 	preloaderElement = document.querySelector('#ts-preloading');
-	asyncAdminContentElement = document.querySelector('#ts-pushmenu-mp-pusher');
+	asyncAdminContentElement = document.querySelector('#ts-main-content');
 	adminButtonElement = document.createElement('a');
 	adminButtonElement.innerHTML = 'Admin Console';
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
@@ -16590,15 +16628,9 @@ window.addEventListener('load', function () {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
 	}
 
-	if (navlinks) {
-		navlinks.addEventListener('mousedown', navlinkclickhandler, false);
+	if (mobile_nav_menu) {
+		mobile_nav_menu.addEventListener('mousedown', navlinkclickhandler, false);
 	}
-	StyliePushMenu = new PushMenu({
-		el: menuElement,
-		trigger: menuTriggerElement,
-		type: 'overlap', // 'overlap', // 'cover',
-		// position: 'right'
-	});
 	asyncAdminPushie = new Pushie({
 		replacecallback: pushstatecallback,
 		pushcallback: pushstatecallback,
@@ -16611,12 +16643,11 @@ window.addEventListener('load', function () {
 	initAjaxFormies();
 	initModalWindows();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
-	window.StyliePushMenu = StyliePushMenu;
 	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;
 });
 
-},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":115,"stylie.modals":90,"stylie.notifications":94,"stylie.pushmenu":101,"stylie.tables":108,"superagent":118}],90:[function(require,module,exports){
+},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":108,"stylie.modals":90,"stylie.notifications":94,"stylie.tables":101,"superagent":111}],90:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -16792,7 +16823,7 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":92,"events":20,"util":28,"util-extend":121}],92:[function(require,module,exports){
+},{"classie":92,"events":20,"util":28,"util-extend":114}],92:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
 },{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
@@ -17062,334 +17093,6 @@ exports.prefixed = function(style){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}],101:[function(require,module,exports){
 /*
- * stylie.pushmenu
- * https://github.com/typesettin/stylie.pushmenu
- *
- * Copyright (c) 2013 AmexPub. All rights reserved.
- */
-
-'use strict';
-
-module.exports = require('./lib/stylie.pushmenu');
-
-},{"./lib/stylie.pushmenu":102}],102:[function(require,module,exports){
-/*
- * stylie.pushmenu
- * https://github.com/typesettin/stylie.pushmenu
- *
- * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
- */
-'use strict';
-
-var classie = require('classie'),
-	detectCSS = require('detectcss'),
-	extend = require('util-extend'),
-	events = require('events'),
-	util = require('util');
-
-/**
- * A module that represents a PushMenu object, a componentTab is a page composition tool.
- * @{@link https://github.com/typesettin/stylie.pushmenu}
- * @author Yaw Joseph Etse
- * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
- * @license MIT
- * @constructor PushMenu
- * @requires module:util-extent
- * @requires module:util
- * @requires module:events
- * @param {object} el element of tab container
- * @param {object} options configuration options
- */
-var PushMenu = function (options) {
-	events.EventEmitter.call(this);
-
-	this.options = extend(this.options, options);
-	// console.log(this.options);
-	this._init();
-	// this.show = this._show;
-	// this.hide = this._hide;
-};
-
-util.inherits(PushMenu, events.EventEmitter);
-
-// taken from https://github.com/inuyaksa/jquery.nicescroll/blob/master/jquery.nicescroll.js
-var hasParent = function (e, id) {
-	if (!e) {
-		return false;
-	}
-	else {
-		var el = e.target || e.srcElement || e || false;
-		while (el && el.id !== id) {
-			el = el.parentNode || false;
-		}
-		return (el !== false);
-	}
-};
-
-// returns the depth of the element "e" relative to element with id=id
-// for this calculation only parents with classname = waypoint are considered
-var getLevelDepth = function (e, id, waypoint, cnt) {
-	cnt = cnt || 0;
-	if (e.id.indexOf(id) >= 0) {
-		return cnt;
-	}
-	else {
-		if (classie.has(e, waypoint)) {
-			++cnt;
-		}
-		return e.parentNode && getLevelDepth(e.parentNode, id, waypoint, cnt);
-	}
-};
-
-// returns the closest element to 'e' that has class "classname"
-var closest = function (e, classname) {
-	if (classie.has(e, classname)) {
-		return e;
-	}
-	return e.parentNode && closest(e.parentNode, classname);
-};
-
-
-/** module default configuration */
-PushMenu.prototype.options = {
-	el: null,
-	trigger: null,
-	// overlap: there will be a gap between open levels
-	// cover: the open levels will be on top of any previous open level
-	type: 'overlap', // overlap || cover
-	// space between each overlaped level
-	levelSpacing: 40,
-	level: 0,
-	// classname for the element (if any) that when clicked closes the current level
-	position: 'left',
-	backClass: 'ts-pushmenu-mp-back',
-	rightClass: 'ts-pushmenu-mp-right',
-	pushedClass: 'ts-pushmenu-mp-pushed',
-	levelClass: 'ts-pushmenu-mp-level',
-	levelSelector: 'div.ts-pushmenu-mp-level',
-	wrapperSelector: '#ts-pushmenu-mp-pusher',
-	menuOpenClass: 'ts-pushmenu-mp-level-open',
-	menuOverlayClass: 'ts-pushmenu-mp-level-overlay',
-};
-/**
- * initializes modals and shows current tab.
- * @emits modalsInitialized
- */
-PushMenu.prototype._init = function () {
-	var self = this;
-	// if menu is open or not
-	this.options.open = false;
-	this.options.type = (this.options.type === 'cover') ? 'cover' : 'overlap';
-	this.options.support = detectCSS.feature('transform');
-	// level depth
-	this.options.level = 0;
-	// the moving wrapper
-	this.options.wrapper = document.querySelector(this.options.wrapperSelector);
-	// the mp-level elements
-	this.options.levels = Array.prototype.slice.call(this.options.el.querySelectorAll(this.options.levelSelector));
-	// save the depth of each of these mp-level elements
-	this.options.levels.forEach(function (el /*, i*/ ) {
-		el.setAttribute('data-level', getLevelDepth(el, self.options.el.id, self.options.levelClass));
-		// console.log('levels i', i);
-	});
-	// the menu items
-	this.options.menuItems = Array.prototype.slice.call(this.options.el.querySelectorAll('li'));
-	// if type == "cover" these will serve as hooks to move back to the previous level
-	this.options.levelBack = Array.prototype.slice.call(this.options.el.querySelectorAll('.' + this.options.backClass));
-	// event type (if mobile use touch events)
-	// this.options.eventtype = mobilecheck() ? 'touchstart' : 'click';
-	// add the class mp-overlap or mp-cover to the main element depending on options.type
-	classie.add(this.options.el, 'ts-pushmenu-mp-' + this.options.type);
-	if (this.options.position === 'right') {
-		classie.add(this.options.el, this.options.rightClass);
-		classie.add(this.options.wrapper, this.options.rightClass);
-	}
-	// initialize / bind the necessary events
-	this._initEvents();
-	this.emit('modalsInitialized');
-};
-
-/**
- * handle tab click events.
- */
-PushMenu.prototype._initEvents = function () {
-	var self = this;
-
-	// the menu should close if clicking somewhere on the body
-	var bodyClickFn = function (el) {
-		self._resetMenu();
-		el.removeEventListener('click', bodyClickFn);
-	};
-
-	// open (or close) the menu
-	this.options.trigger.addEventListener('click', function (ev) {
-		ev.stopPropagation();
-		ev.preventDefault();
-		if (self.options.open) {
-			self._resetMenu();
-		}
-		else {
-			self._openMenu();
-			// the menu should close if clicking somewhere on the body (excluding clicks on the menu)
-			document.addEventListener('click', function (ev) {
-				if (self.options.open && !hasParent(ev.target, self.options.el.id)) {
-					bodyClickFn(this);
-				}
-			});
-		}
-	});
-
-	// opening a sub level menu
-	this.options.menuItems.forEach(function (el /*, i*/ ) {
-		// console.log('this.options.menuItems i', i);
-		// check if it has a sub level
-		var subLevel = el.querySelector(self.options.levelSelector);
-		if (subLevel) {
-			el.querySelector('a').addEventListener('click', function (ev) {
-				ev.preventDefault();
-				var level = closest(el, self.options.levelClass).getAttribute('data-level');
-				if (self.options.level <= level) {
-					ev.stopPropagation();
-					classie.add(closest(el, self.options.levelClass), self.options.menuOverlayClass);
-					self._openMenu(subLevel);
-				}
-			});
-		}
-	});
-
-	// closing the sub levels :
-	// by clicking on the visible part of the level element
-	this.options.levels.forEach(function (el /*, i*/ ) {
-		// console.log('this.options.levels i', i);
-		el.addEventListener('click', function (ev) {
-			ev.stopPropagation();
-			var level = el.getAttribute('data-level');
-			if (self.options.level > level) {
-				self.options.level = level;
-				// console.log('self.options.level', self.options.level)
-				classie.remove(ev.target, self.options.menuOverlayClass);
-				self._closeMenu();
-			}
-		});
-	});
-
-	// by clicking on a specific element
-	this.options.levelBack.forEach(function (el /*, i*/ ) {
-		// console.log('this.options.levelBack i', i);
-		el.addEventListener('click', function (ev) {
-			ev.preventDefault();
-			var level = closest(el, self.options.levelClass).getAttribute('data-level');
-			if (self.options.level <= level) {
-				ev.stopPropagation();
-				self.options.level = closest(el, self.options.levelClass).getAttribute('data-level') - 1;
-				self.options.level === 0 ? self._resetMenu() : self._closeMenu();
-			}
-		});
-	});
-	this.emit('modalsEventsInitialized');
-};
-
-/**
- * _openMenu a modal component.
- * @param {string} modal name
- * @emits showModal
- */
-PushMenu.prototype._openMenu = function (subLevel) {
-	// increment level depth
-	++this.options.level;
-
-	// move the main wrapper
-	var levelFactor = (this.options.level - 1) * this.options.levelSpacing,
-		translateVal;
-
-	if (this.options.position === 'right') {
-		translateVal = this.options.type === 'overlap' ? this.options.el.offsetWidth - levelFactor : this.options.el.offsetWidth;
-		translateVal = translateVal * -1;
-	}
-	else {
-		translateVal = this.options.type === 'overlap' ? this.options.el.offsetWidth + levelFactor : this.options.el.offsetWidth;
-	}
-
-	this._setTransform('translate3d(' + translateVal + 'px,0,0)');
-
-	if (subLevel) {
-		// reset transform for sublevel
-		this._setTransform('', subLevel);
-		// need to reset the translate value for the level menus that have the same level depth and are not open
-		for (var i = 0, len = this.options.levels.length; i < len; ++i) {
-			var levelEl = this.options.levels[i];
-			if (levelEl !== subLevel && !classie.has(levelEl, this.options.menuOpenClass)) {
-				if (this.options.position === 'right') {
-					this._setTransform('translate3d(100%,0,0) translate3d(' + 1 * levelFactor + 'px,0,0)', levelEl);
-				}
-				else {
-					this._setTransform('translate3d(-100%,0,0) translate3d(' + -1 * levelFactor + 'px,0,0)', levelEl);
-				}
-			}
-		}
-	}
-	// add class mp-pushed to main wrapper if opening the first time
-	if (this.options.level === 1) {
-		classie.add(this.options.wrapper, this.options.pushedClass);
-		this.options.open = true;
-	}
-	// add class mp-level-open to the opening level element
-	classie.add(subLevel || this.options.levels[0], this.options.menuOpenClass);
-};
-
-// close the menu
-PushMenu.prototype._resetMenu = function () {
-	this._setTransform('translate3d(0,0,0)');
-	this.options.level = 0;
-	// remove class mp-pushed from main wrapper
-	classie.remove(this.options.wrapper, this.options.pushedClass);
-	this._toggleLevels();
-	this.options.open = false;
-};
-// close sub menus
-PushMenu.prototype._closeMenu = function () {
-	var translateVal = this.options.type === 'overlap' ? this.options.el.offsetWidth + (this.options.level - 1) * this.options.levelSpacing : this.options.el.offsetWidth;
-	if (this.options.position === 'right') {
-		translateVal = translateVal * -1;
-	}
-	this._setTransform('translate3d(' + translateVal + 'px,0,0)');
-	this._toggleLevels();
-};
-// translate the el
-PushMenu.prototype._setTransform = function (val, el) {
-	el = el || this.options.wrapper;
-	el.style.WebkitTransform = val;
-	el.style.MozTransform = val;
-	el.style.transform = val;
-};
-// removes classes mp-level-open from closing levels
-PushMenu.prototype._toggleLevels = function () {
-	for (var i = 0, len = this.options.levels.length; i < len; ++i) {
-		var levelEl = this.options.levels[i];
-		if (levelEl.getAttribute('data-level') >= this.options.level + 1) {
-			classie.remove(levelEl, this.options.menuOpenClass);
-			classie.remove(levelEl, this.options.menuOverlayClass);
-		}
-		else if (Number(levelEl.getAttribute('data-level')) === this.options.level) {
-			classie.remove(levelEl, this.options.menuOverlayClass);
-		}
-	}
-};
-
-module.exports = PushMenu;
-
-},{"classie":103,"detectcss":105,"events":20,"util":28,"util-extend":107}],103:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],105:[function(require,module,exports){
-arguments[4][98][0].apply(exports,arguments)
-},{"./lib/detectCSS":106,"dup":98}],106:[function(require,module,exports){
-arguments[4][99][0].apply(exports,arguments)
-},{"dup":99}],107:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],108:[function(require,module,exports){
-/*
  * stylie.tables
  * http://github.com/typesettin/stylie.tables
  *
@@ -17400,7 +17103,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tables');
 
-},{"./lib/stylie.tables":109}],109:[function(require,module,exports){
+},{"./lib/stylie.tables":102}],102:[function(require,module,exports){
 /*
  * stylie.tables
  * http://github.com/typesettin
@@ -17599,17 +17302,17 @@ if (typeof module === 'object') {
 	module.exports = StylieTable;
 }
 
-},{"classie":110,"detectcss":112,"events":20,"util":28,"util-extend":114}],110:[function(require,module,exports){
+},{"classie":103,"detectcss":105,"events":20,"util":28,"util-extend":107}],103:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":111,"dup":8}],111:[function(require,module,exports){
+},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],112:[function(require,module,exports){
+},{"dup":9}],105:[function(require,module,exports){
 arguments[4][98][0].apply(exports,arguments)
-},{"./lib/detectCSS":113,"dup":98}],113:[function(require,module,exports){
+},{"./lib/detectCSS":106,"dup":98}],106:[function(require,module,exports){
 arguments[4][99][0].apply(exports,arguments)
-},{"dup":99}],114:[function(require,module,exports){
+},{"dup":99}],107:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],115:[function(require,module,exports){
+},{"dup":7}],108:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17621,7 +17324,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":116}],116:[function(require,module,exports){
+},{"./lib/stylie":109}],109:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17721,9 +17424,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":117}],117:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":110}],110:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],118:[function(require,module,exports){
+},{"dup":7}],111:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18806,10 +18509,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":119,"reduce":120}],119:[function(require,module,exports){
+},{"emitter":112,"reduce":113}],112:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],120:[function(require,module,exports){
+},{"dup":16}],113:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],121:[function(require,module,exports){
+},{"dup":17}],114:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}]},{},[89]);

@@ -1,7 +1,7 @@
 {
   "name": "periodicjs.ext.asyncadmin",
   "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
-  "version": "5.0.61",
+  "version": "5.1.0",
   "main": "index.js",
   "engines": {
     "node": ">=0.10.x"
@@ -29,6 +29,7 @@
     "pushie": "^1.0.2",
     "socket.io": "^1.3.5",
     "socket.io-client": "^1.3.5",
+    "stylie.treeview": "^1.0.1",
     "summernote": "^0.6.1",
     "validate-js": "^1.5.1"
   },

@@ -1,0 +1,183 @@
+<% var navmenu={
+    "tree": []
+  },
+  StylieTreeview = locals.stylietreeview;
+
+  var menu_themes = {
+    "tree-item": "folder",
+    "tree-item-label": "Themes",
+    "tree-item-id": "asyncadmin.themes",
+    "tree-item-attributes": {
+      "class": "async-admin-ajax-link",
+      "title": "this is a file link"
+    },
+    "tree-item-folder-contents": [{
+      "tree-item": "file",
+      "tree-item-label": "Manage Themes",
+      "tree-item-id": "asyncadmin.themes.manage",
+      "tree-item-link": "/"+locals.adminPath+"/themes/edit",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage your themes"
+      }
+    }, {
+      "tree-item": "file",
+      "tree-item-label": "Themes Settings",
+      "tree-item-id": "asyncadmin.themes.manage",
+      "tree-item-link": "/"+locals.adminPath+"/themes/settings",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Theme Settings"
+      }
+    }]
+  };
+
+  if(pagedata.extensions.menu && pagedata.extensions.menu.Themes){
+    for (var x in pagedata.extensions.menu.Themes){
+      menu_themes["tree-item-folder-contents"].push(pagedata.extensions.menu.Themes[x]);
+    }
+  }
+
+  var menu_extensions = {
+    "tree-item": "folder",
+    "tree-item-label": "Extensions",
+    "tree-item-id": "asyncadmin.extensions",
+    "tree-item-attributes": {
+      "class": "async-admin-ajax-link",
+      "title": "this is a file link"
+    },
+    "tree-item-folder-contents": [{
+      "tree-item": "file",
+      "tree-item-label": "Manage Extensions",
+      "tree-item-id": "asyncadmin.extensions.manage",
+      "tree-item-link": "/"+locals.adminPath+"/extensions/edit",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage your themes"
+      }
+    }]
+  };
+
+  if(pagedata.extensions.menu && pagedata.extensions.menu.Extensions){
+    for (var x in pagedata.extensions.menu.Extensions){
+      menu_extensions["tree-item-folder-contents"].push(pagedata.extensions.menu.Extensions[x]);
+    }
+  }
+
+  var menu_settings = {
+    "tree-item": "folder",
+    "tree-item-label": "Settings",
+    "tree-item-id": "asyncadmin.settings",
+    "tree-item-attributes": {
+      "class": "async-admin-ajax-link",
+      "title": "this is a file link"
+    },
+    "tree-item-folder-contents": [{
+      "tree-item": "file",
+      "tree-item-label": "Periodic Settings",
+      "tree-item-id": "asyncadmin.settings.manage",
+      "tree-item-link": "/"+locals.adminPath+"/settings",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage your themes"
+      }
+    },{
+      "tree-item": "file",
+      "tree-item-label": "Manage User",
+      "tree-item-id": "asyncadmin.settings.manage.users",
+      "tree-item-link": "/"+locals.adminPath+"/settings/users",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage user settings"
+      }
+    },{
+      "tree-item": "file",
+      "tree-item-label": "Manage User Roles",
+      "tree-item-id": "asyncadmin.settings.manage.userroles",
+      "tree-item-link": "/"+locals.adminPath+"/settings/userroles",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage userroles settings"
+      }
+    },{
+      "tree-item": "file",
+      "tree-item-label": "Manage User Privileges",
+      "tree-item-id": "asyncadmin.settings.manage.userprivileges",
+      "tree-item-link": "/"+locals.adminPath+"/settings/userprivileges",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage userroles settings"
+      }
+    },{
+      "tree-item": "file",
+      "tree-item-label": "Restart Application",
+      "tree-item-id": "asyncadmin.settings.manage.restart",
+      "tree-item-link": "/"+locals.adminPath+"/settings/restart",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage userroles settings"
+      }
+    },{
+      "tree-item": "file",
+      "tree-item-label": "Help",
+      "tree-item-id": "asyncadmin.settings.manage.help",
+      "tree-item-link": "/"+locals.adminPath+"/settings/help",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Manage userroles settings"
+      }
+    }]
+  };
+
+  if(pagedata.extensions.menu && pagedata.extensions.menu.Settings){
+    for (var x in pagedata.extensions.menu.Settings){
+      menu_settings["tree-item-folder-contents"].push(pagedata.extensions.menu.Settings[x]);
+    }
+  }
+
+
+  var menu_logout = {
+    "tree-item": "file",
+    "tree-item-label": "Log Out",
+    "tree-item-id": "asyncadmin.logout",
+    "tree-item-link": "/logout",
+    "tree-item-attributes": {
+      "class": "ts-force-link",
+      "title": "Log out of your account"
+    }
+  };
+
+
+  if(pagedata.extensions.menu && pagedata.extensions.menu.Global){
+    for (var x in pagedata.extensions.menu.Global){
+      if(typeof pagedata.extensions.menu.Global[x].userprivilege !=='undefined'){
+        if(user.privileges[pagedata.extensions.menu.Global[x].userprivilege] || user.accounttype==='admin'){
+          navmenu.tree.push(pagedata.extensions.menu.Global[x]);
+        }
+      }
+      else{
+        navmenu.tree.push(pagedata.extensions.menu.Global[x]);
+      }
+    }
+  }
+
+  if(user.privileges['120'] || user.accounttype==='admin'){
+    navmenu.tree.push(menu_themes);
+  }
+  if(user.privileges['130'] || user.accounttype==='admin'){
+    navmenu.tree.push(menu_extensions);
+  }
+  if(user.privileges['140'] || user.accounttype==='admin'){
+    navmenu.tree.push(menu_settings);
+  }
+  navmenu.tree.push(menu_logout);
+
+
+  navTreeview = new locals.stylietreeview({
+    tree:navmenu
+  });
+
+  navTreeViewHTML = navTreeview.getTreeHTML().replace(/%locals.adminPath%/gi,locals.adminPath);
+
+  %>
+  <%- navTreeViewHTML %>
