@@ -260,7 +260,7 @@ var loadAjaxPage = function (options) {
 			newJavascripts;
 		showPreloader();
 
-		if (window.$('.ts-summernote')) {
+		if (window.$ && window.$('.ts-summernote')) {
 			window.$('.ts-summernote').destroy();
 		}
 
@@ -309,7 +309,7 @@ var loadAjaxPage = function (options) {
 						}
 					}
 					if (options.pushState) {
-						console.log('options.datahref', options.datahref);
+						// console.log('options.datahref', options.datahref);
 						asyncAdminPushie.pushHistory({
 							data: {
 								datahref: options.datahref
@@ -346,7 +346,7 @@ var navlinkclickhandler = function (e) {
 
 	if (classie.has(etarget, 'async-admin-ajax-link')) {
 		e.preventDefault();
-		console.log('etargethref', etargethref);
+		// console.log('etargethref', etargethref);
 		loadAjaxPage({
 			datahref: etargethref,
 			pushState: true
