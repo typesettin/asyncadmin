@@ -1,0 +1,14 @@
+<% include ../../shared/header %>
+<div class="ts-container">
+	<section class="ts-text-container">
+		<% include ../../shared/_html_inject_precontent %>
+		<script type="text/javascript">
+		<%- locals.viewhelper.passObjToClient(userprofile.userroles,"userprofileuseroles") %>
+		</script>
+		<form class="ts-form async-admin-ajax-forms" id="edit-user-form" name="edit-user-form" method="post" action="/p-admin/user/edit"  onsubmit="return false;" enctype='multipart/form-data'>
+			<% include _compose_user_form %>
+		</form>
+		<% include ../../shared/_html_inject_postcontent %>
+	</section>
+</div>
+<% include ../../shared/footer %>

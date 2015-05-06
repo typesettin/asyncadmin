@@ -147,7 +147,31 @@
     }
   };
 
+ 
+  var menu_dashboard = {
+    "tree-item": "file",
+    "tree-item-label": "Admin Dashboard",
+    "tree-item-id": "asyncadmin.dashboard",
+    "tree-item-link": "/%locals.adminPath%/",
+    "tree-item-attributes": {
+      "class": "async-admin-ajax-link",
+      "title": "Periodic Admin Dashboard"
+    }
+  };
+ 
+   var menu_account_settings = {
+    "tree-item": "file",
+    "tree-item-label": "Account Settings",
+    "tree-item-id": "asyncadmin.accountsettings",
+    "tree-item-link": "/%locals.adminPath%/user/"+user._id+"/edit",
+    "tree-item-attributes": {
+      "class": "async-admin-ajax-link",
+      "title": "Edit your profile"
+    }
+  };
 
+  navmenu.tree.push(menu_account_settings);
+  navmenu.tree.push(menu_dashboard);
   if(pagedata.extensions.menu && pagedata.extensions.menu.Global){
     for (var x in pagedata.extensions.menu.Global){
       if(typeof pagedata.extensions.menu.Global[x].userprivilege !=='undefined'){
@@ -181,3 +205,6 @@
 
   %>
   <%- navTreeViewHTML %>
+<script type="text/javascript">
+	<%- locals.viewhelper.passObjToClient(navmenu,"periodic_navmenu") %>
+</script>

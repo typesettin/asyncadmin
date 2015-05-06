@@ -9,8 +9,13 @@ var display_account_link = user.username || user._id
 	      <img class="ts-nav-image" src="/images/elements/menu.white.png">
 	    </a>
 	  </div>
-	  <div class="ts-pull-right ts-text-xs"><a href="/<%-locals.adminPath%>/user/<%-display_account_link%>/edit"><%- display_account_name %></a> | <a href="/logout">logout</a>
+	  <div class="ts-pull-right ">
+	  	<a href="/<%-locals.adminPath%>/user/<%-display_account_link%>/edit" class="async-admin-ajax-link"><%- display_account_name %></a> | 
+	  	<a href="/logout">logout</a>
 	  </div>
-	  <div id="menu-header-stylie" class="ts-text-md ts-text-left">Admin <%- pagedata.toplink %> </div>
+	  <div id="menu-header-stylie" class="ts-text-md ts-text-left">
+	  	<a href="/<%-locals.adminPath%>" class="async-admin-ajax-link">Admin</a> 
+	  	<%- pagedata.toplink %> 
+	  </div>
 	</div>
 </header>

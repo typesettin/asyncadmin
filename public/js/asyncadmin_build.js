@@ -16082,6 +16082,7 @@ var ajaxlinks,
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
 	StylieTable = require('stylie.tables'),
+	StylieTabs = require('stylie.tabs'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -16097,6 +16098,7 @@ var ajaxlinks,
 	mtpms,
 	adminButtonElement,
 	mobile_nav_menu,
+	mobile_nav_menu_overlay,
 	menuTriggerElement,
 	nav_header,
 	consolePlatter,
@@ -16150,26 +16152,6 @@ var endPreloader = function (element) {
 };
 window.endPreloader = endPreloader;
 
-var initAjaxFormies = function () {
-	var ajaxForm;
-	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	//console.log('ajaxforms', ajaxforms);
-	try {
-		if (ajaxforms && ajaxforms.length > 0) {
-			for (var x = 0; x < ajaxforms.length; x++) {
-				ajaxForm = ajaxforms[x];
-				//ajaxFormies[ajaxForm.getAttribute('name')] = 
-				defaultAjaxFormie(ajaxForm);
-			}
-		}
-	}
-	catch (e) {
-		window.showErrorNotificaton({
-			message: e.message
-		});
-	}
-};
-
 var initSummernote = function () {
 	var summernoteObj,
 		summernoteObjID,
@@ -16201,11 +16183,60 @@ var initModalWindows = function () {
 	}
 };
 
+var logToAdminConsole = function (data) {
+	var logInfoElement = document.createElement('div'),
+		adminMessageLevel = document.createElement('span'),
+		adminMessageMessage = document.createElement('span'),
+		adminMessageMeta = document.createElement('pre'),
+		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
+		acc = document.querySelector('#ts-admin-console-content'),
+		loglevel = data.level || 'log';
+	classie.add(adminMessageMeta, 'ts-sans-serif');
+
+	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
+	if (typeof data === 'string') {
+		adminMessageMessage.innerHTML = data;
+		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
+	}
+	else {
+		adminMessageMessage.innerHTML = data.msg;
+		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
+	}
+	logInfoElement.appendChild(adminMessageLevel);
+	logInfoElement.appendChild(adminMessageMessage);
+	logInfoElement.appendChild(adminMessageMeta);
+	adminConsoleElementContent.appendChild(logInfoElement);
+	acp.scrollTop = acp.scrollHeight;
+
+	if (acc && acc.childNodes && acc.childNodes.length > 10) {
+		//console.log('isClearingConsole', isClearingConsole);
+		isClearingConsole = true;
+		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+			acc.removeChild(acc.childNodes[x]);
+		}
+		var t = setTimeout(function () {
+			isClearingConsole = false;
+			//console.log('setTimeout isClearingConsole', isClearingConsole);
+			clearTimeout(t);
+		}, 5000);
+	}
+};
+
 var defaultAjaxFormie = function (formElement) {
-	var $ = window.$;
+	var $ = window.$,
+		_csrfToken = formElement.querySelector('input[name="_csrf"]');
+
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
 		// headers: {'customheader':'customvalue'},
+		postdata: {
+			'_csrf': _csrfToken.value,
+			format: 'json'
+		},
+		queryparameters: {
+			'_csrf': _csrfToken.value,
+			format: 'json'
+		},
 		beforesubmitcallback: function (beforeEvent, formElement) {
 			var beforesubmitFunctionString = formElement.getAttribute('data-beforesubmitfunction'),
 				beforefn = window[beforesubmitFunctionString],
@@ -16255,42 +16286,53 @@ var defaultAjaxFormie = function (formElement) {
 	});
 };
 
-var logToAdminConsole = function (data) {
-	var logInfoElement = document.createElement('div'),
-		adminMessageLevel = document.createElement('span'),
-		adminMessageMessage = document.createElement('span'),
-		adminMessageMeta = document.createElement('pre'),
-		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
-		acc = document.querySelector('#ts-admin-console-content'),
-		loglevel = data.level || 'log';
-	classie.add(adminMessageMeta, 'ts-sans-serif');
-
-	adminMessageLevel.innerHTML = moment().format('dddd, MMMM Do YYYY, HH:mm:ss ') + ' - (' + loglevel + ') : ';
-	if (typeof data === 'string') {
-		adminMessageMessage.innerHTML = data;
-		adminMessageMeta.innerHTML = JSON.stringify({}, null, ' ');
-	}
-	else {
-		adminMessageMessage.innerHTML = data.msg;
-		adminMessageMeta.innerHTML = JSON.stringify(data.meta, null, ' ');
-	}
-	logInfoElement.appendChild(adminMessageLevel);
-	logInfoElement.appendChild(adminMessageMessage);
-	logInfoElement.appendChild(adminMessageMeta);
-	adminConsoleElementContent.appendChild(logInfoElement);
-	acp.scrollTop = acp.scrollHeight;
-
-	if (acc && acc.childNodes && acc.childNodes.length > 10) {
-		//console.log('isClearingConsole', isClearingConsole);
-		isClearingConsole = true;
-		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
-			acc.removeChild(acc.childNodes[x]);
+var initAjaxFormies = function () {
+	var ajaxForm;
+	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	//console.log('ajaxforms', ajaxforms);
+	try {
+		if (ajaxforms && ajaxforms.length > 0) {
+			for (var x = 0; x < ajaxforms.length; x++) {
+				ajaxForm = ajaxforms[x];
+				//ajaxFormies[ajaxForm.getAttribute('name')] = 
+				defaultAjaxFormie(ajaxForm);
+			}
 		}
-		var t = setTimeout(function () {
-			isClearingConsole = false;
-			//console.log('setTimeout isClearingConsole', isClearingConsole);
-			clearTimeout(t);
-		}, 5000);
+	}
+	catch (e) {
+		window.showErrorNotificaton({
+			message: e.message
+		});
+	}
+};
+
+var defaultTab = function (tabElement) {
+	try {
+		return new StylieTabs(tabElement);
+	}
+	catch (e) {
+		throw e;
+	}
+};
+
+var initTabs = function () {
+	var stylieTab;
+	var stylietabs = document.querySelectorAll('.ts-tabs');
+	//console.log('stylietabs', stylietabs);
+	try {
+		if (stylietabs && stylietabs.length > 0) {
+			for (var x = 0; x < stylietabs.length; x++) {
+				stylieTab = stylietabs[x];
+				//stylieTabies[stylieTab.getAttribute('name')] = 
+				defaultTab(stylieTab);
+			}
+		}
+	}
+	catch (e) {
+		console.log(e);
+		window.showErrorNotificaton({
+			message: e.message
+		});
 	}
 };
 
@@ -16299,6 +16341,7 @@ var isMobileNavOpen = function () {
 };
 
 var closeMobileNav = function () {
+	classie.add(mobile_nav_menu_overlay, 'hide');
 	classie.add(mobile_nav_menu, 'slideOutLeft');
 	classie.remove(mobile_nav_menu, 'slideInLeft');
 };
@@ -16308,10 +16351,23 @@ var controlMobileNav = function () {
 		classie.remove(mobile_nav_menu, 'initialState');
 		classie.add(mobile_nav_menu, 'slideInLeft');
 		classie.remove(mobile_nav_menu, 'slideOutLeft');
+		classie.remove(mobile_nav_menu_overlay, 'hide');
 	}
 	else {
 		closeMobileNav();
 	}
+};
+
+var handleUncaughtError = function (e, errorMessageTitle) {
+	endPreloader();
+	logToAdminConsole({
+		msg: errorMessageTitle || 'uncaught error',
+		level: 'log',
+		meta: e
+	});
+	window.showErrorNotificaton({
+		message: e.message
+	});
 };
 
 var loadAjaxPage = function (options) {
@@ -16346,61 +16402,59 @@ var loadAjaxPage = function (options) {
 					});
 				}
 				else {
-					htmlDivElement.innerHTML = res.text;
-					newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
-					newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
-					asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
-					document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
-					asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+					try {
+						htmlDivElement.innerHTML = res.text;
+						newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
+						newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
+						asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
+						document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
+						asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
 
-					// console.log('htmlDivElement', htmlDivElement);
-					newJavascripts = htmlDivElement.querySelectorAll('script');
-					for (var j = 0; j < newJavascripts.length; j++) {
-						if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
-							var newJSScript = document.createElement('script');
-							if (newJavascripts[j].src) {
-								newJSScript.src = newJavascripts[j].src;
+						// console.log('htmlDivElement', htmlDivElement);
+						newJavascripts = htmlDivElement.querySelectorAll('script');
+						for (var j = 0; j < newJavascripts.length; j++) {
+							if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
+								var newJSScript = document.createElement('script');
+								if (newJavascripts[j].src) {
+									newJSScript.src = newJavascripts[j].src;
+								}
+								if (newJavascripts[j].id) {
+									newJSScript.id = newJavascripts[j].id;
+								}
+								if (newJavascripts[j].type) {
+									newJSScript.type = newJavascripts[j].type;
+								}
+								// newJSScript.class = newJavascripts[j].class;
+								newJSScript.innerHTML = newJavascripts[j].innerHTML;
+								asyncHTMLWrapper.appendChild(newJSScript);
 							}
-							if (newJavascripts[j].id) {
-								newJSScript.id = newJavascripts[j].id;
-							}
-							if (newJavascripts[j].type) {
-								newJSScript.type = newJavascripts[j].type;
-							}
-							// newJSScript.class = newJavascripts[j].class;
-							newJSScript.innerHTML = newJavascripts[j].innerHTML;
-							asyncHTMLWrapper.appendChild(newJSScript);
 						}
-					}
-					if (options.pushState) {
-						// console.log('options.datahref', options.datahref);
-						asyncAdminPushie.pushHistory({
-							data: {
-								datahref: options.datahref
-							},
-							title: 'Title:' + options.datahref,
-							href: options.datahref
-						});
-					}
-					endPreloader();
+						if (options.pushState) {
+							// console.log('options.datahref', options.datahref);
+							asyncAdminPushie.pushHistory({
+								data: {
+									datahref: options.datahref
+								},
+								title: 'Title:' + options.datahref,
+								href: options.datahref
+							});
+						}
+						endPreloader();
 
-					initFlashMessage();
-					initSummernote();
-					initAjaxFormies();
-					initModalWindows();
+						initFlashMessage();
+						initSummernote();
+						initAjaxFormies();
+						initTabs();
+						initModalWindows();
+					}
+					catch (ajaxPageError) {
+						handleUncaughtError(ajaxPageError);
+					}
 				}
 			});
 	}
 	catch (e) {
-		endPreloader();
-		logToAdminConsole({
-			msg: 'ajax page error',
-			level: 'log',
-			meta: e
-		});
-		window.showErrorNotificaton({
-			message: e.message
-		});
+		handleUncaughtError(e, 'ajax page error');
 	}
 };
 
@@ -16459,24 +16513,37 @@ var addStyleSheetToChildWindow = function () {
 };
 
 var asyncAdminContentElementClick = function (e) {
-	if (!classie.has(e.target, 'ts-open-admin-console')) {
+	var etarget = e.target,
+		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
+
+	if (!classie.has(etarget, 'ts-open-admin-console')) {
 		consolePlatter.hidePlatterPane();
 	}
-	// if (!isMobileNavOpen()) {
-	// 	closeMobileNav();
-	// }
+	if (classie.has(etarget, 'async-admin-ajax-link')) {
+		e.preventDefault();
+		// console.log('etargethref', etargethref);
+		loadAjaxPage({
+			datahref: etargethref,
+			pushState: true
+		});
+		return false;
+	}
 };
 
 var showAdminConsoleElementClick = function () {
 	window.consolePlatter.showPlatterPane();
 };
 
+var navOverlayClickHandler = function () {
+	closeMobileNav();
+};
 
 var initEventListeners = function () {
 	menuTriggerElement.addEventListener('click', controlMobileNav, false);
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
 	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
+	mobile_nav_menu_overlay.addEventListener('click', navOverlayClickHandler, false);
 };
 
 var adminConsolePlatterConfig = function () {
@@ -16566,6 +16633,8 @@ window.showFlashNotifications = function (options) {
 				else if (options.callback) {
 					options.callback();
 				}
+				flashMessageArray = [];
+				asyncFlashFunctions = [];
 				// else {
 				// 	console.log(result);
 				// }
@@ -16614,6 +16683,7 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
+	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 
 	// open_modal_buttons
 	AdminModal = new StylieModals({});
@@ -16629,7 +16699,8 @@ window.addEventListener('load', function () {
 	}
 
 	if (mobile_nav_menu) {
-		mobile_nav_menu.addEventListener('mousedown', navlinkclickhandler, false);
+		// mobile_nav_menu.addEventListener('mousedown', navlinkclickhandler, false);
+		mobile_nav_menu.addEventListener('click', navlinkclickhandler, false);
 	}
 	asyncAdminPushie = new Pushie({
 		replacecallback: pushstatecallback,
@@ -16641,13 +16712,14 @@ window.addEventListener('load', function () {
 	initFlashMessage();
 	initSummernote();
 	initAjaxFormies();
+	initTabs();
 	initModalWindows();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;
 });
 
-},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":108,"stylie.modals":90,"stylie.notifications":94,"stylie.tables":101,"superagent":111}],90:[function(require,module,exports){
+},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":112,"stylie.modals":90,"stylie.notifications":94,"stylie.tables":101,"stylie.tabs":108,"superagent":115}],90:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -16823,7 +16895,7 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":92,"events":20,"util":28,"util-extend":114}],92:[function(require,module,exports){
+},{"classie":92,"events":20,"util":28,"util-extend":118}],92:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
 },{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
@@ -17314,6 +17386,122 @@ arguments[4][99][0].apply(exports,arguments)
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}],108:[function(require,module,exports){
 /*
+ * stylie.tabs
+ * http://github.com/typesettin/stylie.tabs
+ *
+ * Copyright (c) 2013 AmexPub. All rights reserved.
+ */
+
+'use strict';
+
+module.exports = require('./lib/stylie.tabs');
+
+},{"./lib/stylie.tabs":109}],109:[function(require,module,exports){
+/*
+ * stylie.tabs
+ * http://github.com/typesettin
+ *
+ * Copyright (c) 2015 Typesettin. All rights reserved.
+ */
+'use strict';
+
+var extend = require('util-extend'),
+	classie = require('classie'),
+	events = require('events'),
+	util = require('util');
+
+/**
+ * A module that represents a StylieTabs object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/stylie.tabs}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2015 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor StylieTabs
+ * @requires module:util-extent
+ * @requires module:util
+ * @requires module:events
+ * @param {object} el element of tab container
+ * @param {object} options configuration options
+ */
+var StylieTabs = function (el, options) {
+	events.EventEmitter.call(this);
+
+	this.el = el;
+	this.options = extend({}, this.options);
+	extend(this.options, options);
+	this.showTab = this._show;
+	this._init();
+};
+
+util.inherits(StylieTabs, events.EventEmitter);
+
+/** module default configuration */
+StylieTabs.prototype.options = {
+	start: 0,
+	tabselector: 'nav > ul > li',
+	itemselector: '.ts-tabs-content > section',
+	currenttabclass: 'ts-tab-current',
+	currentitemclass: 'ts-tabs-content-current'
+};
+/**
+ * initializes tabs and shows current tab.
+ * @emits tabsInitialized
+ */
+StylieTabs.prototype._init = function () {
+	// tabs elemes
+	this.tabs = [].slice.call(this.el.querySelectorAll(this.options.tabselector));
+	// content items
+	this.items = [].slice.call(this.el.querySelectorAll(this.options.itemselector));
+	// current index
+	this.current = -1;
+	// show current content item
+	this._show();
+	// init events
+	this._initEvents();
+	if (this.options.callback) {
+		this.options.callback();
+	}
+	this.emit('tabsInitialized');
+
+};
+/**
+ * handle tab click events.
+ */
+StylieTabs.prototype._initEvents = function () {
+	var self = this;
+
+	this.tabs.forEach(function (tab, idx) {
+		tab.addEventListener('click', function (ev) {
+			ev.preventDefault();
+			self._show(idx);
+		});
+	});
+	this.emit('tabsEventsInitialized');
+};
+/**
+ * Sets up a new lintotype component.
+ * @param {number} idx tab to show
+ * @emits tabsShowIndex
+ */
+StylieTabs.prototype._show = function (idx) {
+	if (this.current >= 0) {
+		classie.remove(this.tabs[this.current], this.options.currenttabclass);
+		classie.remove(this.items[this.current], this.options.currentitemclass);
+	}
+	// change current
+	this.current = idx !== undefined ? idx : this.options.start >= 0 && this.options.start < this.items.length ? this.options.start : 0;
+	classie.add(this.tabs[this.current], this.options.currenttabclass);
+	classie.add(this.items[this.current], this.options.currentitemclass);
+	this.emit('tabsShowIndex', this.current);
+};
+module.exports = StylieTabs;
+
+},{"classie":110,"events":20,"util":28,"util-extend":118}],110:[function(require,module,exports){
+arguments[4][8][0].apply(exports,arguments)
+},{"./lib/classie":111,"dup":8}],111:[function(require,module,exports){
+arguments[4][9][0].apply(exports,arguments)
+},{"dup":9}],112:[function(require,module,exports){
+/*
  * stylie
  * http://github.com/typesettin/stylie
  *
@@ -17324,7 +17512,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":109}],109:[function(require,module,exports){
+},{"./lib/stylie":113}],113:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17424,9 +17612,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":110}],110:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":114}],114:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],111:[function(require,module,exports){
+},{"dup":7}],115:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18509,10 +18697,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":112,"reduce":113}],112:[function(require,module,exports){
+},{"emitter":116,"reduce":117}],116:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],113:[function(require,module,exports){
+},{"dup":16}],117:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],114:[function(require,module,exports){
+},{"dup":17}],118:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}]},{},[89]);

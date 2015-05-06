@@ -44,6 +44,7 @@ module.exports = function (periodic) {
 	};
 	periodic.app.controller.extension.admin = {
 		admin: require('./controller/admin')(periodic),
+		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
 		// settings: require('./controller/settings')(periodic)
 	};
@@ -53,9 +54,12 @@ module.exports = function (periodic) {
 		settingsAdminRouter = periodic.express.Router(),
 		extensionAdminRouter = periodic.express.Router(),
 		themeAdminRouter = periodic.express.Router(),
+		adminController = periodic.app.controller.extension.admin.admin,
+		assetController = periodic.app.controller.native.asset,
 		authController = periodic.app.controller.extension.login.auth,
 		uacController = periodic.app.controller.extension.user_access_control.uac,
-		adminController = periodic.app.controller.extension.admin.admin;
+		userController = periodic.app.controller.native.user,
+		userAdminController = periodic.app.controller.extension.admin.user;
 
 	/**
 	 * access control routes
@@ -75,6 +79,20 @@ module.exports = function (periodic) {
 	// adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
 	// adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, uacController.loadUacUsers, adminController.users_index);
 	// adminRouter.get('/check_periodic_version', adminController.check_periodic_version);
+
+
+
+	/**
+	 * admin/user routes
+	 */
+	userAdminRouter.get('/search', userController.loadUsers, userAdminController.users_index);
+	userAdminRouter.get('/new', userAdminController.users_new);
+	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
+	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
+	userAdminRouter.post('/edit', assetController.upload, userController.update);
+	userAdminRouter.post('/new', assetController.upload, userController.create);
+	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, userController.remove);
+
 
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);
