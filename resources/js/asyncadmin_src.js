@@ -47,8 +47,8 @@ window.Stylie = Stylie;
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
-	// console.log(e.target)
-	// console.log(e.target.getAttribute('data-pfmodal-id'))
+	// console.log(e.target);
+	// console.log(e.target.getAttribute('data-tsmodal-id'));
 	AdminModal.show(e.target.getAttribute('data-tsmodal-id'));
 	return false;
 };
@@ -109,6 +109,19 @@ var initSummernote = function () {
 };
 
 var initModalWindows = function () {
+
+	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
+	if (open_modal_buttons.length > 0) {
+		// open_modal_buttons
+		AdminModal = new StylieModals({});
+		AdminModal.on('showModal', function () {
+			classie.add(document.body, 'ts-modal-showing');
+		});
+		AdminModal.on('hideModal', function () {
+			classie.remove(document.body, 'ts-modal-showing');
+		});
+		window.AdminModal = AdminModal;
+	}
 	for (var q = 0; q < open_modal_buttons.length; q++) {
 		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
 	}
@@ -637,14 +650,6 @@ window.addEventListener('load', function () {
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 	servermodalElement = document.querySelector('#servermodal-modal');
 
-	// open_modal_buttons
-	AdminModal = new StylieModals({});
-	AdminModal.on('showModal', function () {
-		classie.add(document.body, 'ts-modal-showing');
-	});
-	AdminModal.on('hideModal', function () {
-		classie.remove(document.body, 'ts-modal-showing');
-	});
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -668,6 +673,5 @@ window.addEventListener('load', function () {
 	initModalWindows();
 	initServerSocketCallback();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
-	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;
 });

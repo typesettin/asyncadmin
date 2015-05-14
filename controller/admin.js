@@ -26,10 +26,10 @@ var async = require('async'),
 var admin_index = function (req, res) {
 	// console.log('req._parsedUrl.pathname === \'/\'',)
 	// console.log('adminExtSettings',adminExtSettings);
-	if(adminExtSettings.settings.adminIndexRedirectPath!=='dashboard' && req._parsedUrl.pathname === '/'){
-		res.redirect(path.join(adminExtSettings.settings.adminPath,adminExtSettings.settings.adminIndexRedirectPath));
+	if (adminExtSettings.settings.adminIndexRedirectPath !== 'dashboard' && req._parsedUrl.pathname === '/') {
+		res.redirect(path.join(adminExtSettings.settings.adminPath, adminExtSettings.settings.adminIndexRedirectPath));
 	}
-	else{
+	else {
 		var viewtemplate = {
 				viewname: 'p-admin/home/index',
 				themefileext: appSettings.templatefileextension,
