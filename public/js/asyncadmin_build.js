@@ -16081,7 +16081,6 @@ var ajaxlinks,
 	classie = require('classie'),
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
-	StylieTable = require('stylie.tables'),
 	StylieTabs = require('stylie.tabs'),
 	AdminModal,
 	open_modal_buttons,
@@ -16097,6 +16096,7 @@ var ajaxlinks,
 	isClearingConsole = false,
 	mtpms,
 	adminButtonElement,
+	servermodalElement,
 	mobile_nav_menu,
 	mobile_nav_menu_overlay,
 	menuTriggerElement,
@@ -16108,11 +16108,6 @@ var ajaxlinks,
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
-
-
-window.createAdminTable = function (options) {
-	return new StylieTable(options);
-};
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -16546,6 +16541,17 @@ var initEventListeners = function () {
 	mobile_nav_menu_overlay.addEventListener('click', navOverlayClickHandler, false);
 };
 
+var initServerSocketCallback = function () {
+	socket.on('server_callback', function (data) {
+		var functionName = data.functionName,
+			serverCallbackFn = window[functionName];
+
+		if (typeof serverCallbackFn === 'function') {
+			serverCallbackFn(data.functionData);
+		}
+	});
+};
+
 var adminConsolePlatterConfig = function () {
 	socket = io();
 	// socket = io(window.location.hostname + ':' + window.socketIoPort);
@@ -16589,6 +16595,15 @@ var adminConsolePlatterConfig = function () {
 	});
 
 	window.consolePlatter = consolePlatter;
+};
+
+window.showServerModal = function (data) {
+	servermodalElement.querySelector('#servermodal-content').innerHTML = data;
+	AdminModal.show('servermodal-modal');
+};
+
+window.showServerNotification = function (data) {
+	window.showStylieNotification(data);
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -16684,6 +16699,7 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
+	servermodalElement = document.querySelector('#servermodal-modal');
 
 	// open_modal_buttons
 	AdminModal = new StylieModals({});
@@ -16714,12 +16730,13 @@ window.addEventListener('load', function () {
 	initAjaxFormies();
 	initTabs();
 	initModalWindows();
+	initServerSocketCallback();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;
 });
 
-},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":112,"stylie.modals":90,"stylie.notifications":94,"stylie.tables":101,"stylie.tabs":108,"superagent":115}],90:[function(require,module,exports){
+},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":105,"stylie.modals":90,"stylie.notifications":94,"stylie.tabs":101,"superagent":108}],90:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -16895,7 +16912,7 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":92,"events":20,"util":28,"util-extend":118}],92:[function(require,module,exports){
+},{"classie":92,"events":20,"util":28,"util-extend":111}],92:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
 },{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
@@ -17165,227 +17182,6 @@ exports.prefixed = function(style){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}],101:[function(require,module,exports){
 /*
- * stylie.tables
- * http://github.com/typesettin/stylie.tables
- *
- * Copyright (c) 2014 Typesettin. All rights reserved.
- */
-
-'use strict';
-
-module.exports = require('./lib/stylie.tables');
-
-},{"./lib/stylie.tables":102}],102:[function(require,module,exports){
-/*
- * stylie.tables
- * http://github.com/typesettin
- *
- * Copyright (c) 2013 Amex Pub. All rights reserved.
- */
-
-'use strict';
-
-var classie = require('classie'),
-	extend = require('util-extend'),
-	events = require('events'),
-	// Pushie = require('pushie'),
-	util = require('util'),
-	detectCSS = require('detectcss');
-
-var getEventTarget = function (e) {
-	e = e || window.event;
-	return e.target || e.srcElement;
-};
-
-/**
- * A module that represents a full with slideshow componenet object, a stylie.tables is a slideshow.
- * @{@link https://github.com/typesettin/stylie.tables}
- * @author Yaw Joseph Etse
- * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
- * @license MIT
- * @constructor StylieTable
- * @requires module:util-extent
- * @requires module:util
- * @requires module:events
- * @requires module:hammerjs
- * @requires module:detectcss
- * @param {object} config {el -  element of tab container}
- * @param {object} options configuration options
- */
-var StylieTable = function (config) {
-	events.EventEmitter.call(this);
-	this.options = extend(this.options, config);
-
-	this._init(config);
-};
-
-util.inherits(StylieTable, events.EventEmitter);
-
-/** module default configuration */
-StylieTable.prototype.options = {
-	tableClass: 'ts-table ts-table-padding-md ts-text-left ts-table-border ts-width-100 ts-table-cell-border ts-sans-serif',
-	tableHeadClass: 'ts-table-head',
-	tableBodyClass: 'ts-table-body',
-	tableFootClass: 'ts-table-foot',
-	createTableHead: true,
-	mirrorTableHeaderFooter: true,
-	elementWrapper: document.querySelector('body'),
-	data: [{
-		'title': 'stylie',
-		'link': 'http://stylie.io',
-		'desc': 'css style guide generator'
-	}, {
-		'title': 'nachie',
-		'link': 'http://nachie.io',
-		'desc': 'generate ache files in javascript'
-	}],
-	keyfilters: {},
-	onCreateTable: function () {
-		return false;
-	},
-	onOpen: function () {
-		return false;
-	}
-};
-
-/**
- * initializes slideshow and shows current slide.
- * @emits tableInitialized
- */
-StylieTable.prototype._init = function (options) {
-	options = options || {};
-	this.options = extend(this.options, options);
-	this._createTable();
-	// this._initEvents(); // initialize/bind the events
-	// Function to create a table as a child of el.
-	this.emit('tableInitialized');
-};
-
-/**
- * initializes slideshow and shows current slide.
- * @emits slidesInitialized
- */
-StylieTable.prototype._createTable = function () {
-	var tableElement,
-		TableHeaderRowObject = [],
-		tHeadCells = [],
-		footerRows = [],
-		TableRowObject = [];
-
-	var tableRowCreate = function (options) {
-		for (var i = 0; i < options.tableRowData.length; ++i) {
-			var tr = options.tbl.insertRow();
-			for (var j = 0; j < options.tableRowData[i].length; ++j) {
-				var td = tr.insertCell();
-				if (typeof options.tableRowData[i][j].filterOptions !== 'undefined' && options.tableRowData[i][j].filterOptions.colstyle) {
-					td.setAttribute('style', options.tableRowData[i][j].filterOptions.colstyle);
-				}
-				//td.innerHTML = 'k';
-				console.log('options.tableRowData[i][j].filterOptions', options.tableRowData[i][j].filterOptions);
-				td.innerHTML = (typeof options.tableRowData[i][j].val !== 'undefined') ? options.tableRowData[i][j].val.toString() : '';
-
-				////options.tableRowData[i][j].val.toString(); //(document.createTextNode(options.tableRowData[i][j].toString()));
-			}
-		}
-	}
-
-	var tableCreate = function (options) {
-		var el = options.el,
-			tableRowData = options.tableBody,
-			tableHeadRowData = options.tableHead;
-
-		var tbl = document.createElement('table');
-		tbl.setAttribute('class', this.options.tableClass);
-
-		//create table body
-		tableRowCreate({
-			tableRowData: tableRowData,
-			tbl: tbl
-		});
-		tbl.tBodies[0].setAttribute('class', this.options.tableBodyClass);
-
-		//create table head
-		if (this.options.createTableHead) {
-			var tblHeader = tbl.createTHead();
-			tblHeader.setAttribute('class', this.options.tableHeadClass);
-			tableRowCreate({
-				tableRowData: tableHeadRowData,
-				tbl: tblHeader
-			});
-		}
-		//create table foot
-		if (this.options.mirrorTableHeaderFooter) {
-			console.log('footer');
-			var tblFooter = tbl.createTFoot();
-			tblFooter.setAttribute('class', this.options.tableFootClass);
-			tableRowCreate({
-				tableRowData: tableHeadRowData,
-				tbl: tblFooter
-			});
-		}
-
-		el.appendChild(tbl);
-		this.options.onCreateTable(tbl);
-	}.bind(this);
-	console.log(this.options.data);
-
-	//create table body
-	for (var i = 0; i < this.options.data.length; ++i) {
-		var cells = [],
-			dataObject = this.options.data[i];
-
-		for (var key in dataObject) {
-			if (typeof this.options.keyfilters[key] === 'undefined' || this.options.keyfilters[key].ignorekey !== true) {
-				cells.push({
-					val: dataObject[key] || '',
-					filterOptions: this.options.keyfilters[key]
-				});
-				if (this.options.createTableHead && i === 0) {
-					if (this.options.keyfilters[key] && typeof this.options.keyfilters[key].label !== 'undefined') {
-						tHeadCells.push({
-							val: this.options.keyfilters[key].label,
-							filterOptions: this.options.keyfilters[key]
-						});
-					}
-					else {
-						tHeadCells.push({
-							val: key,
-							filterOptions: this.options.keyfilters[key]
-						});
-					}
-				}
-			}
-		}
-		TableRowObject.push(cells);
-	}
-	TableHeaderRowObject.push(tHeadCells);
-
-	tableCreate({
-		el: this.options.elementWrapper,
-		tableBody: TableRowObject,
-		tableHead: TableHeaderRowObject
-	});
-};
-
-if (typeof window === 'object') {
-	window.StylieTable = StylieTable;
-}
-if (typeof module === 'object') {
-	module.exports = StylieTable;
-}
-
-},{"classie":103,"detectcss":105,"events":20,"util":28,"util-extend":107}],103:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],105:[function(require,module,exports){
-arguments[4][98][0].apply(exports,arguments)
-},{"./lib/detectCSS":106,"dup":98}],106:[function(require,module,exports){
-arguments[4][99][0].apply(exports,arguments)
-},{"dup":99}],107:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],108:[function(require,module,exports){
-/*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
  *
@@ -17396,7 +17192,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":109}],109:[function(require,module,exports){
+},{"./lib/stylie.tabs":102}],102:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -17496,11 +17292,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":110,"events":20,"util":28,"util-extend":118}],110:[function(require,module,exports){
+},{"classie":103,"events":20,"util":28,"util-extend":111}],103:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":111,"dup":8}],111:[function(require,module,exports){
+},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],112:[function(require,module,exports){
+},{"dup":9}],105:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17512,7 +17308,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":113}],113:[function(require,module,exports){
+},{"./lib/stylie":106}],106:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17612,9 +17408,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":114}],114:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":107}],107:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],115:[function(require,module,exports){
+},{"dup":7}],108:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18697,10 +18493,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":116,"reduce":117}],116:[function(require,module,exports){
+},{"emitter":109,"reduce":110}],109:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],117:[function(require,module,exports){
+},{"dup":16}],110:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],118:[function(require,module,exports){
+},{"dup":17}],111:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}]},{},[89]);

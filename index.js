@@ -39,14 +39,14 @@ module.exports = function (periodic) {
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
 	periodic.app.locals.stylietreeview = stylietreeview;
 
-	periodic.app.controller.extension.admin = {
+	periodic.app.controller.extension.asyncadmin = {
 		adminExtSettings: adminExtSettings
 	};
-	periodic.app.controller.extension.admin = {
+	periodic.app.controller.extension.asyncadmin = {
 		admin: require('./controller/admin')(periodic),
 		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
-		// settings: require('./controller/settings')(periodic)
+		socket_callback: require('./controller/server_callback')(periodic)
 	};
 
 	var adminRouter = periodic.express.Router(),
@@ -54,12 +54,12 @@ module.exports = function (periodic) {
 		settingsAdminRouter = periodic.express.Router(),
 		extensionAdminRouter = periodic.express.Router(),
 		themeAdminRouter = periodic.express.Router(),
-		adminController = periodic.app.controller.extension.admin.admin,
+		adminController = periodic.app.controller.extension.asyncadmin.admin,
 		assetController = periodic.app.controller.native.asset,
 		authController = periodic.app.controller.extension.login.auth,
 		uacController = periodic.app.controller.extension.user_access_control.uac,
 		userController = periodic.app.controller.native.user,
-		userAdminController = periodic.app.controller.extension.admin.user;
+		userAdminController = periodic.app.controller.extension.asyncadmin.user;
 
 	/**
 	 * access control routes

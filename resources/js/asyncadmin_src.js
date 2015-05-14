@@ -17,7 +17,6 @@ var ajaxlinks,
 	classie = require('classie'),
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
-	StylieTable = require('stylie.tables'),
 	StylieTabs = require('stylie.tabs'),
 	AdminModal,
 	open_modal_buttons,
@@ -33,6 +32,7 @@ var ajaxlinks,
 	isClearingConsole = false,
 	mtpms,
 	adminButtonElement,
+	servermodalElement,
 	mobile_nav_menu,
 	mobile_nav_menu_overlay,
 	menuTriggerElement,
@@ -44,11 +44,6 @@ var ajaxlinks,
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
-
-
-window.createAdminTable = function (options) {
-	return new StylieTable(options);
-};
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -482,6 +477,17 @@ var initEventListeners = function () {
 	mobile_nav_menu_overlay.addEventListener('click', navOverlayClickHandler, false);
 };
 
+var initServerSocketCallback = function () {
+	socket.on('server_callback', function (data) {
+		var functionName = data.functionName,
+			serverCallbackFn = window[functionName];
+
+		if (typeof serverCallbackFn === 'function') {
+			serverCallbackFn(data.functionData);
+		}
+	});
+};
+
 var adminConsolePlatterConfig = function () {
 	socket = io();
 	// socket = io(window.location.hostname + ':' + window.socketIoPort);
@@ -525,6 +531,15 @@ var adminConsolePlatterConfig = function () {
 	});
 
 	window.consolePlatter = consolePlatter;
+};
+
+window.showServerModal = function (data) {
+	servermodalElement.querySelector('#servermodal-content').innerHTML = data;
+	AdminModal.show('servermodal-modal');
+};
+
+window.showServerNotification = function (data) {
+	window.showStylieNotification(data);
 };
 
 window.getAsyncCallback = function (functiondata) {
@@ -620,6 +635,7 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
+	servermodalElement = document.querySelector('#servermodal-modal');
 
 	// open_modal_buttons
 	AdminModal = new StylieModals({});
@@ -650,6 +666,7 @@ window.addEventListener('load', function () {
 	initAjaxFormies();
 	initTabs();
 	initModalWindows();
+	initServerSocketCallback();
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.AdminModal = AdminModal;
 	window.logToAdminConsole = logToAdminConsole;

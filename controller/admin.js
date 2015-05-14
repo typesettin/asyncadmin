@@ -199,7 +199,7 @@ var controller = function (resources) {
 	User = mongoose.model('User');
 	// AppDBSetting = mongoose.model('Setting');
 	// var appenvironment = appSettings.application.environment;
-	adminExtSettings = resources.app.controller.extension.admin.adminExtSettings;
+	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
 
 	return {
 		admin_index: admin_index,
