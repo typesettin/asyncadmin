@@ -24,22 +24,29 @@ var async = require('async'),
 	adminExtSettings;
 
 var admin_index = function (req, res) {
-	var viewtemplate = {
-			viewname: 'p-admin/home/index',
-			themefileext: appSettings.templatefileextension,
-			extname: 'periodicjs.ext.asyncadmin'
-		},
-		viewdata = {
-			pagedata: {
-				title: 'Admin',
-				toplink: '&raquo; Home',
-				extensions: CoreUtilities.getAdminMenu()
+	// console.log('req._parsedUrl.pathname === \'/\'',)
+	// console.log('adminExtSettings',adminExtSettings);
+	if(adminExtSettings.settings.adminIndexRedirectPath!=='dashboard' && req._parsedUrl.pathname === '/'){
+		res.redirect(path.join(adminExtSettings.settings.adminPath,adminExtSettings.settings.adminIndexRedirectPath));
+	}
+	else{
+		var viewtemplate = {
+				viewname: 'p-admin/home/index',
+				themefileext: appSettings.templatefileextension,
+				extname: 'periodicjs.ext.asyncadmin'
 			},
-			markdownpages: req.controllerData.markdownpages,
-			contentcounts: req.controllerData.contentcounts,
-			user: req.user
-		};
-	CoreController.renderView(req, res, viewtemplate, viewdata);
+			viewdata = {
+				pagedata: {
+					title: 'Admin',
+					toplink: '&raquo; Home',
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				markdownpages: req.controllerData.markdownpages,
+				contentcounts: req.controllerData.contentcounts,
+				user: req.user
+			};
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	}
 };
 
 /**

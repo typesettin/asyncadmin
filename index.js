@@ -75,6 +75,7 @@ module.exports = function (periodic) {
 	 */
 	// adminRouter.get('/', adminController.admin_index);
 	adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.admin_index);
+	adminRouter.get('/dashboard', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.admin_index);
 	// adminRouter.get('/extensions', adminController.loadExtensions, adminController.extensions_index);
 	// adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
 	// adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, uacController.loadUacUsers, adminController.users_index);
