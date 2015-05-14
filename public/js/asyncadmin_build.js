@@ -16755,7 +16755,7 @@ module.exports = require('./lib/stylie.modals');
 },{"./lib/stylie.modals":91}],91:[function(require,module,exports){
 /*
  * stylie.modals
- * https://github.com/typesettin/component.modals
+ * https://github.com/typesettin/stylie.modals
  *
  * Copyright (c) 2014 Yaw Joseph Etse. All rights reserved.
  */
