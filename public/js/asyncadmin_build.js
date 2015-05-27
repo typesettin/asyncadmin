@@ -16082,6 +16082,7 @@ var ajaxlinks,
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
 	StylieTabs = require('stylie.tabs'),
+	StylieDatalist = require('./datalist'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -16102,12 +16103,19 @@ var ajaxlinks,
 	menuTriggerElement,
 	nav_header,
 	consolePlatter,
-	preloaderElement;
+	preloaderElement,
+	confirmDeleteYes,
+	datalistelements,
+	AdminFormies = {},
+	StylieDataLists = {};
 
 // window.ajaxFormies = ajaxFormies;
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
+
+
+
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -16188,6 +16196,15 @@ var initModalWindows = function () {
 	}
 	for (var q = 0; q < open_modal_buttons.length; q++) {
 		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
+	}
+};
+
+var initDatalists = function () {
+	datalistelements = document.querySelectorAll('.ts-datalist-tagged');
+	for (var q = 0; q < datalistelements.length; q++) {
+		StylieDataLists[datalistelements[q].id] = new StylieDatalist({
+			element: datalistelements[q]
+		});
 	}
 };
 
@@ -16297,15 +16314,17 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	AdminFormies = {};
 	//console.log('ajaxforms', ajaxforms);
 	try {
 		if (ajaxforms && ajaxforms.length > 0) {
 			for (var x = 0; x < ajaxforms.length; x++) {
 				ajaxForm = ajaxforms[x];
 				//ajaxFormies[ajaxForm.getAttribute('name')] = 
-				defaultAjaxFormie(ajaxForm);
+				AdminFormies[ajaxForm.id] = defaultAjaxFormie(ajaxForm);
 			}
 		}
+		window.AdminFormies = AdminFormies;
 	}
 	catch (e) {
 		window.showErrorNotificaton({
@@ -16378,6 +16397,18 @@ var handleUncaughtError = function (e, errorMessageTitle) {
 	});
 };
 
+var ajaxDeleteButtonListeners = function () {
+	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
+	if (confirmDeleteYes) {
+		confirmDeleteYes.addEventListener('click', deleteContentSubmit, false);
+	}
+	for (var x in deleteButtons) {
+		if (typeof deleteButtons[x] === 'object') {
+			deleteButtons[x].addEventListener('click', confirmDeleteDialog, false);
+		}
+	}
+};
+
 var loadAjaxPage = function (options) {
 	// window.console.clear();
 	closeMobileNav();
@@ -16388,9 +16419,11 @@ var loadAjaxPage = function (options) {
 			newJavascripts;
 		showPreloader();
 
-		if (window.$ && window.$('.ts-summernote')) {
-			window.$('.ts-summernote').destroy();
-		}
+		// if (window.$ && window.$('.ts-summernote')) {
+		// 	// console.log('window.$(.ts-summernote)', window.$('.ts-summernote'));
+		// 	// console.log('window.$(.ts-summernote).summernote({})', window.$('.ts-summernote').summernote({}));
+		// 	// window.$('.ts-summernote').summernote({}).destroy();
+		// }
 
 		request
 			.get(options.datahref)
@@ -16454,6 +16487,8 @@ var loadAjaxPage = function (options) {
 						initAjaxFormies();
 						initTabs();
 						initModalWindows();
+						ajaxDeleteButtonListeners();
+						initDatalists();
 					}
 					catch (ajaxPageError) {
 						handleUncaughtError(ajaxPageError);
@@ -16464,6 +16499,98 @@ var loadAjaxPage = function (options) {
 	catch (e) {
 		handleUncaughtError(e, 'ajax page error');
 	}
+};
+
+var deleteContentSubmit = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href');
+
+	request
+		.post(posturl)
+		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
+		.set('Accept', 'application/json')
+		.query({
+			format: 'json'
+		})
+		.end(function (error, res) {
+			if (res && res.body && res.body.result === 'error') {
+				window.showStylieNotification({
+					message: res.body.data.error,
+					ttl: 7000,
+					// layout: options.layout || 'growl',
+					// effect: options.effect || 'jelly',
+					type: 'error', // notice, warning, error or success
+				});
+			}
+			else if (res && res.clientError) {
+				window.showStylieNotification({
+					message: res.status + ': ' + res.text,
+					ttl: 7000,
+					// layout: options.layout || 'growl',
+					// effect: options.effect || 'jelly',
+					type: 'error', // notice, warning, error or success
+				});
+			}
+			else if (error) {
+				window.showStylieNotification({
+					message: error.message,
+					ttl: 7000,
+					// layout: options.layout || 'growl',
+					// effect: options.effect || 'jelly',
+					type: 'error', // notice, warning, error or success
+				});
+			}
+			else {
+				console.log('!eTarget.getAttribute(data-donotnotify)', !eTarget.getAttribute('data-donotnotify'));
+				if (eTarget.getAttribute('data-donotnotify') !== 'do-not-notify') {
+					window.showStylieNotification({
+						message: 'deleted successfully',
+						ttl: 7000,
+						// layout: options.layout || 'growl',
+						// effect: options.effect || 'jelly',
+						type: 'warn', // notice, warning, error or success
+					});
+
+				}
+
+				if (eTarget.getAttribute('data-successfunction')) {
+					var successFunctionString = eTarget.getAttribute('data-successfunction'),
+						successfn = window[successFunctionString];
+					// is object a function?
+					if (typeof successfn === 'function') {
+						successfn(res.body.data);
+					}
+				}
+				else if (eTarget.getAttribute('data-deleted-redirect-href')) {
+					var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
+					loadAjaxPage({
+						datahref: deleteredirecthref
+					});
+				}
+			}
+		});
+};
+
+var confirmDeleteDialog = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href'),
+		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
+		successfunction = eTarget.getAttribute('data-successfunction'),
+		donotnotify = eTarget.getAttribute('data-donotnotify');
+	e.preventDefault();
+
+	confirmDeleteYes.setAttribute('data-href', '#');
+	confirmDeleteYes.setAttribute('data-href', posturl);
+	if (deleteredirecthref) {
+		confirmDeleteYes.setAttribute('data-deleted-redirect-href', deleteredirecthref);
+	}
+	if (successfunction) {
+		confirmDeleteYes.setAttribute('data-successfunction', successfunction);
+	}
+	if (donotnotify) {
+		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
+	}
+	AdminModal.show('confirmdelete-modal');
 };
 
 var navlinkclickhandler = function (e) {
@@ -16713,6 +16840,7 @@ window.addEventListener('load', function () {
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 	servermodalElement = document.querySelector('#servermodal-modal');
+	confirmDeleteYes = document.getElementById('confirm-delete-yes');
 
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
@@ -16736,11 +16864,274 @@ window.addEventListener('load', function () {
 	initTabs();
 	initModalWindows();
 	initServerSocketCallback();
+	ajaxDeleteButtonListeners();
+	initDatalists();
+
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.logToAdminConsole = logToAdminConsole;
+	window.AdminModal = AdminModal;
 });
 
-},{"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":105,"stylie.modals":90,"stylie.notifications":94,"stylie.tabs":101,"superagent":108}],90:[function(require,module,exports){
+},{"./datalist":90,"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":106,"stylie.modals":91,"stylie.notifications":95,"stylie.tabs":102,"superagent":109}],90:[function(require,module,exports){
+'use strict';
+
+var util = require('util'),
+	events = require('events'),
+	classie = require('classie'),
+	extend = require('util-extend'),
+	request = require('superagent'),
+	Bindie = require('bindie');
+
+var get_checkbox_template = function () {
+	var returnTemplateHTML = '<? for(var y in dataelements){ var dataelement=dataelements[y]; ?>';
+	returnTemplateHTML += '<span id="ts-datalist-tagged-cb-span-<?- dataelement.id ?>" class="ts-text-sm ts-margin-md ts-button" style="margin-left:0;" >';
+	returnTemplateHTML += '<input type="checkbox" id="ts-datalist-tagged-cb-<?- dataelement.id ?>" name="<?- dataelement.checkboxname ?>" value="<?- dataelement.id ?>" checked="checked" class="datalistcheckbox">';
+	returnTemplateHTML += ' <?- dataelement.title ?>';
+	returnTemplateHTML += '</span>';
+	returnTemplateHTML += '<?} ?>';
+
+	return returnTemplateHTML;
+};
+
+var makeNiceName = function (makenicename) {
+	return makenicename.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+};
+
+/**
+ * A module that represents a tsdatalist object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/tsdatalist}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor tsdatalist
+ * @requires module:events
+ * @requires module:util-extend
+ * @requires module:util
+ * @param {object} options configuration options
+ * @example 
+		tsdatalist_id: token(),
+		push_state_support: true,
+		replacecallback: function (data) {
+			console.log(data);
+		},
+		popcallback: function (data) {
+			console.log(data);
+		},
+		pushcallback: function (data) {
+			console.log(data);
+		}
+ */
+var tsdatalist = function (options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		element: {},
+		dataitems: {}
+	};
+	this.options = extend(defaultOptions, options);
+	this.init = this.__init;
+	this.init();
+	// this.addBinder = this._addBinder;
+};
+
+util.inherits(tsdatalist, events.EventEmitter);
+
+tsdatalist.prototype.__updateBindie = function () {
+	var new_data_items = this.options.dataitems;
+	this.options.datalistbindie.update({
+		data: {
+			dataitems: {
+				dataelements: new_data_items
+			}
+		}
+	});
+};
+
+var get_data_element_doc = function (options) {
+	var data = options.data,
+		ajaxprop = options.ajaxprop,
+		returnObject = {
+			id: data._id,
+			name: data.name,
+			title: data.title,
+			checkboxname: ajaxprop
+		};
+	return returnObject;
+};
+
+var get_generic_doc = function (options) {
+	var dataobjtouse = options.data;
+	dataobjtouse.name = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.name;
+	dataobjtouse.title = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.title;
+	return dataobjtouse;
+};
+
+tsdatalist.prototype.__addValueToDataList = function () {
+	var _csrfToken = document.querySelector('input[name="_csrf"]');
+	this.options.inputelement.disabled = 'disabled';
+	request
+		.post(this.options.ajaxhref + '/' + makeNiceName(this.options.inputelement.value))
+		.set({
+			_csrf: _csrfToken.value,
+			Accept: 'application/json'
+		})
+		.send({
+			format: 'json',
+			_csrf: _csrfToken.value,
+			title: this.options.inputelement.value
+		})
+		.query({
+			format: 'json',
+		})
+		.end(function (err, res) {
+			this.options.inputelement.removeAttribute('disabled');
+			if (err) {
+				if (window.showErrorNotificaton) {
+					window.showErrorNotificaton({
+						message: err.message
+					});
+				}
+				else {
+					console.error(err);
+				}
+			}
+			else if (res.body.error) {
+				window.showErrorNotificaton({
+					message: res.body.error
+				});
+			}
+			else if (res.body.data && res.body.data.error) {
+				window.showErrorNotificaton({
+					message: 'could not add data: ' + res.body.data.error
+				});
+			}
+			else {
+				var dataobjectresponse = (res.body.data) ? res.body.data.doc : res.body.author,
+					dataobjtouse = get_generic_doc({
+						data: dataobjectresponse
+					});
+				this.options.dataitems[dataobjtouse._id] = get_data_element_doc({
+					data: dataobjtouse,
+					ajaxprop: this.options.ajaxprop
+				});
+				this.__updateBindie();
+
+				this.options.inputelement.value = '';
+				this.options.inputelement.focus();
+				// console.log('this.options', this.options);
+			}
+			// console.log('err, res', err, res);
+		}.bind(this));
+};
+
+
+/**
+ * sets detects support for history push/pop/replace state and can set initial data
+ * @emits initialized
+ */
+tsdatalist.prototype.__init = function () {
+	var datalistcontainer = document.createElement('div'),
+		datalistelement = document.createElement('datalist'),
+		selectelement = document.createElement('select'),
+		checkboxcontainerelement = document.createElement('div'),
+		inputelementcontainer = document.createElement('div'),
+		inputelement = document.createElement('input'),
+		submitbuttonelement = document.createElement('input'),
+		initialinputelement = this.options.element,
+		presetdata,
+		initializing = true;
+
+	checkboxcontainerelement.id = 'datalist-tagged-cb-container-' + this.options.element.id;
+	checkboxcontainerelement.addEventListener('click', function (e) {
+		// console.log(e.target);
+		if (classie.has(e.target, 'datalistcheckbox')) {
+			if (e.target.checked === false) {
+				delete this.options.dataitems[e.target.value];
+				this.__updateBindie();
+			}
+			console.log('e.target.checked', e.target.checked);
+		}
+	}.bind(this), false);
+	this.options.parentElement = this.options.element.parentElement;
+
+	this.options.ajaxprop = this.options.element.getAttribute('data-ajax-prop');
+	this.options.elementid = this.options.element.id;
+	this.options.inputelement = inputelement;
+	this.options.ajaxhref = this.options.element.getAttribute('data-ajax-source');
+
+	inputelementcontainer.setAttribute('class', 'ts-row ts-form-row');
+	inputelement.setAttribute('class', 'ts-col-span8 ts-button');
+	inputelement.id = this.options.element.id;
+	inputelement.setAttribute('placeholder', this.options.element.getAttribute('placeholder'));
+	inputelement.setAttribute('data-bindiecallback', initialinputelement.getAttribute('data-bindiecallback'));
+	inputelement.setAttribute('data-ajax-setdata-variable', this.options.element.getAttribute('data-ajax-setdata-variable'));
+	inputelement.setAttribute('data-ajax-formie', this.options.element.getAttribute('data-ajax-formie'));
+
+	inputelement.addEventListener('keydown', function (e) {
+		if (e.which === 13 || e.keyCode === 13) {
+			this.__addValueToDataList();
+		}
+	}.bind(this), false);
+
+	submitbuttonelement.setAttribute('class', 'ts-col-span4 ts-button ts-text-center');
+	submitbuttonelement.value = 'add';
+	submitbuttonelement.type = 'button';
+	submitbuttonelement.addEventListener('click', function () {
+		this.__addValueToDataList();
+	}.bind(this), false);
+
+	inputelementcontainer.appendChild(inputelement);
+	inputelementcontainer.appendChild(submitbuttonelement);
+	datalistelement.appendChild(selectelement);
+	datalistcontainer.appendChild(datalistelement);
+	datalistcontainer.appendChild(inputelementcontainer);
+	datalistcontainer.appendChild(checkboxcontainerelement);
+	this.options.parentElement.appendChild(datalistcontainer);
+	this.options.parentElement.removeChild(this.options.element);
+
+	if (this.options.inputelement.getAttribute('data-ajax-formie')) {
+		this.options.formietosubmit = this.options.inputelement.getAttribute('data-ajax-formie');
+	}
+	this.options.datalistbindie = new Bindie({
+		ejsdelimiter: '?'
+	});
+	this.options.datalistbindie.addBinder({
+		prop: 'dataitems',
+		elementSelector: '#' + checkboxcontainerelement.getAttribute('id'),
+		binderType: 'template',
+		binderTemplate: get_checkbox_template(),
+		binderCallback: function (cbdata) {
+
+			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
+				successfn = window[successsubmitFunctionString];
+			// is object a function?
+			if (typeof successfn === 'function') {
+				successfn(cbdata);
+			}
+			if (this.options.formietosubmit && initializing === false) {
+				window.AdminFormies[this.options.formietosubmit].submit();
+			}
+		}.bind(this)
+	});
+
+	if (this.options.inputelement.getAttribute('data-ajax-setdata-variable')) {
+		presetdata = window[this.options.inputelement.getAttribute('data-ajax-setdata-variable')];
+		for (var z = 0; z < presetdata.length; z++) {
+			this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
+				data: get_generic_doc({
+					data: presetdata[z]
+				}),
+				ajaxprop: this.options.ajaxprop
+			});
+		}
+		this.__updateBindie();
+	}
+	initializing = false;
+
+	this.emit('initialized');
+};
+module.exports = tsdatalist;
+
+},{"bindie":3,"classie":8,"events":20,"superagent":109,"util":28,"util-extend":112}],91:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -16752,7 +17143,7 @@ window.addEventListener('load', function () {
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":91}],91:[function(require,module,exports){
+},{"./lib/stylie.modals":92}],92:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -16916,11 +17307,11 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":92,"events":20,"util":28,"util-extend":111}],92:[function(require,module,exports){
+},{"classie":93,"events":20,"util":28,"util-extend":112}],93:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":93,"dup":8}],93:[function(require,module,exports){
+},{"./lib/classie":94,"dup":8}],94:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],94:[function(require,module,exports){
+},{"dup":9}],95:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -16932,7 +17323,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":95}],95:[function(require,module,exports){
+},{"./lib/stylie.notifications":96}],96:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -17129,11 +17520,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":96,"detectcss":98,"events":20,"util":28,"util-extend":100}],96:[function(require,module,exports){
+},{"classie":97,"detectcss":99,"events":20,"util":28,"util-extend":101}],97:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":97,"dup":8}],97:[function(require,module,exports){
+},{"./lib/classie":98,"dup":8}],98:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],98:[function(require,module,exports){
+},{"dup":9}],99:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -17143,7 +17534,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":99}],99:[function(require,module,exports){
+},{"./lib/detectCSS":100}],100:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -17182,9 +17573,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],101:[function(require,module,exports){
+},{"dup":7}],102:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -17196,7 +17587,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":102}],102:[function(require,module,exports){
+},{"./lib/stylie.tabs":103}],103:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -17296,11 +17687,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":103,"events":20,"util":28,"util-extend":111}],103:[function(require,module,exports){
+},{"classie":104,"events":20,"util":28,"util-extend":112}],104:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":104,"dup":8}],104:[function(require,module,exports){
+},{"./lib/classie":105,"dup":8}],105:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],105:[function(require,module,exports){
+},{"dup":9}],106:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17312,7 +17703,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":106}],106:[function(require,module,exports){
+},{"./lib/stylie":107}],107:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17412,9 +17803,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":107}],107:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":108}],108:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],108:[function(require,module,exports){
+},{"dup":7}],109:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18497,10 +18888,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":109,"reduce":110}],109:[function(require,module,exports){
+},{"emitter":110,"reduce":111}],110:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],110:[function(require,module,exports){
+},{"dup":16}],111:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],111:[function(require,module,exports){
+},{"dup":17}],112:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}]},{},[89]);
