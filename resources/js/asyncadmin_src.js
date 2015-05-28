@@ -15,6 +15,7 @@ var ajaxlinks,
 	asyncAdminPushie,
 	async = require('async'),
 	classie = require('classie'),
+	CodeMirror = require('codemirror'),
 	StylieNotification = require('stylie.notifications'),
 	StylieModals = require('stylie.modals'),
 	StylieTabs = require('stylie.tabs'),
@@ -28,6 +29,8 @@ var ajaxlinks,
 	asyncAdminContentElement,
 	adminConsoleElement,
 	adminConsoleElementContent,
+	codeMirrorJSEditorsElements,
+	codeMirrors = {},
 	flashMessageArray = [],
 	asyncFlashFunctions = [],
 	request = require('superagent'),
@@ -45,7 +48,20 @@ var ajaxlinks,
 	datalistelements,
 	medialistelements,
 	AdminFormies = {},
-	StylieDataLists = {};
+	StylieDataLists = {},
+	StylieTab = {};
+
+require('../../node_modules/codemirror/addon/edit/matchbrackets');
+require('../../node_modules/codemirror/addon/comment/comment');
+require('../../node_modules/codemirror/addon/comment/continuecomment');
+require('../../node_modules/codemirror/addon/fold/foldcode');
+require('../../node_modules/codemirror/addon/fold/comment-fold');
+require('../../node_modules/codemirror/addon/fold/indent-fold');
+require('../../node_modules/codemirror/addon/fold/brace-fold');
+require('../../node_modules/codemirror/addon/fold/foldgutter');
+require('../../node_modules/codemirror/mode/css/css');
+require('../../node_modules/codemirror/mode/htmlembedded/htmlembedded');
+require('../../node_modules/codemirror/mode/javascript/javascript');
 
 // window.ajaxFormies = ajaxFormies;
 window.Formie = Formie;
@@ -136,6 +152,32 @@ var initModalWindows = function () {
 		open_modal_buttons[q].addEventListener('click', openModalButtonListener, false);
 	}
 };
+
+var initCodemirrors = function () {
+	codeMirrorJSEditorsElements = document.querySelectorAll('.codemirroreditor');
+	for (var cm = 0; cm < codeMirrorJSEditorsElements.length; cm++) {
+		// console.log('codeMirrorJSEditorsElements[cm]', codeMirrorJSEditorsElements[cm]);
+		codeMirrors[codeMirrorJSEditorsElements[cm].id] = CodeMirror.fromTextArea(
+			codeMirrorJSEditorsElements[cm], {
+				lineNumbers: true,
+				lineWrapping: true,
+				matchBrackets: true,
+				autoCloseBrackets: true,
+				mode: 'application/json',
+				indentUnit: 2,
+				indentWithTabs: true,
+				'overflow-y': 'hidden',
+				'overflow-x': 'auto',
+				lint: true,
+				gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
+				foldGutter: true
+			}
+		);
+	}
+	// window.CodeMirror = CodeMirror;
+	window.codeMirrors = codeMirrors;
+};
+
 
 var initDatalists = function () {
 	datalistelements = document.querySelectorAll('.ts-datalist-tagged');
@@ -298,9 +340,10 @@ var initTabs = function () {
 			for (var x = 0; x < stylietabs.length; x++) {
 				stylieTab = stylietabs[x];
 				//stylieTabies[stylieTab.getAttribute('name')] = 
-				defaultTab(stylieTab);
+				StylieTab[stylieTab.id] = defaultTab(stylieTab);
 			}
 		}
+		window.StylieTab = StylieTab;
 	}
 	catch (e) {
 		console.log(e);
@@ -456,6 +499,7 @@ var loadAjaxPage = function (options) {
 						initAjaxFormies();
 						initTabs();
 						initModalWindows();
+						initCodemirrors();
 						ajaxDeleteButtonListeners();
 						initDatalists();
 						initMedialists();
@@ -817,11 +861,13 @@ window.addEventListener('load', function () {
 	initAjaxFormies();
 	initTabs();
 	initModalWindows();
+	initCodemirrors();
 	initServerSocketCallback();
 	ajaxDeleteButtonListeners();
 	initDatalists();
 	initMedialists();
 
+	window.servermodalElement = servermodalElement;
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.logToAdminConsole = logToAdminConsole;
 	window.AdminModal = AdminModal;

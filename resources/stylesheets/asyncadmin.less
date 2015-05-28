@@ -3,7 +3,13 @@
 @import "../../../../node_modules/stylie.modals/resources/stylesheets/stylie.modals.less";
 @import "../../node_modules/platterjs/client/stylesheets/platter.less";
 @import "../../node_modules/stylie.treeview/resources/stylesheets/stylie.treeview.less";
-
+@import (inline) "../../node_modules/codemirror/lib/codemirror.css";
+@import (inline) "../../node_modules/codemirror/addon/fold/foldgutter.css";
+@import (inline) "../../node_modules/codemirror/addon/lint/lint.css";
+.CodeMirror{
+	height:auto;
+	font-size: 65%;
+}
 .animated-fast {
   -webkit-animation-duration: .250s;
   animation-duration: .250s;
