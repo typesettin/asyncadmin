@@ -8,14 +8,7 @@ var util = require('util'),
 	Bindie = require('bindie');
 
 var get_checkbox_template = function () {
-	var returnTemplateHTML = '<? for(var y in dataelements){ var dataelement=dataelements[y]; ?>';
-	returnTemplateHTML += '<span id="ts-datalist-tagged-cb-span-<?- dataelement.id ?>" class="ts-text-sm ts-margin-md ts-button" style="margin-left:0;" >';
-	returnTemplateHTML += '<input type="checkbox" id="ts-datalist-tagged-cb-<?- dataelement.id ?>" name="<?- dataelement.checkboxname ?>" value="<?- dataelement.id ?>" checked="checked" class="datalistcheckbox">';
-	returnTemplateHTML += ' <?- dataelement.title ?>';
-	returnTemplateHTML += '</span>';
-	returnTemplateHTML += '<?} ?>';
-
-	return returnTemplateHTML;
+	return document.querySelector('#compose_taxonomies_template').innerHTML; //returnTemplateHTML;
 };
 
 var makeNiceName = function (makenicename) {
@@ -78,7 +71,8 @@ var get_data_element_doc = function (options) {
 			id: data._id,
 			name: data.name,
 			title: data.title,
-			checkboxname: ajaxprop
+			checkboxname: ajaxprop,
+			source_data: options.data
 		};
 	return returnObject;
 };
@@ -147,7 +141,6 @@ tsdatalist.prototype.__addValueToDataList = function () {
 			// console.log('err, res', err, res);
 		}.bind(this));
 };
-
 
 /**
  * sets detects support for history push/pop/replace state and can set initial data
@@ -240,15 +233,17 @@ tsdatalist.prototype.__init = function () {
 
 	if (this.options.inputelement.getAttribute('data-ajax-setdata-variable')) {
 		presetdata = window[this.options.inputelement.getAttribute('data-ajax-setdata-variable')];
-		for (var z = 0; z < presetdata.length; z++) {
-			this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
-				data: get_generic_doc({
-					data: presetdata[z]
-				}),
-				ajaxprop: this.options.ajaxprop
-			});
+		if (presetdata) {
+			for (var z = 0; z < presetdata.length; z++) {
+				this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
+					data: get_generic_doc({
+						data: presetdata[z]
+					}),
+					ajaxprop: this.options.ajaxprop
+				});
+			}
+			this.__updateBindie();
 		}
-		this.__updateBindie();
 	}
 	initializing = false;
 

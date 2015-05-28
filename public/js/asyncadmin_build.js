@@ -16083,6 +16083,7 @@ var ajaxlinks,
 	StylieModals = require('stylie.modals'),
 	StylieTabs = require('stylie.tabs'),
 	StylieDatalist = require('./datalist'),
+	StylieMedialist = require('./medialist'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -16106,6 +16107,7 @@ var ajaxlinks,
 	preloaderElement,
 	confirmDeleteYes,
 	datalistelements,
+	medialistelements,
 	AdminFormies = {},
 	StylieDataLists = {};
 
@@ -16204,6 +16206,15 @@ var initDatalists = function () {
 	for (var q = 0; q < datalistelements.length; q++) {
 		StylieDataLists[datalistelements[q].id] = new StylieDatalist({
 			element: datalistelements[q]
+		});
+	}
+};
+
+var initMedialists = function () {
+	medialistelements = document.querySelectorAll('.ts-medialist-tagged');
+	for (var q = 0; q < medialistelements.length; q++) {
+		StylieDataLists[medialistelements[q].id] = new StylieMedialist({
+			element: medialistelements[q]
 		});
 	}
 };
@@ -16397,6 +16408,28 @@ var handleUncaughtError = function (e, errorMessageTitle) {
 	});
 };
 
+var confirmDeleteDialog = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href'),
+		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
+		successfunction = eTarget.getAttribute('data-successfunction'),
+		donotnotify = eTarget.getAttribute('data-donotnotify');
+	e.preventDefault();
+
+	confirmDeleteYes.setAttribute('data-href', '#');
+	confirmDeleteYes.setAttribute('data-href', posturl);
+	if (deleteredirecthref) {
+		confirmDeleteYes.setAttribute('data-deleted-redirect-href', deleteredirecthref);
+	}
+	if (successfunction) {
+		confirmDeleteYes.setAttribute('data-successfunction', successfunction);
+	}
+	if (donotnotify) {
+		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
+	}
+	AdminModal.show('confirmdelete-modal');
+};
+
 var ajaxDeleteButtonListeners = function () {
 	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
 	if (confirmDeleteYes) {
@@ -16489,6 +16522,7 @@ var loadAjaxPage = function (options) {
 						initModalWindows();
 						ajaxDeleteButtonListeners();
 						initDatalists();
+						initMedialists();
 					}
 					catch (ajaxPageError) {
 						handleUncaughtError(ajaxPageError);
@@ -16569,28 +16603,6 @@ var deleteContentSubmit = function (e) {
 				}
 			}
 		});
-};
-
-var confirmDeleteDialog = function (e) {
-	var eTarget = e.target,
-		posturl = eTarget.getAttribute('data-href'),
-		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
-		successfunction = eTarget.getAttribute('data-successfunction'),
-		donotnotify = eTarget.getAttribute('data-donotnotify');
-	e.preventDefault();
-
-	confirmDeleteYes.setAttribute('data-href', '#');
-	confirmDeleteYes.setAttribute('data-href', posturl);
-	if (deleteredirecthref) {
-		confirmDeleteYes.setAttribute('data-deleted-redirect-href', deleteredirecthref);
-	}
-	if (successfunction) {
-		confirmDeleteYes.setAttribute('data-successfunction', successfunction);
-	}
-	if (donotnotify) {
-		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
-	}
-	AdminModal.show('confirmdelete-modal');
 };
 
 var navlinkclickhandler = function (e) {
@@ -16818,6 +16830,12 @@ window.showStylieNotification = function (options) {
 	}).show();
 };
 
+window.adminRefresh = function () {
+	loadAjaxPage({
+		datahref: window.location.href
+	});
+};
+
 window.addEventListener('load', function () {
 	window.domLoadEventFired = true;
 	adminConsoleElement = document.querySelector('#ts-admin-console');
@@ -16866,13 +16884,15 @@ window.addEventListener('load', function () {
 	initServerSocketCallback();
 	ajaxDeleteButtonListeners();
 	initDatalists();
+	initMedialists();
 
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.logToAdminConsole = logToAdminConsole;
 	window.AdminModal = AdminModal;
+	window.loadAjaxPage = loadAjaxPage;
 });
 
-},{"./datalist":90,"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":106,"stylie.modals":91,"stylie.notifications":95,"stylie.tabs":102,"superagent":109}],90:[function(require,module,exports){
+},{"./datalist":90,"./medialist":91,"async":1,"bindie":3,"classie":8,"formie":10,"moment":2,"platterjs":29,"pushie":36,"socket.io-client":39,"stylie":107,"stylie.modals":92,"stylie.notifications":96,"stylie.tabs":103,"superagent":110}],90:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -16883,14 +16903,7 @@ var util = require('util'),
 	Bindie = require('bindie');
 
 var get_checkbox_template = function () {
-	var returnTemplateHTML = '<? for(var y in dataelements){ var dataelement=dataelements[y]; ?>';
-	returnTemplateHTML += '<span id="ts-datalist-tagged-cb-span-<?- dataelement.id ?>" class="ts-text-sm ts-margin-md ts-button" style="margin-left:0;" >';
-	returnTemplateHTML += '<input type="checkbox" id="ts-datalist-tagged-cb-<?- dataelement.id ?>" name="<?- dataelement.checkboxname ?>" value="<?- dataelement.id ?>" checked="checked" class="datalistcheckbox">';
-	returnTemplateHTML += ' <?- dataelement.title ?>';
-	returnTemplateHTML += '</span>';
-	returnTemplateHTML += '<?} ?>';
-
-	return returnTemplateHTML;
+	return document.querySelector('#compose_taxonomies_template').innerHTML; //returnTemplateHTML;
 };
 
 var makeNiceName = function (makenicename) {
@@ -16953,7 +16966,8 @@ var get_data_element_doc = function (options) {
 			id: data._id,
 			name: data.name,
 			title: data.title,
-			checkboxname: ajaxprop
+			checkboxname: ajaxprop,
+			source_data: options.data
 		};
 	return returnObject;
 };
@@ -17022,7 +17036,6 @@ tsdatalist.prototype.__addValueToDataList = function () {
 			// console.log('err, res', err, res);
 		}.bind(this));
 };
-
 
 /**
  * sets detects support for history push/pop/replace state and can set initial data
@@ -17115,15 +17128,17 @@ tsdatalist.prototype.__init = function () {
 
 	if (this.options.inputelement.getAttribute('data-ajax-setdata-variable')) {
 		presetdata = window[this.options.inputelement.getAttribute('data-ajax-setdata-variable')];
-		for (var z = 0; z < presetdata.length; z++) {
-			this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
-				data: get_generic_doc({
-					data: presetdata[z]
-				}),
-				ajaxprop: this.options.ajaxprop
-			});
+		if (presetdata) {
+			for (var z = 0; z < presetdata.length; z++) {
+				this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
+					data: get_generic_doc({
+						data: presetdata[z]
+					}),
+					ajaxprop: this.options.ajaxprop
+				});
+			}
+			this.__updateBindie();
 		}
-		this.__updateBindie();
 	}
 	initializing = false;
 
@@ -17131,7 +17146,223 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":3,"classie":8,"events":20,"superagent":109,"util":28,"util-extend":112}],91:[function(require,module,exports){
+},{"bindie":3,"classie":8,"events":20,"superagent":110,"util":28,"util-extend":113}],91:[function(require,module,exports){
+'use strict';
+
+var util = require('util'),
+	events = require('events'),
+	classie = require('classie'),
+	extend = require('util-extend'),
+	request = require('superagent'),
+	Bindie = require('bindie');
+
+var get_checkbox_template = function () {
+	return document.querySelector('#compose_assets_template').innerHTML; //returnTemplateHTML;
+};
+
+var makeNiceName = function (makenicename) {
+	return makenicename.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+};
+
+/**
+ * A module that represents a tsmedialist object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/tsmedialist}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor tsmedialist
+ * @requires module:events
+ * @requires module:util-extend
+ * @requires module:util
+ * @param {object} options configuration options
+ * @example 
+		tsmedialist_id: token(),
+		push_state_support: true,
+		replacecallback: function (data) {
+			console.log(data);
+		},
+		popcallback: function (data) {
+			console.log(data);
+		},
+		pushcallback: function (data) {
+			console.log(data);
+		}
+ */
+var tsmedialist = function (options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		element: {},
+		dataitems: {}
+	};
+	this.options = extend(defaultOptions, options);
+	this.init = this.__init;
+	this.init();
+	// this.addBinder = this._addBinder;
+};
+
+util.inherits(tsmedialist, events.EventEmitter);
+
+tsmedialist.prototype.__updateBindie = function () {
+	var new_data_items = this.options.dataitems;
+	this.options.medialistbindie.update({
+		data: {
+			dataitems: {
+				dataelements: new_data_items
+			}
+		}
+	});
+};
+
+var get_data_element_doc = function (options) {
+	var data = options.data,
+		ajaxprop = options.ajaxprop,
+		returnObject = {
+			id: data._id,
+			name: data.name,
+			title: data.title,
+			checkboxname: ajaxprop,
+			source_data: options.data,
+			primaryasset: options.primaryasset
+		};
+	return returnObject;
+};
+
+tsmedialist.prototype.__addValueToDataList = function () {
+	// var _csrfToken = document.querySelector('input[name="_csrf"]');
+	// this.options.inputelement.disabled = 'disabled';
+	window.AdminFormies[this.options.formietosubmit].submit();
+};
+
+
+/**
+ * sets detects support for history push/pop/replace state and can set initial data
+ * @emits initialized
+ */
+tsmedialist.prototype.__init = function () {
+	var medialistcontainer = document.createElement('div'),
+		medialistelement = document.createElement('datalist'),
+		selectelement = document.createElement('select'),
+		checkboxcontainerelement = document.createElement('div'),
+		inputelementcontainer = document.createElement('div'),
+		inputelement = document.createElement('input'),
+		submitbuttonelement = document.createElement('input'),
+		initialinputelement = this.options.element,
+		presetdata,
+		initializing = true;
+
+	checkboxcontainerelement.id = 'medialist-tagged-cb-container-' + this.options.element.id;
+	checkboxcontainerelement.addEventListener('click', function (e) {
+		// console.log(e.target);
+		if (classie.has(e.target, 'medialistcheckbox')) {
+			if (e.target.checked === false) {
+				delete this.options.dataitems[e.target.value];
+				this.__updateBindie();
+			}
+			// console.log('e.target.checked', e.target.checked);
+		}
+		else if (classie.has(e.target, 'primaryassetlistcheckbox')) {
+			var all_primary_asset_id = document.querySelector('#' + this.options.checkboxcontainerelementid).querySelectorAll('.primaryassetlistcheckbox');
+			for (var p = 0; p < all_primary_asset_id.length; p++) {
+				all_primary_asset_id[p].checked = false;
+				all_primary_asset_id[p].removeAttribute('checked');
+			}
+			e.target.setAttribute('checked', 'checked');
+			e.target.checked = true;
+			this.__addValueToDataList();
+		}
+	}.bind(this), false);
+	this.options.parentElement = this.options.element.parentElement;
+
+	this.options.ajaxprop = this.options.element.getAttribute('data-ajax-prop');
+	this.options.primaryasset = window[this.options.element.getAttribute('data-ajax-setprimaryasset-variable')];
+	this.options.elementid = this.options.element.id;
+	this.options.inputelement = inputelement;
+	this.options.checkboxcontainerelementid = checkboxcontainerelement.id;
+	this.options.ajaxhref = this.options.element.getAttribute('data-ajax-source');
+
+	inputelementcontainer.setAttribute('class', 'ts-row ts-form-row');
+	inputelement.setAttribute('class', 'ts-col-span12 ts-button');
+	inputelement.name = this.options.element.name;
+	inputelement.id = this.options.element.id;
+	inputelement.title = this.options.element.title;
+	inputelement.type = this.options.element.type;
+	inputelement.setAttribute('multiple', 'multiple');
+	inputelement.setAttribute('placeholder', this.options.element.getAttribute('placeholder'));
+	inputelement.setAttribute('data-bindiecallback', initialinputelement.getAttribute('data-bindiecallback'));
+	inputelement.setAttribute('data-ajax-setdata-variable', this.options.element.getAttribute('data-ajax-setdata-variable'));
+	inputelement.setAttribute('data-ajax-formie', this.options.element.getAttribute('data-ajax-formie'));
+
+	inputelement.addEventListener('keydown', function (e) {
+		if (e.which === 13 || e.keyCode === 13) {
+			this.__addValueToDataList();
+		}
+	}.bind(this), false);
+
+
+	inputelement.addEventListener('change', function () {
+		window.AdminFormies[this.options.formietosubmit].submit();
+	}.bind(this), false);
+
+	submitbuttonelement.setAttribute('class', 'ts-col-span4 ts-button ts-text-center');
+	submitbuttonelement.value = 'add';
+	submitbuttonelement.type = 'button';
+	submitbuttonelement.addEventListener('click', function () {
+		this.__addValueToDataList();
+	}.bind(this), false);
+
+	inputelementcontainer.appendChild(inputelement);
+	// inputelementcontainer.appendChild(submitbuttonelement);
+	medialistelement.appendChild(selectelement);
+	medialistcontainer.appendChild(medialistelement);
+	medialistcontainer.appendChild(inputelementcontainer);
+	medialistcontainer.appendChild(checkboxcontainerelement);
+	this.options.parentElement.appendChild(medialistcontainer);
+	this.options.parentElement.removeChild(this.options.element);
+
+	if (this.options.inputelement.getAttribute('data-ajax-formie')) {
+		this.options.formietosubmit = this.options.inputelement.getAttribute('data-ajax-formie');
+	}
+	this.options.medialistbindie = new Bindie({
+		ejsdelimiter: '?'
+	});
+	this.options.medialistbindie.addBinder({
+		prop: 'dataitems',
+		elementSelector: '#' + checkboxcontainerelement.getAttribute('id'),
+		binderType: 'template',
+		binderTemplate: get_checkbox_template(),
+		binderCallback: function (cbdata) {
+			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
+				successfn = window[successsubmitFunctionString];
+			// is object a function?
+			if (typeof successfn === 'function') {
+				successfn(cbdata);
+			}
+			if (this.options.formietosubmit && initializing === false) {
+				window.AdminFormies[this.options.formietosubmit].submit();
+			}
+		}.bind(this)
+	});
+
+	if (this.options.inputelement.getAttribute('data-ajax-setdata-variable')) {
+		presetdata = window[this.options.inputelement.getAttribute('data-ajax-setdata-variable')];
+		if (presetdata) {
+			for (var w = 0; w < presetdata.length; w++) {
+				this.options.dataitems[presetdata[w]._id] = get_data_element_doc({
+					data: presetdata[w],
+					ajaxprop: this.options.ajaxprop,
+					primaryasset: this.options.primaryasset
+				});
+			}
+			this.__updateBindie();
+		}
+	}
+	initializing = false;
+
+	this.emit('initialized');
+};
+module.exports = tsmedialist;
+
+},{"bindie":3,"classie":8,"events":20,"superagent":110,"util":28,"util-extend":113}],92:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -17143,7 +17374,7 @@ module.exports = tsdatalist;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":92}],92:[function(require,module,exports){
+},{"./lib/stylie.modals":93}],93:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -17307,11 +17538,11 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":93,"events":20,"util":28,"util-extend":112}],93:[function(require,module,exports){
+},{"classie":94,"events":20,"util":28,"util-extend":113}],94:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":94,"dup":8}],94:[function(require,module,exports){
+},{"./lib/classie":95,"dup":8}],95:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],95:[function(require,module,exports){
+},{"dup":9}],96:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -17323,7 +17554,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":96}],96:[function(require,module,exports){
+},{"./lib/stylie.notifications":97}],97:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -17520,11 +17751,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":97,"detectcss":99,"events":20,"util":28,"util-extend":101}],97:[function(require,module,exports){
+},{"classie":98,"detectcss":100,"events":20,"util":28,"util-extend":102}],98:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":98,"dup":8}],98:[function(require,module,exports){
+},{"./lib/classie":99,"dup":8}],99:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],99:[function(require,module,exports){
+},{"dup":9}],100:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -17534,7 +17765,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":100}],100:[function(require,module,exports){
+},{"./lib/detectCSS":101}],101:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -17573,9 +17804,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],102:[function(require,module,exports){
+},{"dup":7}],103:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -17587,7 +17818,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":103}],103:[function(require,module,exports){
+},{"./lib/stylie.tabs":104}],104:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -17687,11 +17918,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":104,"events":20,"util":28,"util-extend":112}],104:[function(require,module,exports){
+},{"classie":105,"events":20,"util":28,"util-extend":113}],105:[function(require,module,exports){
 arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":105,"dup":8}],105:[function(require,module,exports){
+},{"./lib/classie":106,"dup":8}],106:[function(require,module,exports){
 arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],106:[function(require,module,exports){
+},{"dup":9}],107:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17703,7 +17934,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":107}],107:[function(require,module,exports){
+},{"./lib/stylie":108}],108:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -17803,9 +18034,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":20,"util":28,"util-extend":108}],108:[function(require,module,exports){
+},{"events":20,"util":28,"util-extend":109}],109:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],109:[function(require,module,exports){
+},{"dup":7}],110:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18888,10 +19119,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":110,"reduce":111}],110:[function(require,module,exports){
+},{"emitter":111,"reduce":112}],111:[function(require,module,exports){
 arguments[4][16][0].apply(exports,arguments)
-},{"dup":16}],111:[function(require,module,exports){
+},{"dup":16}],112:[function(require,module,exports){
 arguments[4][17][0].apply(exports,arguments)
-},{"dup":17}],112:[function(require,module,exports){
+},{"dup":17}],113:[function(require,module,exports){
 arguments[4][7][0].apply(exports,arguments)
 },{"dup":7}]},{},[89]);
