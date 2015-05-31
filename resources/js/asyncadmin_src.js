@@ -178,7 +178,6 @@ var initCodemirrors = function () {
 	window.codeMirrors = codeMirrors;
 };
 
-
 var initDatalists = function () {
 	datalistelements = document.querySelectorAll('.ts-datalist-tagged');
 	for (var q = 0; q < datalistelements.length; q++) {
@@ -409,18 +408,6 @@ var confirmDeleteDialog = function (e) {
 	AdminModal.show('confirmdelete-modal');
 };
 
-var ajaxDeleteButtonListeners = function () {
-	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
-	if (confirmDeleteYes) {
-		confirmDeleteYes.addEventListener('click', deleteContentSubmit, false);
-	}
-	for (var x in deleteButtons) {
-		if (typeof deleteButtons[x] === 'object') {
-			deleteButtons[x].addEventListener('click', confirmDeleteDialog, false);
-		}
-	}
-};
-
 var loadAjaxPage = function (options) {
 	// window.console.clear();
 	closeMobileNav();
@@ -500,7 +487,8 @@ var loadAjaxPage = function (options) {
 						initTabs();
 						initModalWindows();
 						initCodemirrors();
-						ajaxDeleteButtonListeners();
+						initAjaxDeleteButtonListeners();
+						initAjaxSubmitButtonListeners();
 						initDatalists();
 						initMedialists();
 					}
@@ -515,6 +503,74 @@ var loadAjaxPage = function (options) {
 	}
 };
 
+var handle_ajax_button_response = function (e) {
+	var eTarget = e.target;
+	return function (error, res) {
+		endPreloader();
+		if (res && res.body && res.body.result === 'error') {
+			window.showStylieNotification({
+				message: res.body.data.error,
+				ttl: 7000,
+				type: 'error', // notice, warning, error or success
+			});
+		}
+		else if (res && res.clientError) {
+			window.showStylieNotification({
+				message: res.status + ': ' + res.text,
+				ttl: 7000,
+				type: 'error', // notice, warning, error or success
+			});
+		}
+		else if (error) {
+			window.showStylieNotification({
+				message: error.message,
+				ttl: 7000,
+				type: 'error', // notice, warning, error or success
+			});
+		}
+		else {
+			// console.log('!eTarget.getAttribute(data-donotnotify)', !eTarget.getAttribute('data-donotnotify'));
+			if (eTarget.getAttribute('data-donotnotify') !== 'do-not-notify') {
+				var successmessage = 'deleted successfully';
+				if (classie.has(eTarget, 'ts-dialog-delete')) {
+					successmessage = 'deleted successfully';
+				}
+				else if (res.body.message) {
+					successmessage = res.body.message;
+				}
+				else if (res.body.data && res.body.data.message) {
+					successmessage = res.body.data.message;
+				}
+				else {
+					successmessage = 'submitted successfully';
+				}
+
+				window.showStylieNotification({
+					message: successmessage,
+					ttl: 7000,
+					type: 'warn', // notice, warning, error or success
+				});
+
+			}
+
+			if (eTarget.getAttribute('data-successfunction')) {
+				var successFunctionString = eTarget.getAttribute('data-successfunction'),
+					successfn = window[successFunctionString];
+				// is object a function?
+				if (typeof successfn === 'function') {
+					successfn(res.body.data);
+				}
+			}
+			else if (eTarget.getAttribute('data-deleted-redirect-href')) {
+				var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
+				loadAjaxPage({
+					datahref: deleteredirecthref
+				});
+			}
+		}
+	};
+};
+
 var deleteContentSubmit = function (e) {
 	var eTarget = e.target,
 		posturl = eTarget.getAttribute('data-href');
@@ -526,63 +582,45 @@ var deleteContentSubmit = function (e) {
 		.query({
 			format: 'json'
 		})
-		.end(function (error, res) {
-			if (res && res.body && res.body.result === 'error') {
-				window.showStylieNotification({
-					message: res.body.data.error,
-					ttl: 7000,
-					// layout: options.layout || 'growl',
-					// effect: options.effect || 'jelly',
-					type: 'error', // notice, warning, error or success
-				});
-			}
-			else if (res && res.clientError) {
-				window.showStylieNotification({
-					message: res.status + ': ' + res.text,
-					ttl: 7000,
-					// layout: options.layout || 'growl',
-					// effect: options.effect || 'jelly',
-					type: 'error', // notice, warning, error or success
-				});
-			}
-			else if (error) {
-				window.showStylieNotification({
-					message: error.message,
-					ttl: 7000,
-					// layout: options.layout || 'growl',
-					// effect: options.effect || 'jelly',
-					type: 'error', // notice, warning, error or success
-				});
-			}
-			else {
-				console.log('!eTarget.getAttribute(data-donotnotify)', !eTarget.getAttribute('data-donotnotify'));
-				if (eTarget.getAttribute('data-donotnotify') !== 'do-not-notify') {
-					window.showStylieNotification({
-						message: 'deleted successfully',
-						ttl: 7000,
-						// layout: options.layout || 'growl',
-						// effect: options.effect || 'jelly',
-						type: 'warn', // notice, warning, error or success
-					});
+		.end(handle_ajax_button_response(e));
+};
 
-				}
+var submitAjaxButton = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href'),
+		postmethod = eTarget.getAttribute('data-ajax-method'),
+		ajaxrequest;
+	showPreloader();
+	ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
 
-				if (eTarget.getAttribute('data-successfunction')) {
-					var successFunctionString = eTarget.getAttribute('data-successfunction'),
-						successfn = window[successFunctionString];
-					// is object a function?
-					if (typeof successfn === 'function') {
-						successfn(res.body.data);
-					}
-				}
-				else if (eTarget.getAttribute('data-deleted-redirect-href')) {
-					var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
-					loadAjaxPage({
-						datahref: deleteredirecthref
-					});
-				}
-			}
-		});
+	ajaxrequest
+		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
+		.set('Accept', 'application/json')
+		.query({
+			format: 'json'
+		})
+		.end(handle_ajax_button_response(e));
+};
+
+var initAjaxDeleteButtonListeners = function () {
+	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
+	if (confirmDeleteYes) {
+		confirmDeleteYes.addEventListener('click', deleteContentSubmit, false);
+	}
+	for (var x in deleteButtons) {
+		if (typeof deleteButtons[x] === 'object') {
+			deleteButtons[x].addEventListener('click', confirmDeleteDialog, false);
+		}
+	}
+};
+
+var initAjaxSubmitButtonListeners = function () {
+	var ajaxButtons = document.querySelectorAll('.ts-ajax-button');
+	for (var x in ajaxButtons) {
+		if (typeof ajaxButtons[x] === 'object') {
+			ajaxButtons[x].addEventListener('click', submitAjaxButton, false);
+		}
+	}
 };
 
 var navlinkclickhandler = function (e) {
@@ -729,6 +767,24 @@ var adminConsolePlatterConfig = function () {
 	window.consolePlatter = consolePlatter;
 };
 
+window.showDefaultDataResponseModal = function (ajaxFormResponse) {
+	// console.log(ajaxFormResponse.body.data);
+	// seedcustomstatusoutputel.innerHTML = JSON.stringify(ajaxFormResponse.body.data, null, 2);
+	var predata = document.createElement('pre'),
+		h5element = document.createElement('h5'),
+		hrelement = document.createElement('hr');
+
+	h5element.innerHTML = 'Server Data Response';
+	predata.innerHTML = JSON.stringify(ajaxFormResponse, null, 2);
+	predata.setAttribute('class', 'ts-text-xs ts-overflow-auto');
+	predata.setAttribute('style', 'max-height:30em;');
+
+	window.servermodalElement.querySelector('#servermodal-content').innerHTML = '';
+	window.servermodalElement.querySelector('#servermodal-content').appendChild(h5element);
+	window.servermodalElement.querySelector('#servermodal-content').appendChild(hrelement);
+	window.servermodalElement.querySelector('#servermodal-content').appendChild(predata);
+	AdminModal.show('servermodal-modal');
+};
 window.showServerModal = function (data) {
 	servermodalElement.querySelector('#servermodal-content').innerHTML = data;
 	AdminModal.show('servermodal-modal');
@@ -740,7 +796,7 @@ window.showServerNotification = function (data) {
 
 window.getAsyncCallback = function (functiondata) {
 	return function (asyncCB) {
-		new StylieNotification({
+		window.shownStylieNotification = new StylieNotification({
 			message: functiondata.message,
 			ttl: functiondata.ttl,
 			wrapper: functiondata.wrapper,
@@ -799,7 +855,7 @@ window.showErrorNotificaton = function (options) {
 };
 
 window.showStylieNotification = function (options) {
-	new StylieNotification({
+	window.shownStylieNotification = new StylieNotification({
 		message: options.message,
 		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
 		wrapper: options.wrapper || document.querySelector('main'),
@@ -863,7 +919,8 @@ window.addEventListener('load', function () {
 	initModalWindows();
 	initCodemirrors();
 	initServerSocketCallback();
-	ajaxDeleteButtonListeners();
+	initAjaxDeleteButtonListeners();
+	initAjaxSubmitButtonListeners();
 	initDatalists();
 	initMedialists();
 
@@ -872,4 +929,5 @@ window.addEventListener('load', function () {
 	window.logToAdminConsole = logToAdminConsole;
 	window.AdminModal = AdminModal;
 	window.loadAjaxPage = loadAjaxPage;
+	window.StylieNotification = StylieNotification;
 });
