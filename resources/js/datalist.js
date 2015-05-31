@@ -12,7 +12,7 @@ var get_checkbox_template = function () {
 };
 
 var makeNiceName = function (makenicename) {
-	return makenicename.replace(/[^a-z0-9]/gi, '-').toLowerCase();
+	return makenicename.replace(/[^a-z0-9]/gi, '-');
 };
 
 /**
