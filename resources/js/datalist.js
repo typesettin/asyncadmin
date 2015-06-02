@@ -159,6 +159,7 @@ tsdatalist.prototype.__init = function () {
 		initializing = true;
 
 	checkboxcontainerelement.id = 'datalist-tagged-cb-container-' + this.options.element.id;
+	classie.add(checkboxcontainerelement, 'ts-datalist-cb');
 	checkboxcontainerelement.addEventListener('click', function (e) {
 		// console.log(e.target);
 		if (classie.has(e.target, 'datalistcheckbox')) {

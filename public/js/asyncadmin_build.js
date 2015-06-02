@@ -1125,7 +1125,928 @@
 }());
 
 }).call(this,require('_process'))
-},{"_process":38}],2:[function(require,module,exports){
+},{"_process":41}],2:[function(require,module,exports){
+/*
+ * EJS Embedded JavaScript templates
+ * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
+
+'use strict';
+
+/**
+ * @file Embedded JavaScript templating engine.
+ * @author Matthew Eernisse <mde@fleegix.org>
+ * @author Tiancheng "Timothy" Gu <timothygu99@gmail.com>
+ * @project EJS
+ * @license {@link http://www.apache.org/licenses/LICENSE-2.0 Apache License, Version 2.0}
+ */
+
+/**
+ * EJS internal functions.
+ *
+ * Technically this "module" lies in the same file as {@link module:ejs}, for
+ * the sake of organization all the private functions re grouped into this
+ * module.
+ *
+ * @module ejs-internal
+ * @private
+ */
+
+/**
+ * Embedded JavaScript templating engine.
+ *
+ * @module ejs
+ * @public
+ */
+
+var fs = require('fs')
+  , utils = require('./utils')
+  , scopeOptionWarned = false
+  , _VERSION_STRING = require('../package.json').version
+  , _DEFAULT_DELIMITER = '%'
+  , _DEFAULT_LOCALS_NAME = 'locals'
+  , _REGEX_STRING = '(<%%|<%=|<%-|<%#|<%|%>|-%>)'
+  , _OPTS = [ 'cache', 'filename', 'delimiter', 'scope', 'context'
+            , 'debug', 'compileDebug', 'client', '_with'
+            ]
+  , _TRAILING_SEMCOL = /;\s*$/
+  , _BOM = /^\uFEFF/;
+
+/**
+ * EJS template function cache. This can be a LRU object from lru-cache NPM
+ * module. By default, it is {@link module:utils.cache}, a simple in-process
+ * cache that grows continuously.
+ *
+ * @type {Cache}
+ */
+
+exports.cache = utils.cache;
+
+/**
+ * Name of the object containing the locals.
+ *
+ * This variable is overriden by {@link Options}`.localsName` if it is not
+ * `undefined`.
+ *
+ * @type {String}
+ * @public
+ */
+
+exports.localsName = _DEFAULT_LOCALS_NAME;
+
+/**
+ * Get the path to the included file from the parent file path and the
+ * specified path.
+ *
+ * @param {String} name     specified path
+ * @param {String} filename parent file path
+ * @return {String}
+ */
+
+exports.resolveInclude = function(name, filename) {
+  var path = require('path')
+    , dirname = path.dirname
+    , extname = path.extname
+    , resolve = path.resolve
+    , includePath = resolve(dirname(filename), name)
+    , ext = extname(name);
+  if (!ext) {
+    includePath += '.ejs';
+  }
+  return includePath;
+};
+
+/**
+ * Get the template from a string or a file, either compiled on-the-fly or
+ * read from cache (if enabled), and cache the template if needed.
+ *
+ * If `template` is not set, the file specified in `options.filename` will be
+ * read.
+ *
+ * If `options.cache` is true, this function reads the file from
+ * `options.filename` so it must be set prior to calling this function.
+ *
+ * @memberof module:ejs-internal
+ * @param {Options} options   compilation options
+ * @param {String} [template] template source
+ * @return {(TemplateFunction|ClientFunction)}
+ * Depending on the value of `options.client`, either type might be returned.
+ * @static
+ */
+
+function handleCache(options, template) {
+  var fn
+    , path = options.filename
+    , hasTemplate = template !== undefined;
+
+  if (options.cache) {
+    if (!path) {
+      throw new Error('cache option requires a filename');
+    }
+    fn = exports.cache.get(path);
+    if (fn) {
+      return fn;
+    }
+    if (!hasTemplate) {
+      template = fs.readFileSync(path).toString().replace(_BOM, '');
+    }
+  }
+  else if (!hasTemplate) {
+    // istanbul ignore if: should not happen at all
+    if (!path) {
+      throw new Error('Internal EJS error: no file name or template '
+                    + 'provided');
+    }
+    template = fs.readFileSync(path).toString().replace(_BOM, '');
+  }
+  fn = exports.compile(template, options);
+  if (options.cache) {
+    exports.cache.set(path, fn);
+  }
+  return fn;
+}
+
+/**
+ * Get the template function.
+ *
+ * If `options.cache` is `true`, then the template is cached.
+ *
+ * @memberof module:ejs-internal
+ * @param {String}  path    path for the specified file
+ * @param {Options} options compilation options
+ * @return {(TemplateFunction|ClientFunction)}
+ * Depending on the value of `options.client`, either type might be returned
+ * @static
+ */
+
+function includeFile(path, options) {
+  var opts = utils.shallowCopy({}, options);
+  if (!opts.filename) {
+    throw new Error('`include` requires the \'filename\' option.');
+  }
+  opts.filename = exports.resolveInclude(path, opts.filename);
+  return handleCache(opts);
+}
+
+/**
+ * Get the JavaScript source of an included file.
+ *
+ * @memberof module:ejs-internal
+ * @param {String}  path    path for the specified file
+ * @param {Options} options compilation options
+ * @return {String}
+ * @static
+ */
+
+function includeSource(path, options) {
+  var opts = utils.shallowCopy({}, options)
+    , includePath
+    , template;
+  if (!opts.filename) {
+    throw new Error('`include` requires the \'filename\' option.');
+  }
+  includePath = exports.resolveInclude(path, opts.filename);
+  template = fs.readFileSync(includePath).toString().replace(_BOM, '');
+
+  opts.filename = includePath;
+  var templ = new Template(template, opts);
+  templ.generateSource();
+  return templ.source;
+}
+
+/**
+ * Re-throw the given `err` in context to the `str` of ejs, `filename`, and
+ * `lineno`.
+ *
+ * @implements RethrowCallback
+ * @memberof module:ejs-internal
+ * @param {Error}  err      Error object
+ * @param {String} str      EJS source
+ * @param {String} filename file name of the EJS file
+ * @param {String} lineno   line number of the error
+ * @static
+ */
+
+function rethrow(err, str, filename, lineno){
+  var lines = str.split('\n')
+    , start = Math.max(lineno - 3, 0)
+    , end = Math.min(lines.length, lineno + 3);
+
+  // Error context
+  var context = lines.slice(start, end).map(function (line, i){
+    var curr = i + start + 1;
+    return (curr == lineno ? ' >> ' : '    ')
+      + curr
+      + '| '
+      + line;
+  }).join('\n');
+
+  // Alter exception message
+  err.path = filename;
+  err.message = (filename || 'ejs') + ':'
+    + lineno + '\n'
+    + context + '\n\n'
+    + err.message;
+
+  throw err;
+}
+
+/**
+ * Copy properties in data object that are recognized as options to an
+ * options object.
+ *
+ * This is used for compatibility with earlier versions of EJS and Express.js.
+ *
+ * @memberof module:ejs-internal
+ * @param {Object}  data data object
+ * @param {Options} opts options object
+ * @static
+ */
+
+function cpOptsInData(data, opts) {
+  _OPTS.forEach(function (p) {
+    if (typeof data[p] != 'undefined') {
+      opts[p] = data[p];
+    }
+  });
+}
+
+/**
+ * Compile the given `str` of ejs into a template function.
+ *
+ * @param {String}  template EJS template
+ *
+ * @param {Options} opts     compilation options
+ *
+ * @return {(TemplateFunction|ClientFunction)}
+ * Depending on the value of `opts.client`, either type might be returned.
+ * @public
+ */
+
+exports.compile = function compile(template, opts) {
+  var templ;
+
+  // v1 compat
+  // 'scope' is 'context'
+  // FIXME: Remove this in a future version
+  if (opts && opts.scope) {
+    if (!scopeOptionWarned){
+      console.warn('`scope` option is deprecated and will be removed in EJS 3');
+      scopeOptionWarned = true;
+    }
+    if (!opts.context) {
+      opts.context = opts.scope;
+    }
+    delete opts.scope;
+  }
+  templ = new Template(template, opts);
+  return templ.compile();
+};
+
+/**
+ * Render the given `template` of ejs.
+ *
+ * If you would like to include options but not data, you need to explicitly
+ * call this function with `data` being an empty object or `null`.
+ *
+ * @param {String}   template EJS template
+ * @param {Object}  [data={}] template data
+ * @param {Options} [opts={}] compilation and rendering options
+ * @return {String}
+ * @public
+ */
+
+exports.render = function (template, data, opts) {
+  data = data || {};
+  opts = opts || {};
+  var fn;
+
+  // No options object -- if there are optiony names
+  // in the data, copy them to options
+  if (arguments.length == 2) {
+    cpOptsInData(data, opts);
+  }
+
+  fn = handleCache(opts, template);
+  return fn.call(opts.context, data);
+};
+
+/**
+ * Render an EJS file at the given `path` and callback `cb(err, str)`.
+ *
+ * If you would like to include options but not data, you need to explicitly
+ * call this function with `data` being an empty object or `null`.
+ *
+ * @param {String}             path     path to the EJS file
+ * @param {Object}            [data={}] template data
+ * @param {Options}           [opts={}] compilation and rendering options
+ * @param {RenderFileCallback} cb callback
+ * @public
+ */
+
+exports.renderFile = function () {
+  var args = Array.prototype.slice.call(arguments)
+    , path = args.shift()
+    , cb = args.pop()
+    , data = args.shift() || {}
+    , opts = args.pop() || {}
+    , result;
+
+  // No options object -- if there are optiony names
+  // in the data, copy them to options
+  if (arguments.length == 3) {
+    cpOptsInData(data, opts);
+  }
+  opts.filename = path;
+
+  try {
+    result = handleCache(opts)(data);
+  }
+  catch(err) {
+    return cb(err);
+  }
+  return cb(null, result);
+};
+
+/**
+ * Clear intermediate JavaScript cache. Calls {@link Cache#reset}.
+ * @public
+ */
+
+exports.clearCache = function () {
+  exports.cache.reset();
+};
+
+function Template(text, opts) {
+  opts = opts || {};
+  var options = {};
+  this.templateText = text;
+  this.mode = null;
+  this.truncate = false;
+  this.currentLine = 1;
+  this.source = '';
+  options.client = opts.client || false;
+  options.escapeFunction = opts.escape || utils.escapeXML;
+  options.compileDebug = opts.compileDebug !== false;
+  options.debug = !!opts.debug;
+  options.filename = opts.filename;
+  options.delimiter = opts.delimiter || exports.delimiter || _DEFAULT_DELIMITER;
+  options._with = typeof opts._with != 'undefined' ? opts._with : true;
+  options.cache = opts.cache || false;
+  options.rmWhitespace = opts.rmWhitespace;
+  this.opts = options;
+
+  this.regex = this.createRegex();
+}
+
+Template.modes = {
+  EVAL: 'eval'
+, ESCAPED: 'escaped'
+, RAW: 'raw'
+, COMMENT: 'comment'
+, LITERAL: 'literal'
+};
+
+Template.prototype = {
+  createRegex: function () {
+    var str = _REGEX_STRING
+      , delim = utils.escapeRegExpChars(this.opts.delimiter);
+    str = str.replace(/%/g, delim);
+    return new RegExp(str);
+  }
+
+, compile: function () {
+    var src
+      , fn
+      , opts = this.opts
+      , escape = opts.escapeFunction;
+
+    if (opts.rmWhitespace) {
+      // Have to use two separate replace here as `^` and `$` operators don't
+      // work well with `\r`.
+      this.templateText =
+        this.templateText.replace(/\r/g, '').replace(/^\s+|\s+$/gm, '');
+    }
+    if (!this.source) {
+      this.generateSource();
+      var prepended = '  var __output = [];' + '\n';
+      if (opts._with !== false) {
+        prepended +=  '  with (' + exports.localsName + ' || {}) {' + '\n';
+      }
+      this.source  = prepended + this.source;
+      if (opts._with !== false) {
+        this.source += '  }' + '\n';
+      }
+      this.source += '  return __output.join("");' + '\n';
+    }
+
+    if (opts.compileDebug) {
+      src = 'var __line = 1' + '\n'
+          + '  , __lines = ' + JSON.stringify(this.templateText) + '\n'
+          + '  , __filename = ' + (opts.filename ?
+                JSON.stringify(opts.filename) : 'undefined') + ';' + '\n'
+          + 'try {' + '\n'
+          + this.source
+          + '} catch (e) {' + '\n'
+          + '  rethrow(e, __lines, __filename, __line);' + '\n'
+          + '}' + '\n';
+    }
+    else {
+      src = this.source;
+    }
+
+    if (opts.debug) {
+      console.log(src);
+    }
+
+    if (opts.client) {
+      src = 'escape = escape || ' + escape.toString() + ';' + '\n' + src;
+      if (opts.compileDebug) {
+        src = 'rethrow = rethrow || ' + rethrow.toString() + ';' + '\n' + src;
+      }
+    }
+
+    try {
+      fn = new Function(exports.localsName + ', escape, include, rethrow', src);
+    }
+    catch(e) {
+      // istanbul ignore else
+      if (e instanceof SyntaxError) {
+        if (opts.filename) {
+          e.message += ' in ' + opts.filename;
+        }
+        e.message += ' while compiling ejs';
+      }
+      throw e;
+    }
+
+    if (opts.client) {
+      return fn;
+    }
+
+    // Return a callable function which will execute the function
+    // created by the source-code, with the passed data as locals
+    return function (data) {
+      var include = function (path, includeData) {
+        var d = utils.shallowCopy({}, data);
+        if (includeData) {
+          d = utils.shallowCopy(d, includeData);
+        }
+        return includeFile(path, opts)(d);
+      };
+      return fn(data || {}, escape, include, rethrow);
+    };
+
+  }
+
+, generateSource: function () {
+    var self = this
+      , matches = this.parseTemplateText()
+      , d = this.opts.delimiter;
+
+    if (matches && matches.length) {
+      matches.forEach(function (line, index) {
+        var closing
+          , include
+          , includeOpts
+          , includeSrc;
+        // If this is an opening tag, check for closing tags
+        // FIXME: May end up with some false positives here
+        // Better to store modes as k/v with '<' + delimiter as key
+        // Then this can simply check against the map
+        if ( line.indexOf('<' + d) === 0        // If it is a tag
+          && line.indexOf('<' + d + d) !== 0) { // and is not escaped
+          closing = matches[index + 2];
+          if (!(closing == d + '>' || closing == '-' + d + '>')) {
+            throw new Error('Could not find matching close tag for "' + line + '".');
+          }
+        }
+        // HACK: backward-compat `include` preprocessor directives
+        if ((include = line.match(/^\s*include\s+(\S+)/))) {
+          includeOpts = utils.shallowCopy({}, self.opts);
+          includeSrc = includeSource(include[1], includeOpts);
+          includeSrc = '    ; (function(){' + '\n' + includeSrc + '    ; })()' + '\n';
+          self.source += includeSrc;
+        }
+        else {
+          self.scanLine(line);
+        }
+      });
+    }
+
+  }
+
+, parseTemplateText: function () {
+    var str = this.templateText
+      , pat = this.regex
+      , result = pat.exec(str)
+      , arr = []
+      , firstPos
+      , lastPos;
+
+    while (result) {
+      firstPos = result.index;
+      lastPos = pat.lastIndex;
+
+      if (firstPos !== 0) {
+        arr.push(str.substring(0, firstPos));
+        str = str.slice(firstPos);
+      }
+
+      arr.push(result[0]);
+      str = str.slice(result[0].length);
+      result = pat.exec(str);
+    }
+
+    if (str) {
+      arr.push(str);
+    }
+
+    return arr;
+  }
+
+, scanLine: function (line) {
+    var self = this
+      , d = this.opts.delimiter
+      , newLineCount = 0;
+
+    function _addOutput() {
+      if (self.truncate) {
+        line = line.replace('\n', '');
+        self.truncate = false;
+      }
+      else if (self.opts.rmWhitespace) {
+        // Gotta me more careful here.
+        // .replace(/^(\s*)\n/, '$1') might be more appropriate here but as
+        // rmWhitespace already removes trailing spaces anyway so meh.
+        line = line.replace(/^\n/, '');
+      }
+      if (!line) {
+        return;
+      }
+
+      // Preserve literal slashes
+      line = line.replace(/\\/g, '\\\\');
+
+      // Convert linebreaks
+      line = line.replace(/\n/g, '\\n');
+      line = line.replace(/\r/g, '\\r');
+
+      // Escape double-quotes
+      // - this will be the delimiter during execution
+      line = line.replace(/"/g, '\\"');
+      self.source += '    ; __output.push("' + line + '")' + '\n';
+    }
+
+    newLineCount = (line.split('\n').length - 1);
+
+    switch (line) {
+      case '<' + d:
+        this.mode = Template.modes.EVAL;
+        break;
+      case '<' + d + '=':
+        this.mode = Template.modes.ESCAPED;
+        break;
+      case '<' + d + '-':
+        this.mode = Template.modes.RAW;
+        break;
+      case '<' + d + '#':
+        this.mode = Template.modes.COMMENT;
+        break;
+      case '<' + d + d:
+        this.mode = Template.modes.LITERAL;
+        this.source += '    ; __output.push("' + line.replace('<' + d + d, '<' + d) + '")' + '\n';
+        break;
+      case d + '>':
+      case '-' + d + '>':
+        if (this.mode == Template.modes.LITERAL) {
+          _addOutput();
+        }
+
+        this.mode = null;
+        this.truncate = line.indexOf('-') === 0;
+        break;
+      default:
+        // In script mode, depends on type of tag
+        if (this.mode) {
+          // If '//' is found without a line break, add a line break.
+          switch (this.mode) {
+            case Template.modes.EVAL:
+            case Template.modes.ESCAPED:
+            case Template.modes.RAW:
+              if (line.lastIndexOf('//') > line.lastIndexOf('\n')) {
+                line += '\n';
+              }
+          }
+          switch (this.mode) {
+            // Just executing code
+            case Template.modes.EVAL:
+              this.source += '    ; ' + line + '\n';
+              break;
+            // Exec, esc, and output
+            case Template.modes.ESCAPED:
+              this.source += '    ; __output.push(escape(' +
+                line.replace(_TRAILING_SEMCOL, '').trim() + '))' + '\n';
+              break;
+            // Exec and output
+            case Template.modes.RAW:
+              this.source += '    ; __output.push(' +
+                line.replace(_TRAILING_SEMCOL, '').trim() + ')' + '\n';
+              break;
+            case Template.modes.COMMENT:
+              // Do nothing
+              break;
+            // Literal <%% mode, append as raw output
+            case Template.modes.LITERAL:
+              _addOutput();
+              break;
+          }
+        }
+        // In string mode, just add the output
+        else {
+          _addOutput();
+        }
+    }
+
+    if (self.opts.compileDebug && newLineCount) {
+      this.currentLine += newLineCount;
+      this.source += '    ; __line = ' + this.currentLine + '\n';
+    }
+  }
+};
+
+/**
+ * Express.js support.
+ *
+ * This is an alias for {@link module:ejs.renderFile}, in order to support
+ * Express.js out-of-the-box.
+ *
+ * @func
+ */
+
+exports.__express = exports.renderFile;
+
+// Add require support
+/* istanbul ignore else */
+if (require.extensions) {
+  require.extensions['.ejs'] = function (module, filename) {
+    filename = filename || /* istanbul ignore next */ module.filename;
+    var options = {
+          filename: filename
+        , client: true
+        }
+      , template = fs.readFileSync(filename).toString()
+      , fn = exports.compile(template, options);
+    module._compile('module.exports = ' + fn.toString() + ';', filename);
+  };
+}
+
+/**
+ * Version of EJS.
+ *
+ * @readonly
+ * @type {String}
+ * @public
+ */
+
+exports.VERSION = _VERSION_STRING;
+
+/* istanbul ignore if */
+if (typeof window != 'undefined') {
+  window.ejs = exports;
+}
+
+},{"../package.json":4,"./utils":3,"fs":37,"path":40}],3:[function(require,module,exports){
+/*
+ * EJS Embedded JavaScript templates
+ * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *         http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+*/
+
+/**
+ * Private utility functions
+ * @module utils
+ * @private
+ */
+
+'use strict';
+
+var regExpChars = /[|\\{}()[\]^$+*?.]/g;
+
+/**
+ * Escape characters reserved in regular expressions.
+ *
+ * If `string` is `undefined` or `null`, the empty string is returned.
+ *
+ * @param {String} string Input string
+ * @return {String} Escaped string
+ * @static
+ * @private
+ */
+exports.escapeRegExpChars = function (string) {
+  // istanbul ignore if
+  if (!string) {
+    return '';
+  }
+  return String(string).replace(regExpChars, '\\$&');
+};
+
+var _ENCODE_HTML_RULES = {
+      '&': '&amp;'
+    , '<': '&lt;'
+    , '>': '&gt;'
+    , '"': '&#34;'
+    , "'": '&#39;'
+    }
+  , _MATCH_HTML = /[&<>\'"]/g;
+
+/**
+ * Stringified version of constants used by {@link module:utils.escapeXML}.
+ *
+ * It is used in the process of generating {@link ClientFunction}s.
+ *
+ * @readonly
+ * @type {String}
+ */
+
+var escapeFuncStr =
+  'var _ENCODE_HTML_RULES = {\n'
++ '      "&": "&amp;"\n'
++ '    , "<": "&lt;"\n'
++ '    , ">": "&gt;"\n'
++ '    , \'"\': "&#34;"\n'
++ '    , "\'": "&#39;"\n'
++ '    }\n'
++ '  , _MATCH_HTML = /[&<>\'"]/g;\n';
+
+/**
+ * Escape characters reserved in XML.
+ *
+ * If `markup` is `undefined` or `null`, the empty string is returned.
+ *
+ * @implements {EscapeCallback}
+ * @param {String} markup Input string
+ * @return {String} Escaped string
+ * @static
+ * @private
+ */
+exports.escapeXML = function (markup) {
+  return markup == undefined
+    ? ''
+    : String(markup)
+        .replace(_MATCH_HTML, function(m) {
+          return _ENCODE_HTML_RULES[m] || m;
+        });
+};
+exports.escapeXML.toString = function () {
+  return Function.prototype.toString.call(this) + ';\n' + escapeFuncStr
+};
+
+/**
+ * Copy all properties from one object to another, in a shallow fashion.
+ *
+ * @param  {Object} to   Destination object
+ * @param  {Object} from Source object
+ * @return {Object}      Destination object
+ * @static
+ * @private
+ */
+exports.shallowCopy = function (to, from) {
+  from = from || {};
+  for (var p in from) {
+    to[p] = from[p];
+  }
+  return to;
+};
+
+/**
+ * Simple in-process cache implementation. Does not implement limits of any
+ * sort.
+ *
+ * @implements Cache
+ * @static
+ * @private
+ */
+exports.cache = {
+  _data: {},
+  set: function (key, val) {
+    this._data[key] = val;
+  },
+  get: function (key) {
+    return this._data[key];
+  },
+  reset: function () {
+    this._data = {};
+  }
+};
+
+
+},{}],4:[function(require,module,exports){
+module.exports={
+  "name": "ejs",
+  "description": "Embedded JavaScript templates",
+  "keywords": [
+    "template",
+    "engine",
+    "ejs"
+  ],
+  "version": "2.3.1",
+  "author": {
+    "name": "Matthew Eernisse",
+    "email": "mde@fleegix.org",
+    "url": "http://fleegix.org"
+  },
+  "contributors": [
+    {
+      "name": "Timothy Gu",
+      "email": "timothygu99@gmail.com",
+      "url": "https://timothygu.github.io"
+    }
+  ],
+  "license": "Apache-2.0",
+  "main": "./lib/ejs.js",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/mde/ejs.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mde/ejs/issues"
+  },
+  "homepage": "https://github.com/mde/ejs",
+  "dependencies": {},
+  "devDependencies": {
+    "browserify": "^8.0.3",
+    "istanbul": "~0.3.5",
+    "jake": "^8.0.0",
+    "jsdoc": "^3.3.0-beta1",
+    "lru-cache": "^2.5.0",
+    "mocha": "^2.1.0",
+    "rimraf": "^2.2.8",
+    "uglify-js": "^2.4.16"
+  },
+  "engines": {
+    "node": ">=0.10.0"
+  },
+  "scripts": {
+    "test": "mocha",
+    "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
+    "doc": "rimraf out && jsdoc -c jsdoc.json lib/* docs/jsdoc/*",
+    "devdoc": "rimraf out && jsdoc -p -c jsdoc.json lib/* docs/jsdoc/*"
+  },
+  "_id": "ejs@2.3.1",
+  "_shasum": "a697d98ac401e32a99c3deed92c60c19b6199a7f",
+  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.3.1.tgz",
+  "_from": "ejs@2.3.1",
+  "_npmVersion": "2.1.11",
+  "_nodeVersion": "0.10.33",
+  "_npmUser": {
+    "name": "mde",
+    "email": "mde@fleegix.org"
+  },
+  "maintainers": [
+    {
+      "name": "tjholowaychuk",
+      "email": "tj@vision-media.ca"
+    },
+    {
+      "name": "mde",
+      "email": "mde@fleegix.org"
+    }
+  ],
+  "dist": {
+    "shasum": "a697d98ac401e32a99c3deed92c60c19b6199a7f",
+    "tarball": "http://registry.npmjs.org/ejs/-/ejs-2.3.1.tgz"
+  },
+  "directories": {},
+  "readme": "ERROR: No README data found!"
+}
+
+},{}],5:[function(require,module,exports){
 (function (global){
 //! moment.js
 //! version : 2.9.0
@@ -4172,7 +5093,7 @@
 }).call(this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],3:[function(require,module,exports){
+},{}],6:[function(require,module,exports){
 /*
  * bindie
  * http://github.amexpub.com/modules/bindie
@@ -4184,7 +5105,7 @@
 
 module.exports = require('./lib/bindie');
 
-},{"./lib/bindie":4}],4:[function(require,module,exports){
+},{"./lib/bindie":7}],7:[function(require,module,exports){
 /*
  * bindie
  * http://github.com/yawetse/bindie
@@ -4318,7 +5239,7 @@ bindie.prototype._render = function (options) {
 };
 module.exports = bindie;
 
-},{"ejs":5,"events":35,"util":43,"util-extend":7}],5:[function(require,module,exports){
+},{"ejs":8,"events":38,"util":46,"util-extend":10}],8:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -4850,7 +5771,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"./utils":6,"fs":34,"path":37}],6:[function(require,module,exports){
+},{"./utils":9,"fs":37,"path":40}],9:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -4905,7 +5826,7 @@ exports.shallowCopy = function (to, from) {
 };
 
 
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -4940,7 +5861,7 @@ function extend(origin, add) {
   return origin;
 }
 
-},{}],8:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 /*
  * classie
  * http://github.amexpub.com/modules/classie
@@ -4950,7 +5871,7 @@ function extend(origin, add) {
 
 module.exports = require('./lib/classie');
 
-},{"./lib/classie":9}],9:[function(require,module,exports){
+},{"./lib/classie":12}],12:[function(require,module,exports){
 /*!
  * classie - class helper functions
  * from bonzo https://github.com/ded/bonzo
@@ -5033,7 +5954,7 @@ module.exports = require('./lib/classie');
   if ( typeof window === "object" && typeof window.document === "object" ) {
     window.classie = classie;
   }
-},{}],10:[function(require,module,exports){
+},{}],13:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5218,7 +6139,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":19}],11:[function(require,module,exports){
+},{"../../lib/codemirror":22}],14:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5305,7 +6226,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":19}],12:[function(require,module,exports){
+},{"../../lib/codemirror":22}],15:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5427,7 +6348,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":19}],13:[function(require,module,exports){
+},{"../../lib/codemirror":22}],16:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5534,7 +6455,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":19}],14:[function(require,module,exports){
+},{"../../lib/codemirror":22}],17:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5593,7 +6514,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
 
 });
 
-},{"../../lib/codemirror":19}],15:[function(require,module,exports){
+},{"../../lib/codemirror":22}],18:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5744,7 +6665,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   });
 });
 
-},{"../../lib/codemirror":19}],16:[function(require,module,exports){
+},{"../../lib/codemirror":22}],19:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5892,7 +6813,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   }
 });
 
-},{"../../lib/codemirror":19,"./foldcode":15}],17:[function(require,module,exports){
+},{"../../lib/codemirror":22,"./foldcode":18}],20:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -5938,7 +6859,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":19}],18:[function(require,module,exports){
+},{"../../lib/codemirror":22}],21:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6063,7 +6984,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
 });
 
-},{"../../lib/codemirror":19}],19:[function(require,module,exports){
+},{"../../lib/codemirror":22}],22:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -14810,7 +15731,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   return CodeMirror;
 });
 
-},{}],20:[function(require,module,exports){
+},{}],23:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -15566,7 +16487,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
 
 });
 
-},{"../../lib/codemirror":19}],21:[function(require,module,exports){
+},{"../../lib/codemirror":22}],24:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -15596,7 +16517,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
   CodeMirror.defineMIME("application/x-erb", {name: "htmlembedded", scriptingModeSpec:"ruby"});
 });
 
-},{"../../addon/mode/multiplex":18,"../../lib/codemirror":19,"../htmlmixed/htmlmixed":22}],22:[function(require,module,exports){
+},{"../../addon/mode/multiplex":21,"../../lib/codemirror":22,"../htmlmixed/htmlmixed":25}],25:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -15719,7 +16640,7 @@ CodeMirror.defineMIME("text/html", "htmlmixed");
 
 });
 
-},{"../../lib/codemirror":19,"../css/css":20,"../javascript/javascript":23,"../xml/xml":24}],23:[function(require,module,exports){
+},{"../../lib/codemirror":22,"../css/css":23,"../javascript/javascript":26,"../xml/xml":27}],26:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16422,7 +17343,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"../../lib/codemirror":19}],24:[function(require,module,exports){
+},{"../../lib/codemirror":22}],27:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16808,7 +17729,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"../../lib/codemirror":19}],25:[function(require,module,exports){
+},{"../../lib/codemirror":22}],28:[function(require,module,exports){
 /*
  * formie
  * http://github.amexpub.com/modules/formie
@@ -16820,7 +17741,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 module.exports = require('./lib/formie');
 
-},{"./lib/formie":26}],26:[function(require,module,exports){
+},{"./lib/formie":29}],29:[function(require,module,exports){
 /*
  * formie
  * http://github.com/yawetse/formie
@@ -17179,9 +18100,9 @@ formie.prototype._init = function () {
 };
 module.exports = formie;
 
-},{"async":27,"classie":8,"events":35,"forbject":28,"querystring":41,"superagent":30,"util":43,"util-extend":33}],27:[function(require,module,exports){
+},{"async":30,"classie":11,"events":38,"forbject":31,"querystring":44,"superagent":33,"util":46,"util-extend":36}],30:[function(require,module,exports){
 arguments[4][1][0].apply(exports,arguments)
-},{"_process":38,"dup":1}],28:[function(require,module,exports){
+},{"_process":41,"dup":1}],31:[function(require,module,exports){
 /*
  * forbject
  * http://github.amexpub.com/modules/forbject
@@ -17193,7 +18114,7 @@ arguments[4][1][0].apply(exports,arguments)
 
 module.exports = require('./lib/forbject');
 
-},{"./lib/forbject":29}],29:[function(require,module,exports){
+},{"./lib/forbject":32}],32:[function(require,module,exports){
 /*
  * forbject
  * http://github.com/yawetse/forbject
@@ -17446,7 +18367,7 @@ forbject.prototype.setFormObj = function () {
 };
 module.exports = forbject;
 
-},{"events":35,"util":43,"util-extend":33}],30:[function(require,module,exports){
+},{"events":38,"util":46,"util-extend":36}],33:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -18559,7 +19480,7 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":31,"reduce":32}],31:[function(require,module,exports){
+},{"emitter":34,"reduce":35}],34:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -18725,7 +19646,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],32:[function(require,module,exports){
+},{}],35:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -18750,11 +19671,11 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}],33:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],34:[function(require,module,exports){
+},{}],36:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],37:[function(require,module,exports){
 
-},{}],35:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19057,7 +19978,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],36:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -19082,7 +20003,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],37:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -19310,7 +20231,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":38}],38:[function(require,module,exports){
+},{"_process":41}],41:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -19369,7 +20290,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],39:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19455,7 +20376,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],40:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -19542,20 +20463,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],41:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":39,"./encode":40}],42:[function(require,module,exports){
+},{"./decode":42,"./encode":43}],45:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],43:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -20145,7 +21066,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":42,"_process":38,"inherits":36}],44:[function(require,module,exports){
+},{"./support/isBuffer":45,"_process":41,"inherits":39}],47:[function(require,module,exports){
 /*
  * platter
  * http://github.com/typesettin/platter
@@ -20155,7 +21076,7 @@ function hasOwnProperty(obj, prop) {
 
 module.exports = require('./lib/platter');
 
-},{"./lib/platter":45}],45:[function(require,module,exports){
+},{"./lib/platter":48}],48:[function(require,module,exports){
 /*
  * manuscript
  * http://github.com/typesettin/platter
@@ -20462,11 +21383,11 @@ module.exports = platter;
 if ( typeof window === 'object' && typeof window.document === 'object' ) {
 	window.platter = platter;
 }
-},{"classie":46,"domhelper":48,"events":35,"util":43,"util-extend":50}],46:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":47,"dup":8}],47:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],48:[function(require,module,exports){
+},{"classie":49,"domhelper":51,"events":38,"util":46,"util-extend":53}],49:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"./lib/classie":50,"dup":11}],50:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],51:[function(require,module,exports){
 /*
  * domhelper
  * http://github.com/yawetse/domhelper
@@ -20476,7 +21397,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/domhelper');
 
-},{"./lib/domhelper":49}],49:[function(require,module,exports){
+},{"./lib/domhelper":52}],52:[function(require,module,exports){
 /*
  * linotype
  * https://github.com/typesettin/linotype
@@ -20816,9 +21737,9 @@ module.exports = domhelper;
 if ( typeof window === "object" && typeof window.document === "object" ) {
 	window.domhelper = domhelper;
 }
-},{"classie":46}],50:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],51:[function(require,module,exports){
+},{"classie":49}],53:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],54:[function(require,module,exports){
 /*
  * pushie
  * http://github.amexpub.com/modules/pushie
@@ -20830,7 +21751,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":52}],52:[function(require,module,exports){
+},{"./lib/pushie":55}],55:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -21001,13 +21922,13 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":35,"util":43,"util-extend":53}],53:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],54:[function(require,module,exports){
+},{"events":38,"util":46,"util-extend":56}],56:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],57:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
-},{"./lib/":55}],55:[function(require,module,exports){
+},{"./lib/":58}],58:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -21096,7 +22017,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":56,"./socket":58,"./url":59,"debug":63,"socket.io-parser":99}],56:[function(require,module,exports){
+},{"./manager":59,"./socket":61,"./url":62,"debug":66,"socket.io-parser":102}],59:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -21601,7 +22522,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":57,"./socket":58,"./url":59,"backo2":60,"component-bind":61,"component-emitter":62,"debug":63,"engine.io-client":64,"indexof":95,"object-component":96,"socket.io-parser":99}],57:[function(require,module,exports){
+},{"./on":60,"./socket":61,"./url":62,"backo2":63,"component-bind":64,"component-emitter":65,"debug":66,"engine.io-client":67,"indexof":98,"object-component":99,"socket.io-parser":102}],60:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -21627,7 +22548,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],58:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -22014,7 +22935,7 @@ Socket.prototype.disconnect = function(){
   return this;
 };
 
-},{"./on":57,"component-bind":61,"component-emitter":62,"debug":63,"has-binary":93,"socket.io-parser":99,"to-array":103}],59:[function(require,module,exports){
+},{"./on":60,"component-bind":64,"component-emitter":65,"debug":66,"has-binary":96,"socket.io-parser":102,"to-array":106}],62:[function(require,module,exports){
 (function (global){
 
 /**
@@ -22091,7 +23012,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":63,"parseuri":97}],60:[function(require,module,exports){
+},{"debug":66,"parseuri":100}],63:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -22178,7 +23099,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],61:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -22203,9 +23124,9 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],62:[function(require,module,exports){
-arguments[4][31][0].apply(exports,arguments)
-},{"dup":31}],63:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
+arguments[4][34][0].apply(exports,arguments)
+},{"dup":34}],66:[function(require,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -22344,11 +23265,11 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],64:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":65}],65:[function(require,module,exports){
+},{"./lib/":68}],68:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -22360,7 +23281,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":66,"engine.io-parser":78}],66:[function(require,module,exports){
+},{"./socket":69,"engine.io-parser":81}],69:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -23069,7 +23990,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":67,"./transports":68,"component-emitter":62,"debug":75,"engine.io-parser":78,"indexof":95,"parsejson":89,"parseqs":90,"parseuri":91}],67:[function(require,module,exports){
+},{"./transport":70,"./transports":71,"component-emitter":65,"debug":78,"engine.io-parser":81,"indexof":98,"parsejson":92,"parseqs":93,"parseuri":94}],70:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -23230,7 +24151,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":62,"engine.io-parser":78}],68:[function(require,module,exports){
+},{"component-emitter":65,"engine.io-parser":81}],71:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -23287,7 +24208,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":69,"./polling-xhr":70,"./websocket":72,"xmlhttprequest":73}],69:[function(require,module,exports){
+},{"./polling-jsonp":72,"./polling-xhr":73,"./websocket":75,"xmlhttprequest":76}],72:[function(require,module,exports){
 (function (global){
 
 /**
@@ -23524,7 +24445,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":71,"component-inherit":74}],70:[function(require,module,exports){
+},{"./polling":74,"component-inherit":77}],73:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -23912,7 +24833,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":71,"component-emitter":62,"component-inherit":74,"debug":75,"xmlhttprequest":73}],71:[function(require,module,exports){
+},{"./polling":74,"component-emitter":65,"component-inherit":77,"debug":78,"xmlhttprequest":76}],74:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -24159,7 +25080,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + this.hostname + port + this.path + query;
 };
 
-},{"../transport":67,"component-inherit":74,"debug":75,"engine.io-parser":78,"parseqs":90,"xmlhttprequest":73}],72:[function(require,module,exports){
+},{"../transport":70,"component-inherit":77,"debug":78,"engine.io-parser":81,"parseqs":93,"xmlhttprequest":76}],75:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -24399,7 +25320,7 @@ WS.prototype.check = function(){
   return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
 };
 
-},{"../transport":67,"component-inherit":74,"debug":75,"engine.io-parser":78,"parseqs":90,"ws":92}],73:[function(require,module,exports){
+},{"../transport":70,"component-inherit":77,"debug":78,"engine.io-parser":81,"parseqs":93,"ws":95}],76:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -24437,7 +25358,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":87}],74:[function(require,module,exports){
+},{"has-cors":90}],77:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -24445,7 +25366,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],75:[function(require,module,exports){
+},{}],78:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -24594,7 +25515,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":76}],76:[function(require,module,exports){
+},{"./debug":79}],79:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -24793,7 +25714,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":77}],77:[function(require,module,exports){
+},{"ms":80}],80:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -24906,7 +25827,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],78:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -25504,7 +26425,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":79,"after":80,"arraybuffer.slice":81,"base64-arraybuffer":82,"blob":83,"has-binary":84,"utf8":86}],79:[function(require,module,exports){
+},{"./keys":82,"after":83,"arraybuffer.slice":84,"base64-arraybuffer":85,"blob":86,"has-binary":87,"utf8":89}],82:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -25525,7 +26446,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],80:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -25555,7 +26476,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],81:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -25586,7 +26507,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],82:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -25647,7 +26568,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],83:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -25700,7 +26621,7 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],84:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 (function (global){
 
 /*
@@ -25762,12 +26683,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":85}],85:[function(require,module,exports){
+},{"isarray":88}],88:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],86:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -26010,7 +26931,7 @@ module.exports = Array.isArray || function (arr) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],87:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26035,7 +26956,7 @@ try {
   module.exports = false;
 }
 
-},{"global":88}],88:[function(require,module,exports){
+},{"global":91}],91:[function(require,module,exports){
 
 /**
  * Returns `this`. Execute this without a "context" (i.e. without it being
@@ -26045,7 +26966,7 @@ try {
 
 module.exports = (function () { return this; })();
 
-},{}],89:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -26080,7 +27001,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],90:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -26119,7 +27040,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],91:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -26160,7 +27081,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],92:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26205,7 +27126,7 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],93:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 (function (global){
 
 /*
@@ -26267,9 +27188,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":94}],94:[function(require,module,exports){
-arguments[4][85][0].apply(exports,arguments)
-},{"dup":85}],95:[function(require,module,exports){
+},{"isarray":97}],97:[function(require,module,exports){
+arguments[4][88][0].apply(exports,arguments)
+},{"dup":88}],98:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -26280,7 +27201,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],96:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 
 /**
  * HOP ref.
@@ -26365,7 +27286,7 @@ exports.length = function(obj){
 exports.isEmpty = function(obj){
   return 0 == exports.length(obj);
 };
-},{}],97:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -26392,7 +27313,7 @@ module.exports = function parseuri(str) {
   return uri;
 };
 
-},{}],98:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -26537,7 +27458,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":100,"isarray":101}],99:[function(require,module,exports){
+},{"./is-buffer":103,"isarray":104}],102:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26939,7 +27860,7 @@ function error(data){
   };
 }
 
-},{"./binary":98,"./is-buffer":100,"component-emitter":62,"debug":63,"isarray":101,"json3":102}],100:[function(require,module,exports){
+},{"./binary":101,"./is-buffer":103,"component-emitter":65,"debug":66,"isarray":104,"json3":105}],103:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -26956,9 +27877,9 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],101:[function(require,module,exports){
-arguments[4][85][0].apply(exports,arguments)
-},{"dup":85}],102:[function(require,module,exports){
+},{}],104:[function(require,module,exports){
+arguments[4][88][0].apply(exports,arguments)
+},{"dup":88}],105:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -27821,7 +28742,7 @@ arguments[4][85][0].apply(exports,arguments)
   }
 }(this));
 
-},{}],103:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -27836,7 +28757,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],104:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 'use strict';
 var ajaxlinks,
 	// ajaxforms,
@@ -27852,6 +28773,10 @@ var ajaxlinks,
 	io = require('socket.io-client'),
 	socket,
 	asyncAdminPushie,
+	ejs = require('ejs'),
+	content_attribute_template,
+	content_attribute_HTML,
+	content_attribute_content_html,
 	async = require('async'),
 	classie = require('classie'),
 	CodeMirror = require('codemirror'),
@@ -28141,6 +29066,12 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	var ct_attr_selector = document.querySelector('#ct-attr-template');
+	if (ct_attr_selector) {
+
+		content_attribute_template = ct_attr_selector.innerHTML;
+		content_attribute_content_html = document.querySelector('#doc-ct-attr');
+	}
 	AdminFormies = {};
 	//console.log('ajaxforms', ajaxforms);
 	try {
@@ -28705,6 +29636,36 @@ window.showStylieNotification = function (options) {
 	}).show();
 };
 
+window.showStylieAlert = function (options) {
+	window.shownStylieNotification = new StylieNotification({
+		message: options.message,
+		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
+		wrapper: options.wrapper || document.querySelector('main'),
+		layout: options.layout || 'growl',
+		effect: options.effect || 'slide',
+		type: options.type, // notice, warning, error or success
+		onClose: options.onClose || function () {}
+	}).show();
+};
+
+
+window.refresh_content_attributes_media = function (data) {
+	var genericdoc = data.body.data.doc;
+	if (content_attribute_template) {
+		content_attribute_HTML = ejs.render(content_attribute_template, {
+			genericdoc: genericdoc
+		});
+		content_attribute_content_html.innerHTML = content_attribute_HTML;
+	}
+
+	if (document.querySelectorAll('.medialistcheckbox').length !== genericdoc.assets.length) {
+		console.log('document.querySelectorAll(.medialistcheckbox).length', document.querySelectorAll('.medialistcheckbox').length);
+		console.log('genericdoc.assets.length', genericdoc.assets.length);
+		// console.log('do a window refresh');
+		window.adminRefresh();
+	}
+};
+
 window.adminRefresh = function () {
 	loadAjaxPage({
 		datahref: window.location.href
@@ -28734,7 +29695,7 @@ window.addEventListener('load', function () {
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');
-
+	ejs.delimiter = '?';
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
@@ -28771,7 +29732,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../node_modules/codemirror/addon/comment/comment":10,"../../node_modules/codemirror/addon/comment/continuecomment":11,"../../node_modules/codemirror/addon/edit/matchbrackets":12,"../../node_modules/codemirror/addon/fold/brace-fold":13,"../../node_modules/codemirror/addon/fold/comment-fold":14,"../../node_modules/codemirror/addon/fold/foldcode":15,"../../node_modules/codemirror/addon/fold/foldgutter":16,"../../node_modules/codemirror/addon/fold/indent-fold":17,"../../node_modules/codemirror/mode/css/css":20,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":21,"../../node_modules/codemirror/mode/javascript/javascript":23,"./datalist":105,"./medialist":106,"async":1,"bindie":3,"classie":8,"codemirror":19,"formie":25,"moment":2,"platterjs":44,"pushie":51,"socket.io-client":54,"stylie":122,"stylie.modals":107,"stylie.notifications":111,"stylie.tabs":118,"superagent":125}],105:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":13,"../../node_modules/codemirror/addon/comment/continuecomment":14,"../../node_modules/codemirror/addon/edit/matchbrackets":15,"../../node_modules/codemirror/addon/fold/brace-fold":16,"../../node_modules/codemirror/addon/fold/comment-fold":17,"../../node_modules/codemirror/addon/fold/foldcode":18,"../../node_modules/codemirror/addon/fold/foldgutter":19,"../../node_modules/codemirror/addon/fold/indent-fold":20,"../../node_modules/codemirror/mode/css/css":23,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":24,"../../node_modules/codemirror/mode/javascript/javascript":26,"./datalist":108,"./medialist":109,"async":1,"bindie":6,"classie":11,"codemirror":22,"ejs":2,"formie":28,"moment":5,"platterjs":47,"pushie":54,"socket.io-client":57,"stylie":125,"stylie.modals":110,"stylie.notifications":114,"stylie.tabs":121,"superagent":128}],108:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -28933,6 +29894,7 @@ tsdatalist.prototype.__init = function () {
 		initializing = true;
 
 	checkboxcontainerelement.id = 'datalist-tagged-cb-container-' + this.options.element.id;
+	classie.add(checkboxcontainerelement, 'ts-datalist-cb');
 	checkboxcontainerelement.addEventListener('click', function (e) {
 		// console.log(e.target);
 		if (classie.has(e.target, 'datalistcheckbox')) {
@@ -29025,7 +29987,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":3,"classie":8,"events":35,"superagent":125,"util":43,"util-extend":128}],106:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":38,"superagent":128,"util":46,"util-extend":131}],109:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -29130,8 +30092,9 @@ tsmedialist.prototype.__init = function () {
 		initializing = true;
 
 	checkboxcontainerelement.id = 'medialist-tagged-cb-container-' + this.options.element.id;
+	classie.add(checkboxcontainerelement, 'ts-medialist-cb');
 	checkboxcontainerelement.addEventListener('click', function (e) {
-		// console.log(e.target);
+		console.log(e.target);
 		if (classie.has(e.target, 'medialistcheckbox')) {
 			if (e.target.checked === false) {
 				delete this.options.dataitems[e.target.value];
@@ -29210,6 +30173,7 @@ tsmedialist.prototype.__init = function () {
 		binderType: 'template',
 		binderTemplate: get_checkbox_template(),
 		binderCallback: function (cbdata) {
+			console.log('cbdata', cbdata);
 			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
 				successfn = window[successsubmitFunctionString];
 			// is object a function?
@@ -29241,7 +30205,7 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":3,"classie":8,"events":35,"superagent":125,"util":43,"util-extend":128}],107:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":38,"superagent":128,"util":46,"util-extend":131}],110:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -29253,7 +30217,7 @@ module.exports = tsmedialist;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":108}],108:[function(require,module,exports){
+},{"./lib/stylie.modals":111}],111:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -29417,11 +30381,11 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":109,"events":35,"util":43,"util-extend":128}],109:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":110,"dup":8}],110:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],111:[function(require,module,exports){
+},{"classie":112,"events":38,"util":46,"util-extend":131}],112:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"./lib/classie":113,"dup":11}],113:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],114:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -29433,7 +30397,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":112}],112:[function(require,module,exports){
+},{"./lib/stylie.notifications":115}],115:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -29630,11 +30594,11 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":113,"detectcss":115,"events":35,"util":43,"util-extend":117}],113:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":114,"dup":8}],114:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],115:[function(require,module,exports){
+},{"classie":116,"detectcss":118,"events":38,"util":46,"util-extend":120}],116:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"./lib/classie":117,"dup":11}],117:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],118:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -29644,7 +30608,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":116}],116:[function(require,module,exports){
+},{"./lib/detectCSS":119}],119:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -29683,9 +30647,9 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],117:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],118:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],121:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -29697,7 +30661,7 @@ arguments[4][7][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":119}],119:[function(require,module,exports){
+},{"./lib/stylie.tabs":122}],122:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -29797,11 +30761,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":120,"events":35,"util":43,"util-extend":128}],120:[function(require,module,exports){
-arguments[4][8][0].apply(exports,arguments)
-},{"./lib/classie":121,"dup":8}],121:[function(require,module,exports){
-arguments[4][9][0].apply(exports,arguments)
-},{"dup":9}],122:[function(require,module,exports){
+},{"classie":123,"events":38,"util":46,"util-extend":131}],123:[function(require,module,exports){
+arguments[4][11][0].apply(exports,arguments)
+},{"./lib/classie":124,"dup":11}],124:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],125:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -29813,7 +30777,7 @@ arguments[4][9][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":123}],123:[function(require,module,exports){
+},{"./lib/stylie":126}],126:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -29913,9 +30877,9 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":35,"util":43,"util-extend":124}],124:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}],125:[function(require,module,exports){
+},{"events":38,"util":46,"util-extend":127}],127:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}],128:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -30998,10 +31962,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":126,"reduce":127}],126:[function(require,module,exports){
-arguments[4][31][0].apply(exports,arguments)
-},{"dup":31}],127:[function(require,module,exports){
-arguments[4][32][0].apply(exports,arguments)
-},{"dup":32}],128:[function(require,module,exports){
-arguments[4][7][0].apply(exports,arguments)
-},{"dup":7}]},{},[104]);
+},{"emitter":129,"reduce":130}],129:[function(require,module,exports){
+arguments[4][34][0].apply(exports,arguments)
+},{"dup":34}],130:[function(require,module,exports){
+arguments[4][35][0].apply(exports,arguments)
+},{"dup":35}],131:[function(require,module,exports){
+arguments[4][10][0].apply(exports,arguments)
+},{"dup":10}]},{},[107]);

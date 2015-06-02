@@ -13,6 +13,10 @@ var ajaxlinks,
 	io = require('socket.io-client'),
 	socket,
 	asyncAdminPushie,
+	ejs = require('ejs'),
+	content_attribute_template,
+	content_attribute_HTML,
+	content_attribute_content_html,
 	async = require('async'),
 	classie = require('classie'),
 	CodeMirror = require('codemirror'),
@@ -302,6 +306,12 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	var ct_attr_selector = document.querySelector('#ct-attr-template');
+	if (ct_attr_selector) {
+
+		content_attribute_template = ct_attr_selector.innerHTML;
+		content_attribute_content_html = document.querySelector('#doc-ct-attr');
+	}
 	AdminFormies = {};
 	//console.log('ajaxforms', ajaxforms);
 	try {
@@ -866,6 +876,36 @@ window.showStylieNotification = function (options) {
 	}).show();
 };
 
+window.showStylieAlert = function (options) {
+	window.shownStylieNotification = new StylieNotification({
+		message: options.message,
+		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
+		wrapper: options.wrapper || document.querySelector('main'),
+		layout: options.layout || 'growl',
+		effect: options.effect || 'slide',
+		type: options.type, // notice, warning, error or success
+		onClose: options.onClose || function () {}
+	}).show();
+};
+
+
+window.refresh_content_attributes_media = function (data) {
+	var genericdoc = data.body.data.doc;
+	if (content_attribute_template) {
+		content_attribute_HTML = ejs.render(content_attribute_template, {
+			genericdoc: genericdoc
+		});
+		content_attribute_content_html.innerHTML = content_attribute_HTML;
+	}
+
+	if (document.querySelectorAll('.medialistcheckbox').length !== genericdoc.assets.length) {
+		console.log('document.querySelectorAll(.medialistcheckbox).length', document.querySelectorAll('.medialistcheckbox').length);
+		console.log('genericdoc.assets.length', genericdoc.assets.length);
+		// console.log('do a window refresh');
+		window.adminRefresh();
+	}
+};
+
 window.adminRefresh = function () {
 	loadAjaxPage({
 		datahref: window.location.href
@@ -895,7 +935,7 @@ window.addEventListener('load', function () {
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');
-
+	ejs.delimiter = '?';
 
 	for (var u = 0; u < ajaxlinks.length; u++) {
 		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);

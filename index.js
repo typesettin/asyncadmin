@@ -90,7 +90,10 @@ module.exports = function (periodic) {
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
 	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
-	userAdminRouter.post('/edit', assetController.upload, userController.update);
+	userAdminRouter.post('/edit',
+		assetController.multiupload,
+		assetController.create_assets_from_files,
+		userController.update);
 	userAdminRouter.post('/new', assetController.upload, userController.create);
 	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, userController.remove);
 

@@ -102,8 +102,9 @@ tsmedialist.prototype.__init = function () {
 		initializing = true;
 
 	checkboxcontainerelement.id = 'medialist-tagged-cb-container-' + this.options.element.id;
+	classie.add(checkboxcontainerelement, 'ts-medialist-cb');
 	checkboxcontainerelement.addEventListener('click', function (e) {
-		// console.log(e.target);
+		console.log(e.target);
 		if (classie.has(e.target, 'medialistcheckbox')) {
 			if (e.target.checked === false) {
 				delete this.options.dataitems[e.target.value];
@@ -182,6 +183,7 @@ tsmedialist.prototype.__init = function () {
 		binderType: 'template',
 		binderTemplate: get_checkbox_template(),
 		binderCallback: function (cbdata) {
+			console.log('cbdata', cbdata);
 			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
 				successfn = window[successsubmitFunctionString];
 			// is object a function?

@@ -76,22 +76,7 @@
 							  </div><!--/col--> 
 							  <div class="ts-col-span6  ts-text-center" >
 							  	<h4 class="ts-text-left">User Account Image</h4>
-							  	<%
-									if(genericdoc.primaryasset){
-										if(genericdoc.primaryasset.assettype && genericdoc.primaryasset.assettype.match("image")){
-											%><img class="ts-col-span12" src="<%-genericdoc.primaryasset.fileurl%>"/><%
-										} 
-										else{%>
-											<div class="ts-input"> <%-genericdoc.primaryasset.fileurl%></div>
-										<% } 
-									}
-									else{%>
-								    <img src="/favicon.png" alt="" style="width:60%" class="ts-text-label">
-									<%}%>
-										<input type="file" name="asset" class="ts-input">
-								    <!-- <img src="/favicon.png" alt="" class="center-block img-circle img-responsive"> -->
-								    <% mediaassettitle ='' %>
-					    			<!-- < % include ../../shared/media_asset % > -->
+							  	<% include _compose_user_assets %>
 							  </div><!--/col-->  
 							  
 							</div>
