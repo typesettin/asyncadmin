@@ -29017,7 +29017,8 @@ var defaultAjaxFormie = function (formElement) {
 		beforesubmitcallback: function (beforeEvent, formElement) {
 			var beforesubmitFunctionString = formElement.getAttribute('data-beforesubmitfunction'),
 				beforefn = window[beforesubmitFunctionString],
-				summernoteTextAreas = formElement.querySelectorAll('textarea.ts-summernote');
+				summernoteTextAreas = formElement.querySelectorAll('textarea.ts-summernote'),
+				codemirrorTextAreas = formElement.querySelectorAll('textarea.codemirroreditor');
 			// is object a function?
 			if (typeof beforefn === 'function') {
 				beforefn(beforeEvent, formElement);
@@ -29025,6 +29026,9 @@ var defaultAjaxFormie = function (formElement) {
 			window.showPreloader();
 			for (var s = 0; s < summernoteTextAreas.length; s++) {
 				summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
+			}
+			for (var r = 0; r < codemirrorTextAreas.length; r++) {
+				codemirrorTextAreas[r].innerHTML = codeMirrors[codemirrorTextAreas[r].id].getValue();
 			}
 		},
 		successcallback: function (response) {
