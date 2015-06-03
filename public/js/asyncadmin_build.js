@@ -29637,6 +29637,21 @@ window.showStylieNotification = function (options) {
 };
 
 window.showStylieAlert = function (options) {
+	var sendOSAlert = function (options) {
+		var osAlert;
+		try {
+			var notificationDiv = document.createElement('div');
+			notificationDiv.innerHTML = options.message;
+			osAlert = new window.Notification('New ' + window.periodic.name + ' alert', {
+				body: notificationDiv.textContent,
+				icon: '/favicon.png',
+			});
+		}
+		catch (e) {
+			console.warn('OS/Browser does not support Notifications', osAlert);
+		}
+		return osAlert;
+	};
 	window.shownStylieNotification = new StylieNotification({
 		message: options.message,
 		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
@@ -29646,6 +29661,19 @@ window.showStylieAlert = function (options) {
 		type: options.type, // notice, warning, error or success
 		onClose: options.onClose || function () {}
 	}).show();
+
+	if (window.Notification) {
+		if (window.Notification.permission !== 'granted') {
+			window.Notification.requestPermission(function (permission) {
+				if (permission === 'granted') {
+					sendOSAlert(options);
+				}
+			});
+		}
+		else {
+			sendOSAlert(options);
+		}
+	}
 };
 
 
