@@ -272,21 +272,28 @@ var defaultAjaxFormie = function (formElement) {
 			}
 		},
 		successcallback: function (response) {
-			window.showStylieNotification({
-				message: 'Saved'
-			});
 			window.endPreloader();
-			logToAdminConsole({
-				msg: 'ajax response',
-				meta: response
-			});
-			var successsubmitFunctionString = formElement.getAttribute('data-successsubmitfunction'),
-				successfn = window[successsubmitFunctionString];
-			// is object a function?
-			if (typeof successfn === 'function') {
-				successfn(response);
+			if (response.body && response.body.result && response.body.result === 'error') {
+				window.showStylieNotification({
+					message: response.body.data.error.message || response.body.data.error,
+					type: 'error'
+				});
 			}
-			window.showPreloader();
+			else {
+				window.showStylieNotification({
+					message: 'Saved'
+				});
+				logToAdminConsole({
+					msg: 'ajax response',
+					meta: response
+				});
+				var successsubmitFunctionString = formElement.getAttribute('data-successsubmitfunction'),
+					successfn = window[successsubmitFunctionString];
+				// is object a function?
+				if (typeof successfn === 'function') {
+					successfn(response);
+				}
+			}
 		},
 		errorcallback: function (error, response) {
 			window.showErrorNotificaton({
