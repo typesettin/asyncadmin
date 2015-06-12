@@ -17,7 +17,7 @@
 					    Version <%= periodic.version %>
 								<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
 					    <%var d=new Date();%>
-					      <%- d.getFullYear() %>
+					      <%- d.getFullYear() %> <%- locals.appenvironment %>
 					  </div>
 					</div>
 				</section>
@@ -33,7 +33,13 @@
 			</div>
 		</div>
 	</div>
-	
+	<% if(locals.appenvironment==='production'){%>
+	<style type="text/css">
+	.ts-hide-production{
+		display:none;
+	}
+	</style>
+	<%}%>
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
 	<% include _summernote_files %>
 	<script type="text/javascript">

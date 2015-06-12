@@ -429,6 +429,59 @@ var confirmDeleteDialog = function (e) {
 	AdminModal.show('confirmdelete-modal');
 };
 
+var deleteContentSubmit = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href');
+
+	request
+		.post(posturl)
+		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
+		.set('Accept', 'application/json')
+		.query({
+			format: 'json'
+		})
+		.end(handle_ajax_button_response(e));
+};
+
+var submitAjaxButton = function (e) {
+	var eTarget = e.target,
+		posturl = eTarget.getAttribute('data-href'),
+		postmethod = eTarget.getAttribute('data-ajax-method'),
+		ajaxrequest;
+	showPreloader();
+	ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
+
+	ajaxrequest
+		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
+		.set('Accept', 'application/json')
+		.query({
+			format: 'json'
+		})
+		.end(handle_ajax_button_response(e));
+};
+
+var initAjaxDeleteButtonListeners = function () {
+	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
+	if (confirmDeleteYes) {
+		confirmDeleteYes.addEventListener('click', deleteContentSubmit, false);
+	}
+	for (var x in deleteButtons) {
+		if (typeof deleteButtons[x] === 'object') {
+			deleteButtons[x].addEventListener('click', confirmDeleteDialog, false);
+		}
+	}
+};
+
+var initAjaxSubmitButtonListeners = function () {
+	var ajaxButtons = document.querySelectorAll('.ts-ajax-button');
+	for (var x in ajaxButtons) {
+		if (typeof ajaxButtons[x] === 'object') {
+			ajaxButtons[x].addEventListener('click', submitAjaxButton, false);
+		}
+	}
+};
+window.initAjaxSubmitButtonListeners = initAjaxSubmitButtonListeners;
+
 var loadAjaxPage = function (options) {
 	// window.console.clear();
 	closeMobileNav();
@@ -590,58 +643,6 @@ var handle_ajax_button_response = function (e) {
 			}
 		}
 	};
-};
-
-var deleteContentSubmit = function (e) {
-	var eTarget = e.target,
-		posturl = eTarget.getAttribute('data-href');
-
-	request
-		.post(posturl)
-		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
-		.set('Accept', 'application/json')
-		.query({
-			format: 'json'
-		})
-		.end(handle_ajax_button_response(e));
-};
-
-var submitAjaxButton = function (e) {
-	var eTarget = e.target,
-		posturl = eTarget.getAttribute('data-href'),
-		postmethod = eTarget.getAttribute('data-ajax-method'),
-		ajaxrequest;
-	showPreloader();
-	ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
-
-	ajaxrequest
-		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
-		.set('Accept', 'application/json')
-		.query({
-			format: 'json'
-		})
-		.end(handle_ajax_button_response(e));
-};
-
-var initAjaxDeleteButtonListeners = function () {
-	var deleteButtons = document.querySelectorAll('.ts-dialog-delete');
-	if (confirmDeleteYes) {
-		confirmDeleteYes.addEventListener('click', deleteContentSubmit, false);
-	}
-	for (var x in deleteButtons) {
-		if (typeof deleteButtons[x] === 'object') {
-			deleteButtons[x].addEventListener('click', confirmDeleteDialog, false);
-		}
-	}
-};
-
-var initAjaxSubmitButtonListeners = function () {
-	var ajaxButtons = document.querySelectorAll('.ts-ajax-button');
-	for (var x in ajaxButtons) {
-		if (typeof ajaxButtons[x] === 'object') {
-			ajaxButtons[x].addEventListener('click', submitAjaxButton, false);
-		}
-	}
 };
 
 var navlinkclickhandler = function (e) {

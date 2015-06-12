@@ -35,6 +35,7 @@ module.exports = function (periodic) {
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
 	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
 	periodic.app.locals.stylietreeview = stylietreeview;
