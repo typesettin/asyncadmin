@@ -930,7 +930,8 @@ window.showStylieAlert = function (options) {
 
 
 window.refresh_content_attributes_media = function (data) {
-	var genericdoc = data.body.data.doc;
+	var genericdoc = data.body.data.doc,
+		medialistcheckbox_elements = document.querySelectorAll('.medialistcheckbox');
 	if (content_attribute_template) {
 		content_attribute_HTML = ejs.render(content_attribute_template, {
 			genericdoc: genericdoc
@@ -938,7 +939,7 @@ window.refresh_content_attributes_media = function (data) {
 		content_attribute_content_html.innerHTML = content_attribute_HTML;
 	}
 
-	if (document.querySelectorAll('.medialistcheckbox').length !== genericdoc.assets.length) {
+	if (medialistcheckbox_elements && genericdoc.assets && medialistcheckbox_elements.length !== genericdoc.assets.length) {
 		console.log('document.querySelectorAll(.medialistcheckbox).length', document.querySelectorAll('.medialistcheckbox').length);
 		console.log('genericdoc.assets.length', genericdoc.assets.length);
 		// console.log('do a window refresh');
