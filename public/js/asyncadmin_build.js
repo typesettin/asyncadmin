@@ -29262,6 +29262,7 @@ var loadAjaxPage = function (options) {
 			.get(options.datahref)
 			.set('Accept', 'text/html')
 			.end(function (error, res) {
+				window.document.body.scrollTop = 0;
 				// console.log('error', error);
 				// console.log('res', res);
 				if (error) {
