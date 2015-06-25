@@ -879,7 +879,7 @@ window.showErrorNotificaton = function (options) {
 };
 
 window.showStylieNotification = function (options) {
-	window.shownStylieNotification = new StylieNotification({
+	window.StylieNotificationObject = new StylieNotification({
 		message: options.message,
 		ttl: (typeof options.ttl === 'boolean') ? options.ttl : 7000,
 		wrapper: options.wrapper || document.querySelector('main'),
@@ -887,7 +887,8 @@ window.showStylieNotification = function (options) {
 		effect: options.effect || 'jelly',
 		type: options.type, // notice, warning, error or success
 		onClose: options.onClose || function () {}
-	}).show();
+	});
+	window.shownStylieNotification = window.StylieNotificationObject.show();
 };
 
 window.showStylieAlert = function (options) {
