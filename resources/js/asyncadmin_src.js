@@ -747,6 +747,7 @@ var initServerSocketCallback = function () {
 
 var adminConsolePlatterConfig = function () {
 	socket = io();
+	window.adminSocket = socket;
 	// socket = io(window.location.hostname + ':' + window.socketIoPort);
 	// Whenever the server emits 'user joined', log it in the chat body
 	socket.on('log', function (data) {
