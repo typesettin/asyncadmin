@@ -1,8 +1,6 @@
 'use strict';
 
-var Utilities = require('periodicjs.core.utilities'),
-	Controller = require('periodicjs.core.controller'),
-	CoreUtilities,
+var CoreUtilities,
 	CoreController,
 	appSettings,
 	mongoose,
@@ -175,8 +173,8 @@ var controller = function (resources) {
 	logger = resources.logger;
 	mongoose = resources.mongoose;
 	appSettings = resources.settings;
-	CoreController = new Controller(resources);
-	CoreUtilities = new Utilities(resources);
+	CoreController = resources.core.controller;
+	CoreUtilities = resources.core.utilities;
 	Collection = mongoose.model('Collection');
 	Compilation = mongoose.model('Compilation');
 	Contenttype = mongoose.model('Contenttype');

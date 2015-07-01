@@ -4,12 +4,7 @@ var async = require('async'),
 	path = require('path'),
 	marked = require('marked'),
 	fs = require('fs-extra'),
-	Utilities = require('periodicjs.core.utilities'),
-	Controller = require('periodicjs.core.controller'),
-	Extensions = require('periodicjs.core.extensions'),
-	ExtensionCore = new Extensions({
-		extensionFilePath: path.resolve(process.cwd(), './content/config/extensions.json')
-	}),
+	CoreExtension,
 	CoreUtilities,
 	CoreController,
 	appSettings,
@@ -103,7 +98,7 @@ var getHomepageStats = function (req, res, next) {
 
 	async.parallel({
 		extensionsCount: function (cb) {
-			ExtensionCore.getExtensions({
+			CoreExtension.getExtensions({
 					periodicsettings: appSettings
 				},
 				function (err, extensions) {
@@ -197,8 +192,9 @@ var controller = function (resources) {
 	logger = resources.logger;
 	mongoose = resources.mongoose;
 	appSettings = resources.settings;
-	CoreController = new Controller(resources);
-	CoreUtilities = new Utilities(resources);
+	CoreController = resources.core.controller;
+	CoreUtilities = resources.core.utilities;
+	CoreExtension = resources.core.extension;
 	Collection = mongoose.model('Collection');
 	Compilation = mongoose.model('Compilation');
 	Contenttype = mongoose.model('Contenttype');
