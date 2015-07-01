@@ -9,13 +9,7 @@ var path = require('path'),
 	appenvironment,
 	settingJSON,
 	// activate_middleware,
-	Extensions = require('periodicjs.core.extensions'),
-	CoreExtension = new Extensions({
-		extensionFilePath: path.resolve(process.cwd(), './content/config/extensions.json')
-	}),
-	adminExtSettingsFile = path.resolve(CoreExtension.getconfigdir({
-		extname: 'periodicjs.ext.asyncadmin'
-	}), './settings.json'),
+	adminExtSettingsFile = path.join(process.cwd(), 'content/config/extensions/periodicjs.ext.asyncadmin/settings.json'),
 	defaultExtSettings = require('./controller/default_config');
 
 /**
