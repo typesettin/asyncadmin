@@ -8,6 +8,8 @@ var ajaxlinks,
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
 	Formie = require('formie'),
+	forbject = require('forbject'),
+	querystring = require('querystring'),
 	Stylie = require('stylie'),
 	platterjs = require('platterjs'),
 	io = require('socket.io-client'),
@@ -236,6 +238,15 @@ var logToAdminConsole = function (data) {
 	}
 };
 
+var defaultLoadAjaxPageFormie = function (formElement) {
+	var ajaxForbject = new forbject(formElement, {
+		autorefresh: true,
+		addelementsonrefresh: false,
+	});
+
+	return ajaxForbject;
+};
+
 var defaultAjaxFormie = function (formElement) {
 	var $ = window.$,
 		_csrfToken = formElement.querySelector('input[name="_csrf"]');
@@ -314,7 +325,18 @@ var defaultAjaxFormie = function (formElement) {
 var initAjaxFormies = function () {
 	var ajaxForm;
 	var ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
+	var ajaxPageforms = document.querySelectorAll('.async-admin-ajax-page-forms');
 	var ct_attr_selector = document.querySelector('#ct-attr-template');
+	var outputEventListener = function (eventname) {
+		return function (formObjectData) {
+			loadAjaxPage({
+				datahref: window.location.origin + window.location.pathname + '?' + querystring.stringify(formObjectData),
+				pushState: true,
+				eventname: eventname
+			});
+			// console.log('on eventname[' + eventname + '] formObject', formObjectData);
+		};
+	};
 	if (ct_attr_selector) {
 
 		content_attribute_template = ct_attr_selector.innerHTML;
@@ -328,6 +350,14 @@ var initAjaxFormies = function () {
 				ajaxForm = ajaxforms[x];
 				//ajaxFormies[ajaxForm.getAttribute('name')] = 
 				AdminFormies[ajaxForm.id] = defaultAjaxFormie(ajaxForm);
+			}
+		}
+		if (ajaxPageforms && ajaxPageforms.length > 0) {
+			for (var y = 0; y < ajaxPageforms.length; y++) {
+				ajaxForm = ajaxPageforms[y];
+				//ajaxFormies[ajaxForm.getAttribute('name')] = 
+				AdminFormies[ajaxForm.id] = defaultLoadAjaxPageFormie(ajaxForm);
+				AdminFormies[ajaxForm.id].on('refresh', outputEventListener('refresh'));
 			}
 		}
 		window.AdminFormies = AdminFormies;
@@ -477,6 +507,7 @@ var initAjaxSubmitButtonListeners = function () {
 		}
 	}
 };
+
 window.initAjaxSubmitButtonListeners = initAjaxSubmitButtonListeners;
 
 var loadAjaxPage = function (options) {

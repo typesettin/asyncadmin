@@ -24,6 +24,7 @@
     "bindie": "^2.1.0",
     "classie": "^1.0.0",
     "codemirror": "^5.4.0",
+    "forbject": "^1.4.0",
     "formie": "^1.0.0",
     "numeral": "^1.5.3",
     "platterjs": "^1.0.0",
