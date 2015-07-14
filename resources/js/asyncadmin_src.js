@@ -72,9 +72,6 @@ window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
 
-
-
-
 var openModalButtonListener = function (e) {
 	e.preventDefault();
 	// console.log(e.target);
@@ -809,6 +806,7 @@ window.showDefaultDataResponseModal = function (ajaxFormResponse) {
 	window.servermodalElement.querySelector('#servermodal-content').appendChild(predata);
 	AdminModal.show('servermodal-modal');
 };
+
 window.showServerModal = function (data) {
 	servermodalElement.querySelector('#servermodal-content').innerHTML = data;
 	AdminModal.show('servermodal-modal');
@@ -930,7 +928,6 @@ window.showStylieAlert = function (options) {
 		}
 	}
 };
-
 
 window.refresh_content_attributes_media = function (data) {
 	var genericdoc = data.body.data.doc,
