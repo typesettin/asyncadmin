@@ -14,7 +14,7 @@
 		<%- locals.viewhelper.passObjToClient(flash_messages,"periodic_flash_messages") %>
 	</script>
 	<link rel="icon" type="image/png" href="/favicon.png">
-	<script type="text/javascript" src="<%= locals.themehelper.extensionPublicResourcePath('periodicjs.ext.asyncadmin','js') %>asyncadmin.min.js"></script>
+	<script type="text/javascript" src="<%= locals.themehelper.extensionPublicResourcePath('periodicjs.ext.asyncadmin','js') %>asyncadmin.min.js?v=<%-locals.asyncadminextJson.version%>"></script>
 	<% var headertags = locals.viewhelper.includeJavaScripts(pagedata.headerjs); %><%- headertags %>
 	<%- locals.viewhelper.getHTML(locals.additionalHeadHTML) %>
 </head>

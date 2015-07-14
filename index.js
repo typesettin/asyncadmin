@@ -1,6 +1,7 @@
 'use strict';
 
 var path = require('path'),
+	errorie = require('errorie'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
@@ -8,6 +9,7 @@ var path = require('path'),
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
+	extJson,
 	// activate_middleware,
 	adminExtSettingsFile = path.join(process.cwd(), 'content/config/extensions/periodicjs.ext.asyncadmin/settings.json'),
 	defaultExtSettings = require('./controller/default_config');
@@ -27,6 +29,18 @@ module.exports = function (periodic) {
 	appenvironment = periodic.settings.application.environment;
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
+
+
+	try {
+		extJson = fs.readJsonSync(path.join(__dirname, '/package.json'));
+		periodic.app.locals.asyncadminextJson = extJson;
+	}
+	catch (e) {
+		throw new errorie({
+			name: 'Async Admin',
+			message: 'Config error - ' + e.message
+		});
+	}
 
 	periodic.app.locals.numeral = numeral;
 	periodic.app.locals.appenvironment = appenvironment;
