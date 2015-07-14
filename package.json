@@ -11,6 +11,7 @@
     "email": "yaw.etse@gmail.com",
     "url": "http://about.me/yawjosephetse"
   },
+  "license":"MIT",
   "repository": {
     "type": "git",
     "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"

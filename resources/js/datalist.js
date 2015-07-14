@@ -207,26 +207,24 @@ tsdatalist.prototype.__init = function () {
 	this.options.parentElement.appendChild(datalistcontainer);
 	this.options.parentElement.removeChild(this.options.element);
 
-	if (this.options.inputelement.getAttribute('data-ajax-formie')) {
-		this.options.formietosubmit = this.options.inputelement.getAttribute('data-ajax-formie');
-	}
+	this.options.formietosubmit = (this.options.inputelement.getAttribute('data-ajax-formie') && this.options.inputelement.getAttribute('data-ajax-formie') !== null) ? this.options.inputelement.getAttribute('data-ajax-formie') : false;
 	this.options.datalistbindie = new Bindie({
 		ejsdelimiter: '?'
 	});
+
 	this.options.datalistbindie.addBinder({
 		prop: 'dataitems',
 		elementSelector: '#' + checkboxcontainerelement.getAttribute('id'),
 		binderType: 'template',
 		binderTemplate: get_checkbox_template(),
 		binderCallback: function (cbdata) {
-
 			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
 				successfn = window[successsubmitFunctionString];
 			// is object a function?
 			if (typeof successfn === 'function') {
 				successfn(cbdata);
 			}
-			if (this.options.formietosubmit && initializing === false) {
+			if (this.options.formietosubmit && initializing === false && window.AdminFormies[this.options.formietosubmit]) {
 				window.AdminFormies[this.options.formietosubmit].submit();
 			}
 		}.bind(this)
