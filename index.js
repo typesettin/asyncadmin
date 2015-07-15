@@ -32,6 +32,12 @@ module.exports = function (periodic) {
 
 
 	try {
+		if (periodic.settings.theme) {
+			var themeinfo = fs.readJsonSync(path.join(periodic.settings.themepath, '/periodicjs.theme.json'));
+			if (themeinfo['periodicjs.ext.asyncadmin']) {
+				periodic.app.locals.themeasyncadmin = themeinfo['periodicjs.ext.asyncadmin'];
+			}
+		}
 		extJson = fs.readJsonSync(path.join(__dirname, '/package.json'));
 		periodic.app.locals.asyncadminextJson = extJson;
 	}
