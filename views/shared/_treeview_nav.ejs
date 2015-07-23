@@ -32,7 +32,7 @@
     }]
   };
 
-  if(locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Themes){
+  if(locals.themeasyncadmin && locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Themes){
     for (var x in locals.themeasyncadmin.menu.Themes){
       menu_themes["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Themes[x]);
     }
@@ -64,7 +64,7 @@
     }]
   };
 
-  if(locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Extensions){
+  if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Extensions){
     for (var x in locals.themeasyncadmin.menu.Extensions){
       menu_themes["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Extensions[x]);
     }
@@ -141,7 +141,7 @@
     }]
   };
 
-  if(locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Settings){
+  if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Settings){
     for (var x in locals.themeasyncadmin.menu.Settings){
       menu_themes["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Settings[x]);
     }
@@ -190,7 +190,7 @@
   navmenu.tree.push(menu_account_settings);
   navmenu.tree.push(menu_dashboard);
 
-  if(locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Global){
+  if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Global){
     for (var x in locals.themeasyncadmin.menu.Global){
       if(typeof locals.themeasyncadmin.menu.Global[x].userprivilege !=='undefined'){
         if(user.privileges[locals.themeasyncadmin.menu.Global[x].userprivilege] || user.accounttype==='admin'){
@@ -237,5 +237,5 @@
   %>
   <%- navTreeViewHTML %>
 <script type="text/javascript">
-	<%- locals.viewhelper.passObjToClient(navmenu,"periodic_navmenu") %>
+  <%- locals.viewhelper.passObjToClient(navmenu,"periodic_navmenu") %>
 </script>
