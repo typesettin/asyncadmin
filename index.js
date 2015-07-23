@@ -33,7 +33,7 @@ module.exports = function (periodic) {
 
 	try {
 		if (periodic.settings.theme) {
-			var themeinfo = fs.readJsonSync(path.join(periodic.settings.themepath, '/periodicjs.theme.json'));
+			var themeinfo = fs.readJsonSync(path.join(periodic.settings.themepath, '/periodicjs.asyncadmin.json'));
 			if (themeinfo['periodicjs.ext.asyncadmin']) {
 				periodic.app.locals.themeasyncadmin = themeinfo['periodicjs.ext.asyncadmin'];
 			}
