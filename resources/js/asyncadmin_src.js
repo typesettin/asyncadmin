@@ -730,21 +730,21 @@ var addStyleSheetToChildWindow = function () {
 };
 
 var asyncAdminContentElementClick = function (e) {
-	var etarget = e.target,
-		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
+	var etarget = e.target; //,
+	//	etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
 	if (!classie.has(etarget, 'ts-open-admin-console')) {
 		consolePlatter.hidePlatterPane();
 	}
-	if (classie.has(etarget, 'async-admin-ajax-link')) {
-		e.preventDefault();
-		// console.log('etargethref', etargethref);
-		loadAjaxPage({
-			datahref: etargethref,
-			pushState: true
-		});
-		return false;
-	}
+	// if (classie.has(etarget, 'async-admin-ajax-link')) {
+	// 	e.preventDefault();
+	// 	// console.log('etargethref', etargethref);
+	// 	loadAjaxPage({
+	// 		datahref: etargethref,
+	// 		pushState: true
+	// 	});
+	// 	return false;
+	// }
 };
 
 var showAdminConsoleElementClick = function () {

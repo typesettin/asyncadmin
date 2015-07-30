@@ -31113,21 +31113,21 @@ var addStyleSheetToChildWindow = function () {
 };
 
 var asyncAdminContentElementClick = function (e) {
-	var etarget = e.target,
-		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
+	var etarget = e.target; //,
+	//	etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
 	if (!classie.has(etarget, 'ts-open-admin-console')) {
 		consolePlatter.hidePlatterPane();
 	}
-	if (classie.has(etarget, 'async-admin-ajax-link')) {
-		e.preventDefault();
-		// console.log('etargethref', etargethref);
-		loadAjaxPage({
-			datahref: etargethref,
-			pushState: true
-		});
-		return false;
-	}
+	// if (classie.has(etarget, 'async-admin-ajax-link')) {
+	// 	e.preventDefault();
+	// 	// console.log('etargethref', etargethref);
+	// 	loadAjaxPage({
+	// 		datahref: etargethref,
+	// 		pushState: true
+	// 	});
+	// 	return false;
+	// }
 };
 
 var showAdminConsoleElementClick = function () {
@@ -31428,7 +31428,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../node_modules/codemirror/addon/comment/comment":14,"../../node_modules/codemirror/addon/comment/continuecomment":15,"../../node_modules/codemirror/addon/edit/matchbrackets":16,"../../node_modules/codemirror/addon/fold/brace-fold":17,"../../node_modules/codemirror/addon/fold/comment-fold":18,"../../node_modules/codemirror/addon/fold/foldcode":19,"../../node_modules/codemirror/addon/fold/foldgutter":20,"../../node_modules/codemirror/addon/fold/indent-fold":21,"../../node_modules/codemirror/mode/css/css":24,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":25,"../../node_modules/codemirror/mode/javascript/javascript":27,"./datalist":112,"./medialist":113,"async":1,"bindie":6,"classie":11,"codemirror":23,"ejs":2,"forbject":29,"formie":32,"moment":5,"platterjs":51,"pushie":58,"querystring":48,"socket.io-client":61,"stylie":129,"stylie.modals":114,"stylie.notifications":118,"stylie.tabs":125,"superagent":132}],112:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":14,"../../node_modules/codemirror/addon/comment/continuecomment":15,"../../node_modules/codemirror/addon/edit/matchbrackets":16,"../../node_modules/codemirror/addon/fold/brace-fold":17,"../../node_modules/codemirror/addon/fold/comment-fold":18,"../../node_modules/codemirror/addon/fold/foldcode":19,"../../node_modules/codemirror/addon/fold/foldgutter":20,"../../node_modules/codemirror/addon/fold/indent-fold":21,"../../node_modules/codemirror/mode/css/css":24,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":25,"../../node_modules/codemirror/mode/javascript/javascript":27,"./datalist":112,"./medialist":113,"async":1,"bindie":6,"classie":11,"codemirror":23,"ejs":2,"forbject":29,"formie":32,"moment":5,"platterjs":51,"pushie":58,"querystring":48,"socket.io-client":61,"stylie":130,"stylie.modals":114,"stylie.notifications":119,"stylie.tabs":126,"superagent":132}],112:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -32049,37 +32049,43 @@ StylieModals.prototype._show = function (modal_name) {
 	var modal = this.options.modals[modal_name],
 		hasModalEffect = false;
 
-	for (var y = 0; y < modal.classList.length; y++) {
-		if (modal.classList[y].search('ts-modal-effect-') >= 0) {
-			hasModalEffect = true;
+	if(modal){
+		if(modal.classList){
+			for (var y = 0; y < modal.classList.length; y++) {
+				if (modal.classList[y].search('ts-modal-effect-') >= 0) {
+					hasModalEffect = true;
+				}
+			}
 		}
+		
+		if (hasModalEffect === false) {
+			classie.add(modal, this.options.modal_default_class);
+		}
+
+		classie.add(modal, 'ts-modal-show');
+		this.options.current_modal = modal_name;
+
+		modal.addEventListener('click', closeModalClickHandler.bind(this), false);
+
+		if (this.options.close_modal_on_escape_key === true) {
+			htmlEl.addEventListener('keydown', closeModalOnKeydown.bind(this), false);
+		}
+
+		this.emit('showModal', {
+			modal: modal,
+			modal_name: modal_name
+		});
 	}
-
-	if (hasModalEffect === false) {
-		classie.add(modal, this.options.modal_default_class);
-	}
-
-	classie.add(modal, 'ts-modal-show');
-	this.options.current_modal = modal_name;
-
-	modal.addEventListener('click', closeModalClickHandler.bind(this), false);
-
-	if (this.options.close_modal_on_escape_key === true) {
-		htmlEl.addEventListener('keydown', closeModalOnKeydown.bind(this), false);
-	}
-
-	this.emit('showModal', {
-		modal: modal,
-		modal_name: modal_name
-	});
 };
 module.exports = StylieModals;
 
 },{"classie":116,"events":42,"util":50,"util-extend":135}],116:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":117,"dup":11}],117:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],118:[function(require,module,exports){
+},{"./lib/classie":118,"dup":11}],117:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],118:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"./class_list_ployfill":117,"dup":13}],119:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32091,7 +32097,7 @@ arguments[4][54][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":119}],119:[function(require,module,exports){
+},{"./lib/stylie.notifications":120}],120:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32288,11 +32294,13 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":120,"detectcss":122,"events":42,"util":50,"util-extend":124}],120:[function(require,module,exports){
+},{"classie":121,"detectcss":124,"events":42,"util":50,"util-extend":135}],121:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":121,"dup":11}],121:[function(require,module,exports){
-arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],122:[function(require,module,exports){
+},{"./lib/classie":123,"dup":11}],122:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],123:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"./class_list_ployfill":122,"dup":13}],124:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -32302,7 +32310,7 @@ arguments[4][54][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":123}],123:[function(require,module,exports){
+},{"./lib/detectCSS":125}],125:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -32341,9 +32349,7 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],124:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],125:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -32355,7 +32361,7 @@ arguments[4][10][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":126}],126:[function(require,module,exports){
+},{"./lib/stylie.tabs":127}],127:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -32455,11 +32461,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":127,"events":42,"util":50,"util-extend":135}],127:[function(require,module,exports){
+},{"classie":128,"events":42,"util":50,"util-extend":135}],128:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":128,"dup":11}],128:[function(require,module,exports){
+},{"./lib/classie":129,"dup":11}],129:[function(require,module,exports){
 arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],129:[function(require,module,exports){
+},{"dup":54}],130:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32471,7 +32477,7 @@ arguments[4][54][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":130}],130:[function(require,module,exports){
+},{"./lib/stylie":131}],131:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32507,12 +32513,12 @@ util.inherits(stylie, events.EventEmitter);
 
 /** module default configuration */
 stylie.prototype.options = {
-	screenxs: '20em',
-	screensm: '29em',
-	screenmd: '32em',
-	screenlg: '50em',
-	screenxl: '70em',
-	screenxx: '90em',
+	screenxs: '20rem',
+	screensm: '29rem',
+	screenmd: '32rem',
+	screenlg: '50rem',
+	screenxl: '70rem',
+	screenxx: '90rem',
 	screenSizeElement: null,
 	screenSizeValElement: null,
 	sizeContainerElement: window,
@@ -32526,7 +32532,7 @@ stylie.prototype.options = {
 stylie.prototype._init = function () {
 	var screenAsideElement = document.createElement('aside');
 	screenAsideElement.setAttribute('class', 'ts-position-fixed ts-position-right ts-bg-text-primary-color ts-position-bottom ts-margin-xl ts-text-xs');
-	screenAsideElement.innerHTML = '<span id="screensize">screenlg:</span> <span id="screensizeval" class="ts-text-accent-color">50em</span>';
+	screenAsideElement.innerHTML = '<span id="screensize">screenlg:</span> <span id="screensizeval" class="ts-text-accent-color">50rem</span>';
 	var getMatchMediaString = function (minwidth) {
 		return '(min-width: ' + minwidth + ')';
 	};
@@ -32571,9 +32577,7 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":42,"util":50,"util-extend":131}],131:[function(require,module,exports){
-arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],132:[function(require,module,exports){
+},{"events":42,"util":50,"util-extend":135}],132:[function(require,module,exports){
 /**
  * Module dependencies.
  */
