@@ -27,6 +27,7 @@ var ajaxlinks,
 	StylieTabs = require('stylie.tabs'),
 	StylieDatalist = require('./datalist'),
 	StylieMedialist = require('./medialist'),
+	StylieFilterlist = require('./filterlist'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -53,6 +54,7 @@ var ajaxlinks,
 	confirmDeleteYes,
 	datalistelements,
 	medialistelements,
+	filterlistelements,
 	AdminFormies = {},
 	StylieDataLists = {},
 	StylieTab = {};
@@ -73,6 +75,19 @@ require('../../node_modules/codemirror/mode/javascript/javascript');
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
+
+
+var handleUncaughtError = function (e, errorMessageTitle) {
+	endPreloader();
+	logToAdminConsole({
+		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
+		level: 'log',
+		meta: e
+	});
+	window.showErrorNotificaton({
+		message: e.message
+	});
+};
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -199,6 +214,16 @@ var initMedialists = function () {
 	}
 };
 
+var initFilterlists = function () {
+	filterlistelements = document.querySelectorAll('.asyncadmin-ts-filterlist');
+	for (var q = 0; q < filterlistelements.length; q++) {
+		StylieDataLists[filterlistelements[q].id] = new StylieFilterlist({
+			element: filterlistelements[q],
+			filterkeys: filterlistelements[q].getAttribute('data-filterkeys')
+		});
+	}
+};
+
 var logToAdminConsole = function (data) {
 	var logInfoElement = document.createElement('div'),
 		adminMessageLevel = document.createElement('span'),
@@ -249,7 +274,7 @@ var defaultLoadAjaxPageFormie = function (formElement) {
 
 var defaultAjaxFormie = function (formElement) {
 	var $ = window.$,
-		_csrfToken = formElement.querySelector('input[name="_csrf"]');
+		_csrfToken = formElement.querySelector('input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
 
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
@@ -363,9 +388,7 @@ var initAjaxFormies = function () {
 		window.AdminFormies = AdminFormies;
 	}
 	catch (e) {
-		window.showErrorNotificaton({
-			message: e.message
-		});
+		handleUncaughtError(e);
 	}
 };
 
@@ -420,18 +443,6 @@ var controlMobileNav = function () {
 	else {
 		closeMobileNav();
 	}
-};
-
-var handleUncaughtError = function (e, errorMessageTitle) {
-	endPreloader();
-	logToAdminConsole({
-		msg: errorMessageTitle || 'uncaught error',
-		level: 'log',
-		meta: e
-	});
-	window.showErrorNotificaton({
-		message: e.message
-	});
 };
 
 var confirmDeleteDialog = function (e) {
@@ -595,6 +606,8 @@ var loadAjaxPage = function (options) {
 						initAjaxSubmitButtonListeners();
 						initDatalists();
 						initMedialists();
+						initFilterlists();
+						initAjaxLinkEventListeners();
 					}
 					catch (ajaxPageError) {
 						handleUncaughtError(ajaxPageError);
@@ -675,7 +688,7 @@ var handle_ajax_button_response = function (e) {
 	};
 };
 
-var navlinkclickhandler = function (e) {
+var async_admin_ajax_link_handler = function (e) {
 	var etarget = e.target,
 		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
@@ -755,11 +768,14 @@ var navOverlayClickHandler = function () {
 	closeMobileNav();
 };
 
+var initAjaxLinkEventListeners = function () {
+	window.addEventListener('click', async_admin_ajax_link_handler, false);
+};
+
 var initEventListeners = function () {
 	menuTriggerElement.addEventListener('click', controlMobileNav, false);
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
-	asyncHTMLWrapper.addEventListener('click', navlinkclickhandler, false);
 	mobile_nav_menu_overlay.addEventListener('click', navOverlayClickHandler, false);
 };
 
@@ -1015,8 +1031,8 @@ window.addEventListener('load', function () {
 	}
 
 	if (mobile_nav_menu) {
-		// mobile_nav_menu.addEventListener('mousedown', navlinkclickhandler, false);
-		mobile_nav_menu.addEventListener('click', navlinkclickhandler, false);
+		// mobile_nav_menu.addEventListener('mousedown', async_admin_ajax_link_handler, false);
+		mobile_nav_menu.addEventListener('click', async_admin_ajax_link_handler, false);
 	}
 	asyncAdminPushie = new Pushie({
 		replacecallback: pushstatecallback,
@@ -1025,6 +1041,7 @@ window.addEventListener('load', function () {
 	});
 	adminConsolePlatterConfig();
 	initEventListeners();
+	initAjaxLinkEventListeners();
 	initFlashMessage();
 	initSummernote();
 	initAjaxFormies();
@@ -1036,6 +1053,7 @@ window.addEventListener('load', function () {
 	initAjaxSubmitButtonListeners();
 	initDatalists();
 	initMedialists();
+	initFilterlists();
 
 	window.servermodalElement = servermodalElement;
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
