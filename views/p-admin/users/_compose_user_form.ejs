@@ -1,193 +1,219 @@
 <input type="hidden" name="_csrf" value=<%- locals.token %> >
-<div class="ts-page-content-container">
+<% genericdoc = (userprofile)? userprofile : {}; 
+	if(genericdoc){%>
+	<input type="hidden" name="docid" value="<%- genericdoc._id %>">
+<%}%>
+<div class="ts-page-content-container-profile-page">
 	<div class="ts-row">
-		<div class="ts-col-span12 ts-col-nofloat ts-no-heading-margin">
-			<% 
-				var genericdoc = (userprofile)? userprofile : {}; 
-			%>
-			<%if(genericdoc.username){%>
-					<!-- <button id="delete-user" data-href="/p-admin/user/<%- genericdoc._id %>/delete" class="ts-pull-right ts-button ts-color-error">delete</button> -->
-			<a data-href="/p-admin/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete ts-pull-right" data-successfunction="backToUsersLanding" >delete</a>
-
-				<%}%>
-			<h2>
-				<% if(genericdoc.username){%>Edit<%}else{%>New<%} %> User
-			</h2>
-			<%if(genericdoc){%>
-				<input type="hidden" name="docid" value="<%- genericdoc._id %>">
-			<%}%>
-		</div>
-		<div class="ts-row">
-			<div class="ts-col-span12">
-				<div id="tabs" class="ts-tabs">
-					<nav>
-						<ul class="ts-col-span12 ts-text-center">
-							<li class="ts-padding-md">Account Information</li>
-							<li class="ts-padding-md">Account Settings</li>
-							<li class="ts-padding-md">Account Access</li>
-						</ul>
-					</nav>
-					<div class="ts-tabs-content">
-						<section class="ts-no-padding">
-							<div class="ts-row ts-document">
-							  <div class="ts-col-span6">
-									<h4>Account Information</h4>         
-									<div class="ts-row ts-form-row">
-										<div>
-											<label class="ts-label">Name</label>
-										</div>
-										<input type="text" name="firstname" placeholder="first name" value="<%- genericdoc.firstname %>" class="ts-input"/>
-										<input type="text" name="lastname" placeholder="last name" value="<%- genericdoc.lastname %>" class="ts-input"/>
-									</div>
-									<div class="ts-row ts-form-row">
-										<label class="ts-label">Website</label>
-										<input type="text" name="url" placeholder="http://mywebsite.com" value="<%- genericdoc.url %>"  class="ts-input" />
-									</div>
-									<div class="ts-row ts-form-row">
-										<label class="ts-label">Bio</label>
-										<input type="text" name="description" placeholder="no profile"  class="ts-input" value="<%- genericdoc.description %>"/>
-									</div>
-									<!-- <div class="ts-row ts-form-row">
-										<label class="ts-label">Location</label>
-										<input type="password" name="password" placeholder="password"  class="ts-input"/>
-									</div> -->
-									<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
-										<label class="ts-label">Gender</label>
-										<% var docgender = [{
-											"value":"male",
-											"label":"Male"
-											},{
-											"value":"female",
-											"label":"Female"
-											},{
-											"value":"other",
-											"label":"Other"
-											}]; %>
-										<select name="gender" class="ts-input">
-											<option disabled="disabled" <% if(!genericdoc || typeof genericdoc.gender==='undefined' ){%> selected="selected" <%}%> >Select a gender</option>
-											<% docgender.forEach(function(gender){
-												%>
-													<option <% if(genericdoc && typeof genericdoc.gender==='string' && genericdoc.gender === gender.value ){%> selected="selected"
-													<%}%> value="<%- gender.value %>"><%- gender.label %></option>
-												<%
-												}); %>
-										</select>
-									</div>
-							  </div><!--/col--> 
-							  <div class="ts-col-span6  ts-text-center" >
-							  	<h4 class="ts-text-left">User Account Image</h4>
-							  	<% include _compose_user_assets %>
-							  </div><!--/col-->  
-							  
-							</div>
-						</section>
-						<section class="ts-no-padding">
-							<div class="ts-col-span12  ts-document">
-								<div class="ts-row ts-form-row">
-									<label class="ts-label">Email</label>
-									<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" class="ts-input"/>
-								</div>
-								<div class="ts-row ts-form-row">
-									<label class="ts-label">Username</label>
-									<input type="text" name="username"  autocomplete="off" placeholder="username"  value="<%- genericdoc.username %>" class="ts-input" />
-								</div>
-								<div class="ts-row ts-form-row">
-									<label class="ts-label">Password</label>
-									<input type="password" name="password" value="" placeholder="password" autocomplete="off"  class="ts-input"/>
-								</div>
-								<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
-									<label class="ts-label">Confirm password</label>
-									<input type="password" title="confirm your password" value="" name="passwordconfirm" placeholder="confirm password" autocomplete="off" class="ts-input" />
-								</div>
-							</div>
-						</section>
-						<section class="ts-no-padding">
-							<div class="ts-col-span12  ts-document">
-								<% if(user.privileges['760'] || user.accounttype==='admin'){%>
-									<div class="ts-row ts-form-row">
-										<div class="ts-col-span12" >
-											<label class="ts-label">User Roles</label>
-											<input type="text" id="padmin-userroles" name="userroles" placeholder=""  class="ts-input"/>
-										</div>
-										<div class="ts-col-span12">
-											<label class="ts-label">Account Type</label>
-											<% var docaccounttype = [{
-												"value":"basic",
-												"label":"basic"
-												},{
-												"value":"admin",
-												"label":"admin"
-												},{
-												"value":"invalid",
-												"label":"invalid"
-												}]; %>
-											<select name="accounttype" class="ts-input">
-												<% docaccounttype.forEach(function(accounttype){
-													%>
-														<option <% if(genericdoc && typeof genericdoc.accounttype==='string' && genericdoc.accounttype === accounttype.value ){%> selected="selected"
-														<%}%> value="<%- accounttype.value %>"><%- accounttype.label %></option>
-													<%
-													}); %>
-											</select>
-										</div>
-										<div class="ts-col-span12">
-											<label class="ts-label">Activated</label>
-											<% var docactivated = [{
-												"value":true,
-												"label":"true"
-												},{
-												"value":false,
-												"label":"false"
-												}]; %>
-											<select name="activated" class="ts-input">
-												<% docactivated.forEach(function(activated){
-													%>
-														<option <% if(genericdoc && genericdoc.activated === activated.value ){%> selected="selected"
-														<%}%> value="<%- activated.value %>"><%- activated.label %></option>
-													<%
-													}); %>
-											</select>
-										</div>
-									</div>
-								<%}
-								else{ %>
-									<div class="ts-row ts-form-row">
-										<div class="ts-col-span12" >
-											<label class="ts-label">Account Type</label>
-											<input type="text" disabled="disabled" value="<%- genericdoc.accounttype %>" class="ts-input"/>
-										</div>
-									</div>
-									<div class="ts-row ts-form-row">
-										<div class="ts-col-span12" >
-											<label class="ts-label">Activated</label>
-											<input type="text" disabled="disabled" value="<%- genericdoc.activated %>" class="ts-input"/>
-										</div>
-									</div>
-									<div class="ts-row ts-form-row">
-										<div class="ts-col-span12" >
-											<label class="ts-label">User Roles</label>
-											<%
-											var userroletextvalue ="";
-											if(genericdoc.userroles && genericdoc.userroles.length >0){
-												genericdoc.userroles.forEach(function(userrole){ 
-													userroletextvalue+="#"+userrole.title+" ";
-												});
-											}%>
-
-											<input type="text" disabled="disabled" value="<%- userroletextvalue %>" class="ts-input"/>
-										</div>
-									</div>
-								<%} %>
-							</div>
-						</section>
+		<div class="ts-genericdoc-entry ts-col-span8 ts-screensm-col-span12 ts-screenxs-col-span12">
+			<!-- START: Account Information -->
+			<details open="open" class="ts-text-sm">
+				<summary>
+					<% if(genericdoc.username){%>Edit<%}else{%>New<%} %> User Account
+				</summary>
+				<aside>
+					<div class="ts-row ts-form-row">
+						<div>
+							<label class="ts-label">Name</label>
+						</div>
+						<input type="text" name="firstname" placeholder="first name" value="<%- genericdoc.firstname %>" class="ts-input"/>
+						<input type="text" name="lastname" placeholder="last name" value="<%- genericdoc.lastname %>" class="ts-input"/>
 					</div>
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Website</label>
+						<input type="text" name="url" placeholder="http://mywebsite.com" value="<%- genericdoc.url %>"  class="ts-input" />
+					</div>
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Bio</label>
+						<input type="text" name="description" placeholder="no profile"  class="ts-input" value="<%- genericdoc.description %>"/>
+					</div>
+					<!-- <div class="ts-row ts-form-row">
+						<label class="ts-label">Location</label>
+						<input type="password" name="password" placeholder="password"  class="ts-input"/>
+					</div> -->
+					<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
+						<label class="ts-label">Gender</label>
+						<% var docgender = [{
+							"value":"male",
+							"label":"Male"
+							},{
+							"value":"female",
+							"label":"Female"
+							},{
+							"value":"other",
+							"label":"Other"
+							}]; %>
+						<select name="gender" class="ts-input">
+							<option disabled="disabled" <% if(!genericdoc || typeof genericdoc.gender==='undefined' ){%> selected="selected" <%}%> >Select a gender</option>
+							<% docgender.forEach(function(gender){
+								%>
+									<option <% if(genericdoc && typeof genericdoc.gender==='string' && genericdoc.gender === gender.value ){%> selected="selected"
+									<%}%> value="<%- gender.value %>"><%- gender.label %></option>
+								<%
+								}); %>
+						</select>
+					</div>
+				</aside>
+			</details>
+			<!-- END: Account Information -->
+			<!-- START: Account Information -->
+			<details open="open" class="ts-text-sm">
+				<summary>
+					Account Images
+				</summary>
+				<aside>
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Account Image</label>
+				  	<% include _compose_user_assets %>
+					</div>
+					
+				</aside>
+			</details>
+			<!-- END: Account Information -->
+		</div>
+
+		<div class=" ts-col-span4 ts-screensm-col-span12 ts-screenxs-col-span12">
+			
+
+			<details open="open" class="ts-text-sm">
+				<summary>
+					<div class="ts-pull-right">
+			      <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">
+			      	<% if(genericdoc.username){%>Update<%}else{%>Save<%}%>
+				     </button>
+						<%if(genericdoc){%>
+							<a data-href="/<%- locals.adminPath %>/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-successfunction="backToUsersLanding" >Delete</a>
+						<%}%>
+					</div>
+						Account Info
+				</summary>
+				<aside>
+				<!-- Start: Account Information -->
+				<div class="ts-row ts-form-row">
+					<label class="ts-label">Email</label>
+					<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" class="ts-input"/>
 				</div>
-			</div>
-			<div class="ts-col-span12">
-				<div class="ts-row ts-form-row ts-text-center no-margin">
-					<input type="submit" name="save_button" value="<% if(genericdoc.username){%>Update<%}else{%>Save<%}%>" class="ts-button ts-color-info ts-col-span2 ts-col-nofloat"/>
+				<div class="ts-row ts-form-row">
+					<label class="ts-label">Username</label>
+					<input type="text" name="username"  autocomplete="off" placeholder="username"  value="<%- genericdoc.username %>" class="ts-input" />
 				</div>
-			</div>
+				<div class="ts-row ts-form-row">
+					<label class="ts-label">Password</label>
+					<input type="password" name="password" value="" placeholder="password" autocomplete="off"  class="ts-input"/>
+				</div>
+				<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
+					<label class="ts-label">Confirm password</label>
+					<input type="password" title="confirm your password" value="" name="passwordconfirm" placeholder="confirm password" autocomplete="off" class="ts-input" />
+				</div>
+				<!-- END: Account Information -->
+			</aside>
+		</details>
+		<details open="open" class="ts-text-sm">
+				<summary>
+				Account Details
+				</summary>
+				<aside>
+				  <% if(user.privileges['760'] || user.accounttype==='admin'){%>
+						<div class="ts-row ts-form-row">
+							<div class="ts-col-span12" >
+								<label class="ts-label">User Roles</label>
+								<input type="text" 
+									id="padmin-userroles" 
+									data-ajax-prop="userroles" 
+									data-ajax-source="/<%- locals.adminPath %>/userrole/new" 
+									data-ajax-setdata-variable="genericdoc_userroles" 
+        					data-ajax-formie="edit-user-form" 
+									class="ts-col-span12 ts-datalist-tagged" 
+									placeholder="User Roles" 
+									name="userroles-ts-datalist-tagged" 
+      					  />
+							</div>
+							<% 
+							if(genericdoc && genericdoc.userroles){%>
+							<script type="text/javascript">
+							  <%- locals.viewhelper.passObjToClient(genericdoc.userroles,"genericdoc_userroles") %>
+							</script>
+							<%}%>
+							<div class="ts-col-span12">
+								<label class="ts-label">Account Type</label>
+								<% var docaccounttype = [{
+									"value":"basic",
+									"label":"basic"
+									},{
+									"value":"admin",
+									"label":"admin"
+									},{
+									"value":"invalid",
+									"label":"invalid"
+									}]; %>
+								<select name="accounttype" class="ts-input">
+									<% docaccounttype.forEach(function(accounttype){
+										%>
+											<option <% if(genericdoc && typeof genericdoc.accounttype==='string' && genericdoc.accounttype === accounttype.value ){%> selected="selected"
+											<%}%> value="<%- accounttype.value %>"><%- accounttype.label %></option>
+										<%
+										}); %>
+								</select>
+							</div>
+							<div class="ts-col-span12">
+								<label class="ts-label">Activated</label>
+								<% var docactivated = [{
+									"value":true,
+									"label":"true"
+									},{
+									"value":false,
+									"label":"false"
+									}]; %>
+								<select name="activated" class="ts-input">
+									<% docactivated.forEach(function(activated){
+										%>
+											<option <% if(genericdoc && genericdoc.activated === activated.value ){%> selected="selected"
+											<%}%> value="<%- activated.value %>"><%- activated.label %></option>
+										<%
+										}); %>
+								</select>
+							</div>
+						</div>
+					<%}
+					else{ %>
+						<div class="ts-row ts-form-row">
+							<div class="ts-col-span12" >
+								<label class="ts-label">Account Type</label>
+								<input type="text" disabled="disabled" value="<%- genericdoc.accounttype %>" class="ts-input"/>
+							</div>
+						</div>
+						<div class="ts-row ts-form-row">
+							<div class="ts-col-span12" >
+								<label class="ts-label">Activated</label>
+								<input type="text" disabled="disabled" value="<%- genericdoc.activated %>" class="ts-input"/>
+							</div>
+						</div>
+						<div class="ts-row ts-form-row">
+							<div class="ts-col-span12" >
+								<label class="ts-label">User Roles</label>
+								<%
+								var userroletextvalue ="";
+								if(genericdoc.userroles && genericdoc.userroles.length >0){
+									genericdoc.userroles.forEach(function(userrole){ 
+										userroletextvalue+="#"+userrole.title+" ";
+									});
+								}%>
+
+								<input type="text" disabled="disabled" value="<%- userroletextvalue %>" class="ts-input"/>
+							</div>
+						</div>
+					<%} %>
+
+				  <% if(typeof genericdoctypename === "string" && genericdoc){%>
+						<div class="ts-row  ts-text-center ts-text-sm ts-padding-lg">
+				      <% if(genericdoc){%> 
+								
+				      <%}%>
+						</div>
+				  <%}%>
+				</aside>
+			</details>
 		</div>
 	</div>
 </div>
+<% include ../../shared/_template_compose_taxonomies %>

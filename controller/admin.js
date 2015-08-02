@@ -16,7 +16,8 @@ var async = require('async'),
 	Compilation,
 	Item,
 	User,
-	adminExtSettings;
+	adminExtSettings,
+	loginSettings;
 
 var admin_index = function (req, res) {
 	// console.log('req._parsedUrl.pathname === \'/\'',)
@@ -175,6 +176,24 @@ var getHomepageStats = function (req, res, next) {
 	});
 };
 
+var checkDeleteUser = function (req, res, next) {
+	if ((req.user.activated || req.user.accounttype || req.user.userroles) && !User.hasPrivilege(req.user, 760)) {
+		var err = new Error('EXT-UAC760: You don\'t have access to modify user access');
+		next(err);
+	}
+	else {
+		next();
+	}
+};
+
+var checkUserValidation = function (req, res, next) {
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	// console.log('loginSettings', loginSettings);
+	req.controllerData.checkuservalidation = loginSettings.new_user_validation;
+	req.controllerData.checkuservalidation.useComplexity = loginSettings.complexitySettings.useComplexity;
+	req.controllerData.checkuservalidation.complexity = loginSettings.complexitySettings.settings.weak;
+	next();
+};
 /**
  * admin controller
  * @module authController
@@ -203,12 +222,15 @@ var controller = function (resources) {
 	// AppDBSetting = mongoose.model('Setting');
 	// var appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
+	loginSettings = resources.app.controller.extension.login.loginExtSettings;
 
 	return {
 		admin_index: admin_index,
 		getMarkdownReleases: getMarkdownReleases,
 		getHomepageStats: getHomepageStats,
 		adminExtSettings: adminExtSettings,
+		checkDeleteUser: checkDeleteUser,
+		checkUserValidation: checkUserValidation
 	};
 };
 

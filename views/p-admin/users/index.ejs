@@ -1,0 +1,17 @@
+<% include ../../shared/header %>
+<% genericdoctype = "User" %>
+<% genericdoctypelink = "user" %>
+<% genericdoctypeplurallink = "users" %>
+<% genericdoccount = userscount %>
+<% genericdocpages = userpages %>
+<% genericdoc_tktouse = "createdat,updatedat,username,email,firstname,lastname,birthday,accounttype,gender,primaryasset,assets,userroles,primaryauthor,coverimages,coverimage" %>
+<div class="ts-container">
+  <div class="ts-page-content-container">
+    <% include ../../shared/genericdoc_search_filters %>
+    <% users.forEach(function(genericdoc,i){%>
+    <% include ../../shared/genericdoc_list_user %>
+    <%})%>
+    <input type="hidden" name="_csrf" value=<%- locals.token %> >
+  </div>
+</div>
+<% include ../../shared/footer %>

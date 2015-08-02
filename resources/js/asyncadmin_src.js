@@ -329,9 +329,26 @@ var defaultAjaxFormie = function (formElement) {
 			}
 		},
 		errorcallback: function (error, response) {
-			window.showErrorNotificaton({
-				message: error.message
-			});
+			// console.log('error', error);
+			// console.log('response.response', response.response);
+			if (error.message) {
+				window.showErrorNotificaton({
+					message: error.message
+				});
+			}
+			else {
+				try {
+					var jsonmessage = JSON.parse(response.response);
+					window.showErrorNotificaton({
+						message: jsonmessage.data.error
+					});
+				}
+				catch (e) {
+					window.showErrorNotificaton({
+						message: error
+					});
+				}
+			}
 			window.endPreloader();
 			logToAdminConsole({
 				msg: error,

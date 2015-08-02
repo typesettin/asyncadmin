@@ -1,0 +1,65 @@
+<% fk_to_use = (typeof genericdoc_tktouse !=='undefined')? genericdoc_tktouse : "createdat,updatedat,title,name,content,contenttypes,tags,categories,assets,primaryasset,authors,primaryauthor,changes" %>
+<form 
+  id="search-options-form" 
+  name="search-options-form" 
+  class="ts-form search-options-form async-admin-ajax-page-forms" 
+  method="get">
+  <details class="ts-genericdoc">
+    <summary>
+      <span class="ts-text-xx ts-text-bold">Manage &rsaquo; <%-genericdoctype%>s</span>
+      <% if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag" ) {%>
+        <a class=" ts-button ts-pull-right ts-open-modal" href="/<%- locals.adminPath %>/content/<%- genericdoctypelink  %>/new" data-tsmodal-id="new-<%- genericdoctypelink  %>-modal">New <%- genericdoctype %></a>
+      <%}else if(genericdoctypelink ==="user" ) {%>
+        <a class="async-admin-ajax-link ts-button ts-pull-right" href="/<%- locals.adminPath %>/<%- genericdoctypelink  %>/new">New <%- genericdoctype %></a>
+      <%}else{%>
+        <a class="async-admin-ajax-link ts-button ts-pull-right" href="/<%- locals.adminPath %>/content/<%- genericdoctypelink  %>/new">New <%- genericdoctype %></a>
+      <%}%>
+
+    <div>
+      Search: <input name="search" value="<%- request.query.search %>"/>
+      <div class="ts-pull-right"> 
+        <% var genericdocsperpage = [{
+        "value":"15",
+        "label":"15"
+        },{
+        "value":"30",
+        "label":"30"
+        },{
+        "value":"50",
+        "label":"50"
+        },{
+        "value":"200",
+        "label":"200"
+        }]; %>
+        <select name="limit"  class="autoFormSubmit">
+          <% genericdocsperpage.forEach(function(iperpage){
+            %>
+              <option <% if(request.query.limit === iperpage.value ){%> selected="selected"
+              <%}%> value="<%= iperpage.value %>"><%= iperpage.label %></option>
+            <%
+            }); %>
+        </select> 
+
+       of 
+      <%- genericdoccount %> 
+      <%- genericdoctypeplurallink %> | page 
+      <input style="width:1em;" class="autoFormSubmit" name="pagenum" value="<%- request.query.pagenum %>"/>
+       of 
+      <%- genericdocpages %></div>  
+    </div>
+    
+    </summary>
+    <aside>
+      <div id="<%- genericdoctype %>-filterlist-container" class="asyncadmin-ts-filterlist ts-row" data-filterkeys="<%- fk_to_use %>" data-formelement="search-options-form">
+        <div class="ts-col-span10 ts-text-xs ts-container-margin-md">
+          <div class=" ts-form-row ts-filterlist-element-container">
+          </div>
+        </div>
+        <div class="ts-col-span2 ts-form-row ts-text-xs ts-text-center ts-container-margin-md">
+          <a  class="ts-button add-filterlist-button ts-width-100" name="parent-ts-datalist-tagged">Add filter</a>
+        </div>
+      </div>
+    </aside>
+  </details>
+  <hr>
+</form>

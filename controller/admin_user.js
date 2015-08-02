@@ -1,6 +1,7 @@
 'use strict';
 
-var CoreUtilities,
+var merge = require('utils-merge'),
+	CoreUtilities,
 	CoreController,
 	appSettings,
 	mongoose,
@@ -10,6 +11,7 @@ var CoreUtilities,
 	Compilation,
 	Item,
 	User,
+	adminPath,
 	adminExtSettings;
 
 /**
@@ -24,18 +26,14 @@ var users_index = function (req, res) {
 			themefileext: appSettings.templatefileextension,
 			extname: 'periodicjs.ext.asyncadmin'
 		},
-		viewdata = {
+		viewdata = merge(req.controllerData, {
 			pagedata: {
-				title: 'Manage Users',
-				toplink: '&raquo; Manage Users',
-				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+				title: 'Users',
+				toplink: '&raquo; Users',
 				extensions: CoreUtilities.getAdminMenu()
 			},
-			users: req.controllerData.users,
-			userscount: req.controllerData.userscount,
-			userpages: Math.ceil(req.controllerData.userscount / req.query.limit),
 			user: req.user
-		};
+		});
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
@@ -47,6 +45,7 @@ var users_index = function (req, res) {
  */
 var users_show = function (req, res) {
 	var allow_edit = false,
+		username_display = req.controllerData.user.username || req.controllerData.user.email || req.controllerData.user._id,
 		params = req.params;
 
 	if (params.id === req.user.username) {
@@ -72,8 +71,8 @@ var users_show = function (req, res) {
 		},
 		viewdata = {
 			pagedata: {
-				title: 'User profile (' + req.controllerData.user.username + ')',
-				toplink: '&raquo; User &raquo; ' + req.controllerData.user.username,
+				title: 'User profile (' + username_display + ')',
+				toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
 				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
 				extensions: CoreUtilities.getAdminMenu()
 			},
@@ -119,6 +118,7 @@ var users_new = function (req, res) {
  */
 var users_edit = function (req, res) {
 	var allow_edit = false,
+		username_display = req.controllerData.user.username || req.controllerData.user.email || req.controllerData.user._id,
 		params = req.params;
 
 	if (params.id === req.user.username) {
@@ -144,8 +144,8 @@ var users_edit = function (req, res) {
 		},
 		viewdata = {
 			pagedata: {
-				title: 'Edit ' + req.controllerData.user.username,
-				toplink: '&raquo; Edit user &raquo; ' + req.controllerData.user.username,
+				title: 'Edit ' + username_display,
+				toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
 				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
 				extensions: CoreUtilities.getAdminMenu()
 			},
@@ -183,6 +183,7 @@ var controller = function (resources) {
 	// AppDBSetting = mongoose.model('Setting');
 	// var appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
+	adminPath = resources.app.locals.adminPath;
 
 	return {
 		users_index: users_index,

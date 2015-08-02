@@ -75,12 +75,16 @@ module.exports = function (periodic) {
 		assetController = periodic.app.controller.native.asset,
 		authController = periodic.app.controller.extension.login.auth,
 		uacController = periodic.app.controller.extension.user_access_control.uac,
+		userroleController = periodic.app.controller.extension.user_access_control.userrole,
 		userController = periodic.app.controller.native.user,
 		userAdminController = periodic.app.controller.extension.asyncadmin.user;
 
 	/**
 	 * access control routes
 	 */
+
+	adminRouter.get('*', global.CoreCache.disableCache);
+	adminRouter.post('*', global.CoreCache.disableCache);
 	adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	extensionAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	themeAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
@@ -103,17 +107,37 @@ module.exports = function (periodic) {
 	/**
 	 * admin/user routes
 	 */
-	userAdminRouter.get('/search', userController.loadUsers, userAdminController.users_index);
+	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
 	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
 	userAdminRouter.post('/edit',
 		assetController.multiupload,
 		assetController.create_assets_from_files,
+		adminController.checkUserValidation,
 		userController.update);
-	userAdminRouter.post('/new', assetController.upload, userController.create);
-	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, userController.remove);
+	userAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, userController.create);
+	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
 
+
+
+	//user roles
+	adminRouter.get('/userroles', uacController.loadUserAccesControls, userroleController.index);
+	adminRouter.get('/userrole/new', userroleController.userrole_new);
+	adminRouter.get('/userrole/:id', uacController.loadUserrole, userroleController.show);
+	adminRouter.get('/userrole/edit/:id', uacController.loadUserrole, userroleController.show);
+	adminRouter.post('/userrole/new/:id', uacController.skipInvalid, uacController.loadUserrole, userroleController.create);
+	adminRouter.post('/userrole/new', userroleController.create);
+	adminRouter.post('/userrole/edit', userroleController.update);
+	adminRouter.post('/userrole/:id/delete', uacController.loadUserrole, userroleController.remove);
+	adminRouter.get('/userroles/search.:ext', global.CoreCache.disableCache, uacController.loadUserroles, uacController.userroleSearchResults);
+	adminRouter.get('/userroles/search', global.CoreCache.disableCache, uacController.loadUserroles, uacController.userroleSearchResults);
+
+
+	//user priviliges
+	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
+	adminRouter.get('/userprivileges/search', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
 
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);

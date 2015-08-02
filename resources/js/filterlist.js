@@ -84,6 +84,7 @@ var generate_filter_container = function (elem, e, filterkeyslist, forbject_name
 	filter_query_key_op.innerHTML = '<option value="is"> = </option>';
 	filter_query_key_op.innerHTML += '<option value="like"> % like % </option>';
 	filter_query_key_op.innerHTML += '<option value="not"> != </option>';
+	filter_query_key_op.innerHTML += '<option value="not-like"> % not like % </option>';
 	filter_query_key_op.innerHTML += '<option value="lt"> < </option>';
 	filter_query_key_op.innerHTML += '<option value="lte"> <= </option>';
 	filter_query_key_op.innerHTML += '<option value="gt"> > </option>';

@@ -1,0 +1,52 @@
+<% username_display = genericdoc.username || genericdoc.email || genericdoc._id; %>
+<details class="ts-genericdoc">
+  <summary>
+    <div class="ts-genericdoc-hoveroptions ts-pull-right">
+      <a href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/edit" class="async-admin-ajax-link"><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/doc_edit_three.svg" alt="edit"  class="ts-icon async-admin-ajax-link" data-ajax-href="/<%- locals.adminPath %>/<%- genericdoctypelink %>/<%- genericdoc._id %>/edit" /></a>
+      <!-- <img src="/extensions/periodicjs.ext.asyncadmin/img/icons/doc_view_two.svg" alt="view"  class="ts-icon" /></a> -->
+      <a><img src="/extensions/periodicjs.ext.asyncadmin/img/icons/doc_delete.svg" alt="delete"  class="ts-icon ts-button-error-color ts-dialog-delete"  data-href="/<%- locals.adminPath %>/<%- genericdoctypelink %>/<%- genericdoc._id %>/delete" data-deleted-redirect-href="/<%- locals.adminPath %>/<%- genericdoctypeplurallink %>"/></a>
+    </div>
+    <%- username_display %> - <%- genericdoc._id %>
+    <small class="ts-text-divider-text-color">(<%- locals.viewhelper.moment(genericdoc.createdat).format('YYYY/MM/DD hh:mm:ssa') %>) 
+    </small>
+
+    <hr>
+  </summary>
+  <aside class="ts-text-xs">
+    <div class="ts-row">
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>First name</strong>:  <%- genericdoc.firstname %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Last name</strong>: <%- genericdoc.lastname %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Email</strong>: <%- genericdoc.email %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Gender</strong>: <%- genericdoc.gender %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Activated</strong>:  <%- genericdoc.activated %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Account Type</strong>: <%- genericdoc.accounttype %> 
+
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>Updated Date</strong>: <%- locals.viewhelper.moment(genericdoc.updatedat).format('YYYY/MM/DD - hh:mm:ssa') %> 
+      </div>
+      <div class="ts-screensm-col-span12 ts-col-span3 ">
+        <strong>User Roles</strong>:
+        <% generictaxomony = genericdoc.userroles %>
+        <% include generictax_list_item %>
+      </div>
+    </div>
+    <div class="ts-row">
+      <div class="ts-col-span12">
+        <% genericassets = genericdoc.assets %>
+        <% include genericassets_list_item %>
+      </div>
+    </div>
+  </aside>
+</details>
