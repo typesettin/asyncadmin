@@ -1,0 +1,51 @@
+<div class="ts-modal-hidden-container">
+  <div id="new-userrole-modal" data-name="new-userrole-modal" class="ts-modal ts-modal-effect-1 ts-width-66">
+    <section class="ts-modal-content ts-bg-text-primary-color  ts-no-heading-margin ts-padding-md ts-shadow ">
+      <form class="ts-form async-admin-ajax-forms" name="new-userrole-form" id="new-userrole-form" method="post" action="/<%- locals.adminPath %>/userrole/new" data-successsubmitfunction="adminRefresh">
+        <input type="hidden" name="_csrf" value=<%- locals.token %> >
+        <div  id="new-userrole-modal-content">
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">Title</label>
+            </div>
+            <input type="text" placeholder="title" class="ts-input" name="title">
+          </div>
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">ID</label>
+            </div>
+            <input type="text" placeholder="userroleid" class="ts-input" name="userroleid">
+          </div>
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">Description</label>
+            </div>
+            <input type="text" placeholder="description" class="ts-input" name="description">
+          </div>
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">Privileges</label>
+            </div>
+            <input type="text" 
+                  id="padmin-userprivileges" 
+                  data-ajax-prop="userprivileges" 
+                  data-ajax-source="/<%- locals.adminPath %>/userprivilege/new" 
+                  data-ajax-setdata-variable="genericdoc_userprivileges" 
+                  class="ts-col-span12 ts-datalist-tagged" 
+                  placeholder="User Privileges" 
+                  name="userprivileges-ts-datalist-tagged" 
+                  />
+          </div>
+        </div>
+        <div class="ts-row ts-form-row">
+          <div class="ts-col-span12 ts-text-center">
+            <input type="submit" name="new_userrole_button" value="create user role" class="ts-button ts-button-primary-color ts-modal-close"/>
+            <a class="ts-button ts-modal-close">cancel</a>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="ts-modal-overlay ts-bg-primary-color"></div>
+</div>
+<% include ../../shared/_template_compose_taxonomies %>

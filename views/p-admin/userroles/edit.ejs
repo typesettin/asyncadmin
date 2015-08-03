@@ -1,0 +1,28 @@
+<% include ../../shared/header %>
+<div class="ts-container">
+	<section class="ts-text-container ts-genericdoc">
+		<% include ../../shared/_html_inject_precontent %>
+		<script type="text/javascript">
+		<%- locals.viewhelper.passObjToClient(userrole.privileges,"userproleuseprivileges") %>
+		</script>
+		<form class="ts-form async-admin-ajax-forms" id="edit-userrole-form" name="edit-userrole-form" method="post" action="/<%- locals.adminPath %>/user/edit"  onsubmit="return false;" enctype='multipart/form-data' 
+data-successsubmitfunction="adminRefresh">
+			<input type="hidden" name="_csrf" value=<%- locals.token %> >
+			<div class="ts-page-content-container-profile-page">
+				<div class="ts-row">
+					<div class="ts-genericdoc-entry ts-col-span7 ts-screensm-col-span12 ts-screenxs-col-span12">
+						<%- userrole %>
+					</div>
+					<div class=" ts-col-span5 ts-screensm-col-span12 ts-screenxs-col-span12">
+						<h6>All Privileges</h6>
+						<% userprivileges.forEach(function(userprivilege){%>
+							<span class="ts-button ts-text-xs">#<%- userprivilege.name %> (<%- userprivilege.userprivilegeid %>)</span>
+						<%} );%>
+					</div>
+				</div>
+			</div>
+		</form>
+		<% include ../../shared/_html_inject_postcontent %>
+	</section>
+</div>
+<% include ../../shared/footer %>

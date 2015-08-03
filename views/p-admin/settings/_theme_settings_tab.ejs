@@ -1,0 +1,33 @@
+<aside class="ts-padding-md ts-border-divider-text-color">
+	<form class="ts-form ts-ajax-form noFormSubmit" method="post" action="/p-admin/settings/updatethemesettings">
+		<input type="hidden" name="_csrf" value=<%- locals.token %> >
+		<div class="ts-document">
+			<div class="ts-row">
+				<p>Updates <a class="ts-button ts-text-sm">content/config/themes/<%= appsettings.readonly.theme %>/periodicjs.theme.json</a> and restarts your application.</p>
+				<details open="open">
+					<summary>
+						Configuration Options [<%- themesettings.environment %>]
+					</summary>
+					<aside>
+						<p class="extra-padding">
+							<div id="themesettings-config"></div>
+						</p>
+					</aside>
+				</details>
+				<details open="open">
+					<summary>
+						Read Only
+					</summary>
+					<aside>
+						<p class="extra-padding">
+							<div id="themesettings-readonly"></div>
+						</p>
+						<p class="ts-text-center">
+								<button type="submit" class=" ts-button ts-color-info " style="font-size: 110%;">Update Theme Settings</button>
+						</p>
+					</aside>
+				</details>
+			</div>
+		</div>
+	</form>
+</aside>

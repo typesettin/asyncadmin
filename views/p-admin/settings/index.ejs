@@ -1,0 +1,40 @@
+<% include ../../shared/header %>
+	<input type="hidden" name="_csrf" value=<%= locals.token %> >
+	<div class="ts-container">
+		<section class="ts-text-container">
+			<div class="ts-row">
+				<div class="ts-col-span12">
+					<div id="periodic-settings-tabs" class="ts-tabs">
+						<nav>
+							<ul class="ts-col-span12 ts-text-center">
+								<li class="ts-col-span3 ts-no-margin">Periodic Settings</li>
+								<li class="ts-col-span3 ts-no-margin">Theme Settings</li>
+								<li class="ts-col-span3 ts-no-margin">Restart</li>
+								<li class="ts-col-span3 ts-no-margin">Help</li>
+							</ul>
+						</nav>
+						<div class="ts-tabs-content ts-tab-border">
+							<section class="ts-no-padding">
+								<% include _periodic_settings_tab %>
+							</section>
+							<section class="ts-no-padding">
+								<% include _theme_settings_tab %>
+							</section>
+							<section class="ts-no-padding">
+								<% include _restart_tab %>
+							</section>
+							<section class="ts-no-padding">
+								<% include _help_tab %>
+							</section>
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
+	</div>
+<script type="text/javascript">
+<%- locals.viewhelper.passObjToClient(appsettings,"appsettings") %>
+<%- locals.viewhelper.passObjToClient(themesettings,"themesettings") %>
+</script>
+<script type="text/javascript" src="/extensions/periodicjs.ext.asyncadmin/js/settings.min.js"></script>
+<% include ../../shared/footer %>

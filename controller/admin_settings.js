@@ -1,0 +1,708 @@
+'use strict';
+
+var path = require('path'),
+	// request = require('superagent'),
+	async = require('async'),
+	fs = require('fs-extra'),
+	str2json = require('string-to-json'),
+	merge = require('utils-merge'),
+	ejs = require('ejs'),
+	CoreUtilities,
+	CoreController,
+	CoreExtension,
+	CoreMailer,
+	appSettings,
+	dbSettings,
+	mongoose,
+	AppDBSetting,
+	logger,
+	restartfile = path.join(process.cwd(), '/content/config/restart.json'),
+	changedemailtemplate,
+	emailtransport;
+
+/**
+ * default email settings, sends mail with nodemailer and mail core extension
+ * @param  {object} options - contains email options and nodemailer transport
+ * @param  {Function} callbackk async callback
+ */
+var sendEmail = function (options, callback) {
+	var mailtransport = options.mailtransport,
+		user = options.user,
+		mailoptions = {};
+
+	mailoptions.to = (options.to) ? options.to : appSettings.adminnotificationemail;
+	mailoptions.cc = user.email; //options.cc;
+	mailoptions.bcc = options.bcc;
+	mailoptions.replyTo = options.replyTo;
+	mailoptions.subject = options.subject;
+	if (options.generatetextemail) {
+		mailoptions.generateTextFromHTML = true;
+	}
+	mailoptions.html = options.html;
+	mailoptions.text = options.text;
+	mailtransport.sendMail(mailoptions, callback);
+};
+
+
+/**
+ * send setting update email
+ * @param  {object} options - contains email options and nodemailer transport
+ * @param  {Function} callbackk async callback
+ */
+var sendSettingEmail = function (options, callback) {
+	var settingemailoptions = options;
+	settingemailoptions.subject = (options.subject) ? options.subject : appSettings.name + ' -Admin Email Notification';
+	settingemailoptions.generatetextemail = true;
+	settingemailoptions.html = ejs.render(options.emailtemplate, settingemailoptions);
+	// console.log('settingemailoptions',settingemailoptions);
+	sendEmail(settingemailoptions, callback);
+};
+
+/**
+ * restarts application response handler and send notification email
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var restart_app = function (req, res) {
+	CoreUtilities.restart_app({
+		restartfile: restartfile
+	});
+	CoreController.handleDocumentQueryRender({
+		req: req,
+		res: res,
+		redirecturl: '/p-admin/settings',
+		responseData: {
+			result: 'success',
+			data: 'restarted'
+		}
+	});
+	if (changedemailtemplate && emailtransport) {
+		var d = new Date();
+		fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
+			if (err) {
+				logger.err(err);
+			}
+			else if (templatestring) {
+				sendSettingEmail({
+					subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Restart Notification',
+					user: req.user,
+					hostname: req.headers.host,
+					appname: appSettings.name,
+					appenvironment: appSettings.application.environment,
+					appport: appSettings.application.port,
+					settingmessage: 'Your application was restarted from the admin interface - ' + d,
+					emailtemplate: templatestring,
+					mailtransport: emailtransport
+				}, function (err, status) {
+					if (err) {
+						logger.error(err);
+					}
+					else {
+						console.info('email status', status);
+					}
+				});
+			}
+		});
+	}
+};
+
+/**
+ * placeholder response for updating application
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var update_app = function (req, res) {
+	CoreController.handleDocumentQueryRender({
+		req: req,
+		res: res,
+		redirecturl: '/p-admin/settings',
+		responseData: {
+			result: 'success',
+			data: 'restarted'
+		}
+	});
+};
+
+/**
+ * load the extensions configuration files from the installed config folder in content/config/extensions/[extension]/[config files]
+ * @param  {object}   req
+ * @param  {object}   res
+ * @param  {Function} next
+ */
+var load_extension_settings = function (req, res, next) {
+	var extname = req.params.id,
+		ext_default_config_file_path = path.resolve(process.cwd(), 'node_modules/', extname, 'config'),
+		ext_installed_config_file_path = path.resolve(process.cwd(), 'content/config/extensions/', extname);
+
+	/**
+	 * load config files into array of filejson
+	 * @param  {Function} callback async callbackk
+	 * @return {array}            array of file data objects
+	 */
+	var loadconfigfiles = function (callback) {
+		var configfilesJSON = [];
+		fs.readdir(ext_installed_config_file_path, function (err, configfiles) {
+			if (configfiles && configfiles.length > 0) {
+				async.each(configfiles, function (configFile, cb) {
+					if (path.extname(configFile) === '.json') {
+						fs.readJson(path.resolve(ext_installed_config_file_path, configFile), function (err, data) {
+							if (err) {
+								cb(err);
+							}
+							else {
+								configfilesJSON.push({
+									name: configFile,
+									filedata: data
+								});
+								cb(null);
+							}
+						});
+					}
+					else {
+						fs.readFile(path.resolve(ext_installed_config_file_path, configFile), 'utf8', function (err, data) {
+							if (err) {
+								cb(err);
+							}
+							else {
+								configfilesJSON.push({
+									name: configFile,
+									filedata: data
+								});
+								cb(null);
+							}
+						});
+					}
+				}, function (err) {
+					if (err) {
+						callback(err);
+					}
+					else {
+						callback(null, configfilesJSON);
+					}
+				});
+			}
+			else {
+				callback(null, configfilesJSON);
+			}
+		});
+	};
+
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+
+
+	async.waterfall([
+			function (cb) {
+				cb(null, {
+					ext_default_config_file_path: ext_default_config_file_path,
+					ext_installed_config_file_path: ext_installed_config_file_path
+				});
+			},
+			CoreExtension.getExtensionConfigFiles,
+			CoreExtension.copyMissingConfigFiles,
+			loadconfigfiles
+		],
+		function (err, result) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				// console.log('err', err, 'result', result);
+				req.controllerData.extconfigfiles = result;
+				next();
+			}
+		});
+};
+
+/**
+ * save data from theme page post
+ * @param  {object} req
+ * @param  {object} res
+ */
+var update_theme_filedata = function (req, res) {
+	var updateThemeFileData = CoreUtilities.removeEmptyObjectValues(req.body),
+		themeconffile = path.resolve(process.cwd(), 'content/themes/', updateThemeFileData.themename, updateThemeFileData.filename),
+		jsonParseError;
+	delete updateThemeFileData._csrf;
+
+	try {
+		updateThemeFileData.filedata = (path.extname(updateThemeFileData.filename) === '.json') ? JSON.parse(updateThemeFileData.filedata) : updateThemeFileData.filedata;
+	}
+	catch (e) {
+		jsonParseError = e;
+	}
+
+	if (path.extname(updateThemeFileData.filename) === '.json') {
+		logger.warn('write json');
+		fs.writeJson(themeconffile, updateThemeFileData.filedata, function (err) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else if (jsonParseError) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: 'JSON Parse Error: ' + jsonParseError,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/theme/' + updateThemeFileData.themename,
+					responseData: {
+						result: 'success',
+						data: 'updated theme file and restarted application'
+					},
+					callback: function () {
+						CoreUtilities.restart_app({
+							restartfile: restartfile
+						});
+					}
+				});
+			}
+		});
+	}
+	else {
+		logger.warn('write file');
+		fs.outputFile(themeconffile, updateThemeFileData.filedata, function (err) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else if (jsonParseError) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: 'JSON Parse Error: ' + jsonParseError,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/theme/' + updateThemeFileData.themename,
+					responseData: {
+						result: 'success',
+						data: 'updated theme file and restarted application'
+					},
+					callback: function () {
+						CoreUtilities.restart_app({
+							restartfile: restartfile
+						});
+					}
+				});
+			}
+		});
+	}
+};
+
+/**
+ * save data from config page post
+ * @param  {object} req
+ * @param  {object} res
+ */
+var update_ext_filedata = function (req, res) {
+	var updateConfigFileData = CoreUtilities.removeEmptyObjectValues(req.body),
+		extconffile = path.resolve(process.cwd(), 'content/config/extensions/', updateConfigFileData.extname, updateConfigFileData.filename),
+		jsonParseError;
+	delete updateConfigFileData._csrf;
+
+	try {
+		updateConfigFileData.filedata = (path.extname(updateConfigFileData.filename) === '.json') ? JSON.parse(updateConfigFileData.filedata) : updateConfigFileData.filedata;
+	}
+	catch (e) {
+		jsonParseError = e;
+	}
+
+	if (path.extname(updateConfigFileData.filename) === '.json') {
+		logger.warn('write json');
+		fs.writeJson(extconffile, updateConfigFileData.filedata, function (err) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else if (jsonParseError) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: 'JSON Parse Error: ' + jsonParseError,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/extension/' + updateConfigFileData.extname,
+					responseData: {
+						result: 'success',
+						data: 'updated config file and restarted application'
+					},
+					callback: function () {
+						CoreUtilities.restart_app({
+							restartfile: restartfile
+						});
+					}
+				});
+			}
+		});
+	}
+	else {
+		logger.warn('write file');
+		fs.outputFile(extconffile, updateConfigFileData.filedata, function (err) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else if (jsonParseError) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: 'JSON Parse Error: ' + jsonParseError,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/extension/' + updateConfigFileData.extname,
+					responseData: {
+						result: 'success',
+						data: 'updated config file and restarted application'
+					},
+					callback: function () {
+						CoreUtilities.restart_app({
+							restartfile: restartfile
+						});
+					}
+				});
+			}
+		});
+	}
+};
+
+/**
+ * load app configuration information
+ * @param  {object} req
+ * @param  {object} res
+ * @param {object} next async callback
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var load_app_settings = function (req, res, next) {
+	var appsettings = {
+		readonly: {
+			application: appSettings.application,
+			cookies: appSettings.cookies,
+			crsf: appSettings.crsf,
+			database: dbSettings.url,
+			expressCompression: appSettings.expressCompression,
+			theme: appSettings.theme,
+			templatefileextension: appSettings.templatefileextension,
+			templateengine: appSettings.templateengine,
+			sessions: appSettings.sessions,
+			node_modules: appSettings.node_modules,
+			version: appSettings.version,
+		},
+		environment: appSettings.application.environment,
+		configuration: {
+			adminnotificationemail: appSettings.adminnotificationemail,
+			serverfromemail: appSettings.serverfromemail,
+			debug: appSettings.debug,
+			periodic_cache_status: appSettings.periodic_cache_status,
+			homepage: appSettings.homepage,
+			name: appSettings.name,
+		}
+	};
+
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.controllerData.appsettings = appsettings;
+	next();
+};
+
+/**
+ * load theme configuration information
+ * @param  {object} req
+ * @param  {object} res
+ * @param {object} next async callback
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var load_theme_settings = function (req, res, next) {
+	var themesettings = {
+		readonly: {},
+		environment: appSettings.application.environment,
+		configuration: {}
+	};
+
+	if (appSettings.themeSettings && appSettings.themeSettings.settings) {
+		themesettings.configuration = appSettings.themeSettings.settings[appSettings.application.environment];
+		themesettings.readonly = {
+			name: appSettings.themeSettings.name,
+			periodicCompatibility: appSettings.themeSettings.periodicCompatibility,
+			author: appSettings.themeSettings.author,
+			url: appSettings.themeSettings.url,
+			templatefileextension: appSettings.templatefileextension,
+			templateengine: appSettings.templateengine,
+			themepath: appSettings.themepath
+		};
+	}
+
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.controllerData.themesettings = themesettings;
+	next();
+};
+
+/**
+ * form upload handler to update app settings, and sends notification email
+ * @param  {object} req
+ * @param  {object} res
+ * @param {object} next async callback
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var update_app_settings = function (req, res) {
+	var updatedAppSettings = CoreUtilities.removeEmptyObjectValues(req.body),
+		appsettingsfile = path.join(process.cwd(), 'content/config/environment/' + appSettings.application.environment + '.json');
+
+	updatedAppSettings = CoreUtilities.replaceBooleanStringObjectValues(updatedAppSettings);
+	delete updatedAppSettings._csrf;
+
+	fs.ensureFileSync(appsettingsfile);
+	fs.readJson(appsettingsfile, function (err, appconfig) {
+		if (err) {
+			CoreController.handleDocumentQueryErrorResponse({
+				err: err,
+				res: res,
+				req: req
+			});
+		}
+		else {
+			updatedAppSettings = str2json.convert(updatedAppSettings);
+			var originalconfig = appconfig || {},
+				mergedconfig = merge(originalconfig, updatedAppSettings);
+
+			fs.writeJson(appsettingsfile, mergedconfig, function (err) {
+				if (err) {
+					CoreController.handleDocumentQueryErrorResponse({
+						err: err,
+						res: res,
+						req: req
+					});
+				}
+				else {
+					CoreController.handleDocumentQueryRender({
+						req: req,
+						res: res,
+						redirecturl: '/p-admin/settings',
+						responseData: {
+							result: 'success',
+							data: 'app config updated'
+						},
+						callback: function () {
+							CoreUtilities.restart_app({
+								restartfile: restartfile
+							});
+						}
+					});
+
+					if (changedemailtemplate && emailtransport) {
+						var d = new Date();
+						fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
+							if (err) {
+								logger.err(err);
+							}
+							else if (templatestring) {
+								sendSettingEmail({
+									subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Configuration Change Notification',
+									user: req.user,
+									hostname: req.headers.host,
+									appname: appSettings.name,
+									appenvironment: appSettings.application.environment,
+									appport: appSettings.application.port,
+									settingmessage: '<p>Your application was configuration was changed from the admin interface - ' + d + '</p><p><pre>' + JSON.stringify(mergedconfig, null, '\t') + '</pre></p>',
+									emailtemplate: templatestring,
+									mailtransport: emailtransport
+								}, function (err, status) {
+									if (err) {
+										logger.error(err);
+									}
+									else {
+										console.info('email status', status);
+									}
+								});
+							}
+						});
+					}
+				}
+			});
+		}
+	});
+};
+
+/**
+ * form upload handler to update theme settings, and sends notification email
+ * @param  {object} req
+ * @param  {object} res
+ * @param {object} next async callback
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var update_theme_settings = function (req, res) {
+	var updatedThemeSettings = CoreUtilities.removeEmptyObjectValues(req.body),
+		themesettingsfile = path.join(process.cwd(), 'content/config/themes', appSettings.theme, 'periodicjs.theme.json');
+
+	updatedThemeSettings = CoreUtilities.replaceBooleanStringObjectValues(updatedThemeSettings);
+	delete updatedThemeSettings._csrf;
+
+	fs.readJson(themesettingsfile, function (err, themeconfig) {
+		if (err) {
+			CoreController.handleDocumentQueryErrorResponse({
+				err: err,
+				res: res,
+				req: req
+			});
+		}
+		else {
+			updatedThemeSettings = str2json.convert(updatedThemeSettings);
+			var originalsettings = themeconfig.settings[appSettings.application.environment],
+				mergedsettings = merge(originalsettings, updatedThemeSettings),
+				newthemeconfig = themeconfig;
+			newthemeconfig.settings[appSettings.application.environment] = mergedsettings;
+
+			fs.writeJson(themesettingsfile, newthemeconfig, function (err) {
+				if (err) {
+					CoreController.handleDocumentQueryErrorResponse({
+						err: err,
+						res: res,
+						req: req
+					});
+				}
+				else {
+					CoreController.handleDocumentQueryRender({
+						req: req,
+						res: res,
+						redirecturl: '/p-admin/settings',
+						responseData: {
+							result: 'success',
+							data: 'theme config updated'
+						},
+						callback: function () {
+							CoreUtilities.restart_app({
+								restartfile: restartfile
+							});
+						}
+					});
+					if (changedemailtemplate && emailtransport) {
+						var d = new Date();
+						fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
+							if (err) {
+								logger.err(err);
+							}
+							else if (templatestring) {
+								sendSettingEmail({
+									subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Theme Setting Change Notification',
+									user: req.user,
+									hostname: req.headers.host,
+									appname: appSettings.name,
+									appenvironment: appSettings.application.environment,
+									appport: appSettings.application.port,
+									settingmessage: '<p>Your theme configuration was changed from the admin interface - ' + d + '</p><p><pre>' + JSON.stringify(newthemeconfig, null, '\t') + '</pre></p>',
+									emailtemplate: templatestring,
+									mailtransport: emailtransport
+								}, function (err, status) {
+									if (err) {
+										logger.error(err);
+									}
+									else {
+										console.info('email status', status);
+									}
+								});
+							}
+						});
+					}
+				}
+			});
+		}
+	});
+};
+
+/**
+ * settings controller
+ * @module settingsController
+ * @{@link https://github.com/typesettin/periodicjs.ext.admin}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @requires module:async
+ * @requires module:path
+ * @requires module:string-to-json
+ * @requires module:utils-merge
+ * @requires module:ejs
+ * @requires module:periodicjs.core.utilities
+ * @requires module:periodicjs.core.controller
+ * @requires module:periodicjs.core.mailer
+ * @param  {object} resources variable injection from current periodic instance with references to the active logger and mongo session
+ * @return {object}           settings
+ */
+var controller = function (resources) {
+	logger = resources.logger;
+	mongoose = resources.mongoose;
+	appSettings = resources.settings;
+	dbSettings = resources.db;
+	CoreController = resources.core.controller;
+	CoreUtilities = resources.core.utilities;
+	CoreExtension = resources.core.extension;
+	CoreMailer = resources.core.mailer;
+	AppDBSetting = mongoose.model('Setting');
+
+	CoreController.getPluginViewDefaultTemplate({
+			viewname: 'p-admin/email/settings/notification',
+			themefileext: appSettings.templatefileextension
+		},
+		function (err, templatepath) {
+			if (templatepath === 'p-admin/email/settings/notification') {
+				templatepath = path.resolve(process.cwd(), 'node_modules/periodicjs.ext.admin/views', templatepath + '.' + appSettings.templatefileextension);
+			}
+			changedemailtemplate = templatepath;
+		}
+	);
+	CoreMailer.getTransport({
+		appenvironment: appSettings.application.environment
+	}, function (err, transport) {
+		if (err) {
+			console.error(err);
+		}
+		else {
+			emailtransport = transport;
+		}
+	});
+
+	return {
+		load_extension_settings: load_extension_settings,
+		update_ext_filedata: update_ext_filedata,
+		update_theme_filedata: update_theme_filedata,
+		load_app_settings: load_app_settings,
+		load_theme_settings: load_theme_settings,
+		restart_app: restart_app,
+		update_app: update_app,
+		update_theme_settings: update_theme_settings,
+		update_app_settings: update_app_settings
+	};
+};
+
+module.exports = controller;

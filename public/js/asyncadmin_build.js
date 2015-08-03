@@ -1298,7 +1298,7 @@
 }());
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":44}],2:[function(require,module,exports){
+},{"_process":45}],2:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -2002,7 +2002,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"../package.json":4,"./utils":3,"fs":40,"path":43}],3:[function(require,module,exports){
+},{"../package.json":4,"./utils":3,"fs":41,"path":44}],3:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -5412,7 +5412,7 @@ bindie.prototype._render = function (options) {
 };
 module.exports = bindie;
 
-},{"ejs":8,"events":41,"util":49,"util-extend":10}],8:[function(require,module,exports){
+},{"ejs":8,"events":42,"util":50,"util-extend":10}],8:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -5944,7 +5944,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"./utils":9,"fs":40,"path":43}],9:[function(require,module,exports){
+},{"./utils":9,"fs":41,"path":44}],9:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -6044,7 +6044,229 @@ function extend(origin, add) {
 
 module.exports = require('./lib/classie');
 
-},{"./lib/classie":12}],12:[function(require,module,exports){
+},{"./lib/classie":13}],12:[function(require,module,exports){
+/* 
+ * classList.js: Cross-browser full element.classList implementation.
+ * 2014-07-23
+ *
+ * By Eli Grey, http://eligrey.com
+ * Public Domain.
+ * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+ */
+
+/*global self, document, DOMException, DOMTokenList */
+
+/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
+
+if ("document" in self) {
+
+    // Full polyfill for browsers with no classList support
+    if (!("classList" in document.createElement("_")) || document.createElementNS && !("classList" in document.createElementNS("http://www.w3.org/2000/svg", "g"))) {
+
+        (function(view) {
+
+            "use strict";
+
+            if (!('Element' in view)) {
+                return;
+            }
+
+            var classListProp = "classList",
+                protoProp = "prototype",
+                elemCtrProto = view.Element[protoProp],
+                objCtr = Object,
+                strTrim = String[protoProp].trim || function() {
+                    return this.replace(/^\s+|\s+$/g, "");
+                }, arrIndexOf = Array[protoProp].indexOf || function(item) {
+                    var
+                    i = 0,
+                        len = this.length;
+                    for (; i < len; i++) {
+                        if (i in this && this[i] === item) {
+                            return i;
+                        }
+                    }
+                    return -1;
+                },
+                // Vendors: please allow content code to instantiate DOMExceptions
+                DOMEx = function(type, message) {
+                    this.name = type;
+                    this.code = DOMException[type];
+                    this.message = message;
+                }, checkTokenAndGetIndex = function(classList, token) {
+                    if (token === "") {
+                        throw new DOMEx(
+                            "SYNTAX_ERR", "An invalid or illegal string was specified");
+                    }
+                    if (/\s/.test(token)) {
+                        throw new DOMEx(
+                            "INVALID_CHARACTER_ERR", "String contains an invalid character");
+                    }
+                    return arrIndexOf.call(classList, token);
+                }, ClassList = function(elem) {
+                    var
+                    trimmedClasses = strTrim.call(elem.getAttribute("class") || ""),
+                        classes = trimmedClasses ? trimmedClasses.split(/\s+/) : [],
+                        i = 0,
+                        len = classes.length;
+                    for (; i < len; i++) {
+                        this.push(classes[i]);
+                    }
+                    this._updateClassName = function() {
+                        elem.setAttribute("class", this.toString());
+                    };
+                }, classListProto = ClassList[protoProp] = [],
+                classListGetter = function() {
+                    return new ClassList(this);
+                };
+            // Most DOMException implementations don't allow calling DOMException's toString()
+            // on non-DOMExceptions. Error's toString() is sufficient here.
+            DOMEx[protoProp] = Error[protoProp];
+            classListProto.item = function(i) {
+                return this[i] || null;
+            };
+            classListProto.contains = function(token) {
+                token += "";
+                return checkTokenAndGetIndex(this, token) !== -1;
+            };
+            classListProto.add = function() {
+                var
+                tokens = arguments,
+                    i = 0,
+                    l = tokens.length,
+                    token, updated = false;
+                do {
+                    token = tokens[i] + "";
+                    if (checkTokenAndGetIndex(this, token) === -1) {
+                        this.push(token);
+                        updated = true;
+                    }
+                }
+                while (++i < l);
+
+                if (updated) {
+                    this._updateClassName();
+                }
+            };
+            classListProto.remove = function() {
+                var
+                tokens = arguments,
+                    i = 0,
+                    l = tokens.length,
+                    token, updated = false,
+                    index;
+                do {
+                    token = tokens[i] + "";
+                    index = checkTokenAndGetIndex(this, token);
+                    while (index !== -1) {
+                        this.splice(index, 1);
+                        updated = true;
+                        index = checkTokenAndGetIndex(this, token);
+                    }
+                }
+                while (++i < l);
+
+                if (updated) {
+                    this._updateClassName();
+                }
+            };
+            classListProto.toggle = function(token, force) {
+                token += "";
+
+                var
+                result = this.contains(token),
+                    method = result ?
+                        force !== true && "remove" :
+                        force !== false && "add";
+
+                if (method) {
+                    this[method](token);
+                }
+
+                if (force === true || force === false) {
+                    return force;
+                } else {
+                    return !result;
+                }
+            };
+            classListProto.toString = function() {
+                return this.join(" ");
+            };
+
+            if (objCtr.defineProperty) {
+                var classListPropDesc = {
+                    get: classListGetter,
+                    enumerable: true,
+                    configurable: true
+                };
+                try {
+                    objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
+                } catch (ex) { // IE 8 doesn't support enumerable:true
+                    if (ex.number === -0x7FF5EC54) {
+                        classListPropDesc.enumerable = false;
+                        objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
+                    }
+                }
+            } else if (objCtr[protoProp].__defineGetter__) {
+                elemCtrProto.__defineGetter__(classListProp, classListGetter);
+            }
+
+        }(self));
+
+    } else {
+        // There is full or partial native classList support, so just check if we need
+        // to normalize the add/remove and toggle APIs.
+
+        (function() {
+            "use strict";
+
+            var testElement = document.createElement("_");
+
+            testElement.classList.add("c1", "c2");
+
+            // Polyfill for IE 10/11 and Firefox <26, where classList.add and
+            // classList.remove exist but support only one argument at a time.
+            if (!testElement.classList.contains("c2")) {
+                var createMethod = function(method) {
+                    var original = DOMTokenList.prototype[method];
+
+                    DOMTokenList.prototype[method] = function(token) {
+                        var i, len = arguments.length;
+
+                        for (i = 0; i < len; i++) {
+                            token = arguments[i];
+                            original.call(this, token);
+                        }
+                    };
+                };
+                createMethod('add');
+                createMethod('remove');
+            }
+
+            testElement.classList.toggle("c3", false);
+
+            // Polyfill for IE 10 and Firefox <24, where classList.toggle does not
+            // support the second argument.
+            if (testElement.classList.contains("c3")) {
+                var _toggle = DOMTokenList.prototype.toggle;
+
+                DOMTokenList.prototype.toggle = function(token, force) {
+                    if (1 in arguments && !this.contains(token) === !force) {
+                        return force;
+                    } else {
+                        return _toggle.call(this, token);
+                    }
+                };
+
+            }
+
+            testElement = null;
+        }());
+    }
+
+}
+
+},{}],13:[function(require,module,exports){
 /*!
  * classie - class helper functions
  * from bonzo https://github.com/ded/bonzo
@@ -6059,47 +6281,75 @@ module.exports = require('./lib/classie');
 /*global define: false */
 'use strict';
 
-  // class helper functions from bonzo https://github.com/ded/bonzo
+// class helper functions from bonzo https://github.com/ded/bonzo
+var classList = require('./class_list_ployfill'),
+    classie;
 
-  function classReg( className ) {
+function classReg(className) {
     return new RegExp("(^|\\s+)" + className + "(\\s+|$)");
-  }
+}
 
-  // classList support for class management
-  // altho to be fair, the api sucks because it won't accept multiple classes at once
-  var hasClass, addClass, removeClass;
+function noop() {}
 
-  if (typeof document === "object" && 'classList' in document.documentElement ) {
-    hasClass = function( elem, c ) {
-      return elem.classList.contains( c );
-    };
-    addClass = function( elem, c ) {
-      elem.classList.add( c );
-    };
-    removeClass = function( elem, c ) {
-      elem.classList.remove( c );
-    };
-  }
-  else {
-    hasClass = function( elem, c ) {
-      return classReg( c ).test( elem.className );
-    };
-    addClass = function( elem, c ) {
-      if ( !hasClass( elem, c ) ) {
-        elem.className = elem.className + ' ' + c;
-      }
-    };
-    removeClass = function( elem, c ) {
-      elem.className = elem.className.replace( classReg( c ), ' ' );
-    };
-  }
+function isArr(classes) {
+    if (Array.isArray(classes)) {
+        return true;
+    } else if (Object.prototype.toString.call(classes) === '[object Array]') {
+        return true;
+    } else {
+        return false;
+    }
+}
 
-  function toggleClass( elem, c ) {
-    var fn = hasClass( elem, c ) ? removeClass : addClass;
-    fn( elem, c );
-  }
+function removeMultiple() {
+    var c = arguments[1],
+        elem = arguments[0];
+    c.forEach(function(value) {
+        if (classie.has(elem, value)) {
+            noop();
+        }
+        classie.removeClass(elem, value);
+    });
+}
 
-  var classie = {
+
+function addMultiple() {
+    var c = arguments[1],
+        elem = arguments[0];
+    c.forEach(function(value) {
+        if (classie.has(elem, value)) {
+            noop();
+        }
+        classie.addClass(elem, value);
+    });
+}
+
+function hasClass(elem, c) {
+    return elem.classList.contains(c);
+}
+
+function addClass(elem, c) {
+    if (isArr(c)) {
+        addMultiple.apply(this, arguments);
+    } else {
+        elem.classList.add(c);
+    }
+}
+
+function removeClass(elem, c) {
+    if (isArr(c)) {
+        removeMultiple.apply(this, arguments);
+    } else {
+        elem.classList.remove(c);
+    }
+}
+
+function toggleClass(elem, c) {
+    var fn = hasClass(elem, c) ? removeClass : addClass;
+    fn(elem, c);
+}
+
+var classie = {
     // full names
     hasClass: hasClass,
     addClass: addClass,
@@ -6110,24 +6360,19 @@ module.exports = require('./lib/classie');
     add: addClass,
     remove: removeClass,
     toggle: toggleClass
-  };
+};
 
-  // transport
+// transport
 
-  if ( typeof module === "object" && module && typeof module.exports === "object" ) {
+if (typeof module === "object" && module && typeof module.exports === "object") {
     // commonjs / browserify
     module.exports = classie;
-  } else {
+} else {
     // AMD
     define(classie);
-  }
+}
 
-  // If there is a window object, that at least has a document property,
-  // define classie
-  if ( typeof window === "object" && typeof window.document === "object" ) {
-    window.classie = classie;
-  }
-},{}],13:[function(require,module,exports){
+},{"./class_list_ployfill":12}],14:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6312,7 +6557,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":22}],14:[function(require,module,exports){
+},{"../../lib/codemirror":23}],15:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6399,7 +6644,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":22}],15:[function(require,module,exports){
+},{"../../lib/codemirror":23}],16:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6521,7 +6766,7 @@ module.exports = require('./lib/classie');
   });
 });
 
-},{"../../lib/codemirror":22}],16:[function(require,module,exports){
+},{"../../lib/codemirror":23}],17:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6628,7 +6873,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":22}],17:[function(require,module,exports){
+},{"../../lib/codemirror":23}],18:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6687,7 +6932,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
 
 });
 
-},{"../../lib/codemirror":22}],18:[function(require,module,exports){
+},{"../../lib/codemirror":23}],19:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6838,7 +7083,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   });
 });
 
-},{"../../lib/codemirror":22}],19:[function(require,module,exports){
+},{"../../lib/codemirror":23}],20:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -6986,7 +7231,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   }
 });
 
-},{"../../lib/codemirror":22,"./foldcode":18}],20:[function(require,module,exports){
+},{"../../lib/codemirror":23,"./foldcode":19}],21:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7032,7 +7277,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":22}],21:[function(require,module,exports){
+},{"../../lib/codemirror":23}],22:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7157,7 +7402,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
 });
 
-},{"../../lib/codemirror":22}],22:[function(require,module,exports){
+},{"../../lib/codemirror":23}],23:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7225,7 +7470,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     setGuttersForLineNumbers(options);
 
     var doc = options.value;
-    if (typeof doc == "string") doc = new Doc(doc, options.mode);
+    if (typeof doc == "string") doc = new Doc(doc, options.mode, null, options.lineSeparator);
     this.doc = doc;
 
     var input = new CodeMirror.inputStyles[options.inputStyle](this);
@@ -7874,7 +8119,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     // width and height.
     removeChildren(display.cursorDiv);
     removeChildren(display.selectionDiv);
-    display.gutters.style.height = 0;
+    display.gutters.style.height = display.sizer.style.minHeight = 0;
 
     if (different) {
       display.lastWrapHeight = update.wrapperHeight;
@@ -8115,12 +8360,22 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       lineView.node.removeChild(lineView.gutter);
       lineView.gutter = null;
     }
+    if (lineView.gutterBackground) {
+      lineView.node.removeChild(lineView.gutterBackground);
+      lineView.gutterBackground = null;
+    }
+    if (lineView.line.gutterClass) {
+      var wrap = ensureLineWrapped(lineView);
+      lineView.gutterBackground = elt("div", null, "CodeMirror-gutter-background " + lineView.line.gutterClass,
+                                      "left: " + (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) +
+                                      "px; width: " + dims.gutterTotalWidth + "px");
+      wrap.insertBefore(lineView.gutterBackground, lineView.text);
+    }
     var markers = lineView.line.gutterMarkers;
     if (cm.options.lineNumbers || markers) {
       var wrap = ensureLineWrapped(lineView);
       var gutterWrap = lineView.gutter = elt("div", null, "CodeMirror-gutter-wrapper", "left: " +
-                                             (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) +
-                                             "px; width: " + dims.gutterTotalWidth + "px");
+                                             (cm.options.fixedGutter ? dims.fixedPos : -dims.gutterTotalWidth) + "px");
       cm.display.input.setUneditable(gutterWrap);
       wrap.insertBefore(gutterWrap, lineView.text);
       if (lineView.line.gutterClass)
@@ -8241,13 +8496,19 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     cm.display.shift = false;
     if (!sel) sel = doc.sel;
 
-    var textLines = splitLines(inserted), multiPaste = null;
+    var paste = cm.state.pasteIncoming || origin == "paste";
+    var textLines = doc.splitLines(inserted), multiPaste = null;
     // When pasing N lines into N selections, insert one line per selection
-    if (cm.state.pasteIncoming && sel.ranges.length > 1) {
-      if (lastCopied && lastCopied.join("\n") == inserted)
-        multiPaste = sel.ranges.length % lastCopied.length == 0 && map(lastCopied, splitLines);
-      else if (textLines.length == sel.ranges.length)
+    if (paste && sel.ranges.length > 1) {
+      if (lastCopied && lastCopied.join("\n") == inserted) {
+        if (sel.ranges.length % lastCopied.length == 0) {
+          multiPaste = [];
+          for (var i = 0; i < lastCopied.length; i++)
+            multiPaste.push(doc.splitLines(lastCopied[i]));
+        }
+      } else if (textLines.length == sel.ranges.length) {
         multiPaste = map(textLines, function(l) { return [l]; });
+      }
     }
 
     // Normal behavior is to insert the new text into every selection
@@ -8257,22 +8518,31 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       if (range.empty()) {
         if (deleted && deleted > 0) // Handle deletion
           from = Pos(from.line, from.ch - deleted);
-        else if (cm.state.overwrite && !cm.state.pasteIncoming) // Handle overwrite
+        else if (cm.state.overwrite && !paste) // Handle overwrite
           to = Pos(to.line, Math.min(getLine(doc, to.line).text.length, to.ch + lst(textLines).length));
       }
       var updateInput = cm.curOp.updateInput;
       var changeEvent = {from: from, to: to, text: multiPaste ? multiPaste[i % multiPaste.length] : textLines,
-                         origin: origin || (cm.state.pasteIncoming ? "paste" : cm.state.cutIncoming ? "cut" : "+input")};
+                         origin: origin || (paste ? "paste" : cm.state.cutIncoming ? "cut" : "+input")};
       makeChange(cm.doc, changeEvent);
       signalLater(cm, "inputRead", cm, changeEvent);
     }
-    if (inserted && !cm.state.pasteIncoming)
+    if (inserted && !paste)
       triggerElectric(cm, inserted);
 
     ensureCursorVisible(cm);
     cm.curOp.updateInput = updateInput;
     cm.curOp.typing = true;
     cm.state.pasteIncoming = cm.state.cutIncoming = false;
+  }
+
+  function handlePaste(e, cm) {
+    var pasted = e.clipboardData && e.clipboardData.getData("text/plain");
+    if (pasted) {
+      e.preventDefault();
+      runInOp(cm, function() { applyTextInput(cm, pasted, 0, null, "paste"); });
+      return true;
+    }
   }
 
   function triggerElectric(cm, inserted) {
@@ -8371,21 +8641,9 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         input.poll();
       });
 
-      on(te, "paste", function() {
-        // Workaround for webkit bug https://bugs.webkit.org/show_bug.cgi?id=90206
-        // Add a char to the end of textarea before paste occur so that
-        // selection doesn't span to the end of textarea.
-        if (webkit && !cm.state.fakedLastChar && !(new Date - cm.state.lastMiddleDown < 200)) {
-          var start = te.selectionStart, end = te.selectionEnd;
-          te.value += "$";
-          // The selection end needs to be set before the start, otherwise there
-          // can be an intermediate non-empty selection between the two, which
-          // can override the middle-click paste buffer on linux and cause the
-          // wrong thing to get pasted.
-          te.selectionEnd = end;
-          te.selectionStart = start;
-          cm.state.fakedLastChar = true;
-        }
+      on(te, "paste", function(e) {
+        if (handlePaste(e, cm)) return true;
+
         cm.state.pasteIncoming = true;
         input.fastPoll();
       });
@@ -8549,14 +8807,11 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       // possible when it is clear that nothing happened. hasSelection
       // will be the case when there is a lot of text in the textarea,
       // in which case reading its value would be expensive.
-      if (!cm.state.focused || (hasSelection(input) && !prevInput) ||
+      if (this.contextMenuPending || !cm.state.focused ||
+          (hasSelection(input) && !prevInput && !this.composing) ||
           isReadOnly(cm) || cm.options.disableInput || cm.state.keySeq)
         return false;
-      // See paste handler for more on the fakedLastChar kludge
-      if (cm.state.pasteIncoming && cm.state.fakedLastChar) {
-        input.value = input.value.substring(0, input.value.length - 1);
-        cm.state.fakedLastChar = false;
-      }
+
       var text = input.value;
       // If nothing changed, bail.
       if (text == prevInput && !cm.somethingSelected()) return false;
@@ -8702,13 +8957,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       div.contentEditable = "true";
       disableBrowserMagic(div);
 
-      on(div, "paste", function(e) {
-        var pasted = e.clipboardData && e.clipboardData.getData("text/plain");
-        if (pasted) {
-          e.preventDefault();
-          cm.replaceSelection(pasted, null, "paste");
-        }
-      });
+      on(div, "paste", function(e) { handlePaste(e, cm); })
 
       on(div, "compositionstart", function(e) {
         var data = e.data;
@@ -8921,13 +9170,13 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       var toIndex = findViewIndex(cm, to.line);
       if (toIndex == display.view.length - 1) {
         var toLine = display.viewTo - 1;
-        var toNode = display.view[toIndex].node;
+        var toNode = display.lineDiv.lastChild;
       } else {
         var toLine = lineNo(display.view[toIndex + 1].line) - 1;
         var toNode = display.view[toIndex + 1].node.previousSibling;
       }
 
-      var newText = splitLines(domTextBetween(cm, fromNode, toNode, fromLine, toLine));
+      var newText = cm.doc.splitLines(domTextBetween(cm, fromNode, toNode, fromLine, toLine));
       var oldText = getBetween(cm.doc, Pos(fromLine, 0), Pos(toLine, getLine(cm.doc, toLine).text.length));
       while (newText.length > 1 && oldText.length > 1) {
         if (lst(newText) == lst(oldText)) { newText.pop(); oldText.pop(); toLine--; }
@@ -9083,7 +9332,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   }
 
   function domTextBetween(cm, from, to, fromLine, toLine) {
-    var text = "", closing = false;
+    var text = "", closing = false, lineSep = cm.doc.lineSeparator();
     function recognizeMarker(id) { return function(marker) { return marker.id == id; }; }
     function walk(node) {
       if (node.nodeType == 1) {
@@ -9097,7 +9346,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         if (markerID) {
           var found = cm.findMarks(Pos(fromLine, 0), Pos(toLine + 1, 0), recognizeMarker(+markerID));
           if (found.length && (range = found[0].find()))
-            text += getBetween(cm.doc, range.from, range.to).join("\n");
+            text += getBetween(cm.doc, range.from, range.to).join(lineSep);
           return;
         }
         if (node.getAttribute("contenteditable") == "false") return;
@@ -9109,7 +9358,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         var val = node.nodeValue;
         if (!val) return;
         if (closing) {
-          text += "\n";
+          text += lineSep;
           closing = false;
         }
         text += val;
@@ -9716,10 +9965,12 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   function prepareMeasureForLine(cm, line) {
     var lineN = lineNo(line);
     var view = findViewForLine(cm, lineN);
-    if (view && !view.text)
+    if (view && !view.text) {
       view = null;
-    else if (view && view.changes)
+    } else if (view && view.changes) {
       updateLineForChanges(cm, view, lineN, getDimensions(cm));
+      cm.curOp.forceUpdate = true;
+    }
     if (!view)
       view = updateExternalMeasurement(cm, line);
 
@@ -10727,7 +10978,8 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     var sel = cm.doc.sel, modifier = mac ? e.metaKey : e.ctrlKey, contained;
     if (cm.options.dragDrop && dragAndDrop && !isReadOnly(cm) &&
         type == "single" && (contained = sel.contains(start)) > -1 &&
-        !sel.ranges[contained].empty())
+        (cmp((contained = sel.ranges[contained]).from(), start) < 0 || start.xRel > 0) &&
+        (cmp(contained.to(), start) > 0 || start.xRel < 0))
       leftButtonStartDrag(cm, e, start, modifier);
     else
       leftButtonSelect(cm, e, start, type, modifier);
@@ -10955,7 +11207,9 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
           text[i] = reader.result;
           if (++read == n) {
             pos = clipPos(cm.doc, pos);
-            var change = {from: pos, to: pos, text: splitLines(text.join("\n")), origin: "paste"};
+            var change = {from: pos, to: pos,
+                          text: cm.doc.splitLines(text.join(cm.doc.lineSeparator())),
+                          origin: "paste"};
             makeChange(cm.doc, change);
             setSelectionReplaceHistory(cm.doc, simpleSelection(pos, changeEnd(change)));
           }
@@ -11638,7 +11892,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   function replaceRange(doc, code, from, to, origin) {
     if (!to) to = from;
     if (cmp(to, from) < 0) { var tmp = to; to = from; from = tmp; }
-    if (typeof code == "string") code = splitLines(code);
+    if (typeof code == "string") code = doc.splitLines(code);
     makeChange(doc, {from: from, to: to, text: code, origin: origin});
   }
 
@@ -12433,6 +12687,22 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     clearCaches(cm);
     regChange(cm);
   }, true);
+  option("lineSeparator", null, function(cm, val) {
+    cm.doc.lineSep = val;
+    if (!val) return;
+    var newBreaks = [], lineNo = cm.doc.first;
+    cm.doc.iter(function(line) {
+      for (var pos = 0;;) {
+        var found = line.text.indexOf(val, pos);
+        if (found == -1) break;
+        pos = found + val.length;
+        newBreaks.push(Pos(lineNo, found));
+      }
+      lineNo++;
+    });
+    for (var i = newBreaks.length - 1; i >= 0; i--)
+      replaceRange(cm.doc, val, newBreaks[i], Pos(newBreaks[i].line, newBreaks[i].ch + val.length))
+  });
   option("specialChars", /[\t\u0000-\u0019\u00ad\u200b-\u200f\u2028\u2029\ufeff]/g, function(cm, val, old) {
     cm.state.specialChars = new RegExp(val.source + (val.test("\t") ? "" : "|\t"), "g");
     if (old != CodeMirror.Init) cm.refresh();
@@ -12783,7 +13053,8 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
             } else if (cur.line > cm.doc.first) {
               var prev = getLine(cm.doc, cur.line - 1).text;
               if (prev)
-                cm.replaceRange(line.charAt(0) + "\n" + prev.charAt(prev.length - 1),
+                cm.replaceRange(line.charAt(0) + cm.doc.lineSeparator() +
+                                prev.charAt(prev.length - 1),
                                 Pos(cur.line - 1, prev.length - 1), Pos(cur.line, 1), "+transpose");
             }
           }
@@ -12797,7 +13068,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         var len = cm.listSelections().length;
         for (var i = 0; i < len; i++) {
           var range = cm.listSelections()[i];
-          cm.replaceRange("\n", range.anchor, range.head, "+input");
+          cm.replaceRange(cm.doc.lineSeparator(), range.anchor, range.head, "+input");
           cm.indentLine(range.from().line + 1, null, true);
           ensureCursorVisible(cm);
         }
@@ -13961,7 +14232,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     // is needed on Webkit to be able to get line-level bounding
     // rectangles for it (in measureChar).
     var content = elt("span", null, null, webkit ? "padding-right: .1px" : null);
-    var builder = {pre: elt("pre", [content]), content: content,
+    var builder = {pre: elt("pre", [content], "CodeMirror-line"), content: content,
                    col: 0, pos: 0, cm: cm,
                    splitSpaces: (ie || webkit) && cm.getOption("lineWrapping")};
     lineView.measure = {};
@@ -14051,6 +14322,10 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
           txt.setAttribute("role", "presentation");
           txt.setAttribute("cm-text", "\t");
           builder.col += tabWidth;
+        } else if (m[0] == "\r" || m[0] == "\n") {
+          var txt = content.appendChild(elt("span", m[0] == "\r" ? "␍" : "␤", "cm-invalidchar"));
+          txt.setAttribute("cm-text", m[0]);
+          builder.col += 1;
         } else {
           var txt = builder.cm.options.specialCharPlaceholder(m[0]);
           txt.setAttribute("cm-text", m[0]);
@@ -14396,8 +14671,8 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   };
 
   var nextDocId = 0;
-  var Doc = CodeMirror.Doc = function(text, mode, firstLine) {
-    if (!(this instanceof Doc)) return new Doc(text, mode, firstLine);
+  var Doc = CodeMirror.Doc = function(text, mode, firstLine, lineSep) {
+    if (!(this instanceof Doc)) return new Doc(text, mode, firstLine, lineSep);
     if (firstLine == null) firstLine = 0;
 
     BranchChunk.call(this, [new LeafChunk([new Line("", null)])]);
@@ -14411,8 +14686,9 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     this.history = new History(null);
     this.id = ++nextDocId;
     this.modeOption = mode;
+    this.lineSep = lineSep;
 
-    if (typeof text == "string") text = splitLines(text);
+    if (typeof text == "string") text = this.splitLines(text);
     updateDoc(this, {from: start, to: start, text: text});
     setSelection(this, simpleSelection(start), sel_dontScroll);
   };
@@ -14442,12 +14718,12 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     getValue: function(lineSep) {
       var lines = getLines(this, this.first, this.first + this.size);
       if (lineSep === false) return lines;
-      return lines.join(lineSep || "\n");
+      return lines.join(lineSep || this.lineSeparator());
     },
     setValue: docMethodOp(function(code) {
       var top = Pos(this.first, 0), last = this.first + this.size - 1;
       makeChange(this, {from: top, to: Pos(last, getLine(this, last).text.length),
-                        text: splitLines(code), origin: "setValue", full: true}, true);
+                        text: this.splitLines(code), origin: "setValue", full: true}, true);
       setSelection(this, simpleSelection(top));
     }),
     replaceRange: function(code, from, to, origin) {
@@ -14458,7 +14734,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     getRange: function(from, to, lineSep) {
       var lines = getBetween(this, clipPos(this, from), clipPos(this, to));
       if (lineSep === false) return lines;
-      return lines.join(lineSep || "\n");
+      return lines.join(lineSep || this.lineSeparator());
     },
 
     getLine: function(line) {var l = this.getLineHandle(line); return l && l.text;},
@@ -14524,13 +14800,13 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         lines = lines ? lines.concat(sel) : sel;
       }
       if (lineSep === false) return lines;
-      else return lines.join(lineSep || "\n");
+      else return lines.join(lineSep || this.lineSeparator());
     },
     getSelections: function(lineSep) {
       var parts = [], ranges = this.sel.ranges;
       for (var i = 0; i < ranges.length; i++) {
         var sel = getBetween(this, ranges[i].from(), ranges[i].to());
-        if (lineSep !== false) sel = sel.join(lineSep || "\n");
+        if (lineSep !== false) sel = sel.join(lineSep || this.lineSeparator());
         parts[i] = sel;
       }
       return parts;
@@ -14545,7 +14821,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       var changes = [], sel = this.sel;
       for (var i = 0; i < sel.ranges.length; i++) {
         var range = sel.ranges[i];
-        changes[i] = {from: range.from(), to: range.to(), text: splitLines(code[i]), origin: origin};
+        changes[i] = {from: range.from(), to: range.to(), text: this.splitLines(code[i]), origin: origin};
       }
       var newSel = collapse && collapse != "end" && computeReplacedSel(this, changes, collapse);
       for (var i = changes.length - 1; i >= 0; i--)
@@ -14695,7 +14971,8 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     },
 
     copy: function(copyHistory) {
-      var doc = new Doc(getLines(this, this.first, this.first + this.size), this.modeOption, this.first);
+      var doc = new Doc(getLines(this, this.first, this.first + this.size),
+                        this.modeOption, this.first, this.lineSep);
       doc.scrollTop = this.scrollTop; doc.scrollLeft = this.scrollLeft;
       doc.sel = this.sel;
       doc.extend = false;
@@ -14711,7 +14988,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       var from = this.first, to = this.first + this.size;
       if (options.from != null && options.from > from) from = options.from;
       if (options.to != null && options.to < to) to = options.to;
-      var copy = new Doc(getLines(this, from, to), options.mode || this.modeOption, from);
+      var copy = new Doc(getLines(this, from, to), options.mode || this.modeOption, from, this.lineSep);
       if (options.sharedHist) copy.history = this.history;
       (this.linked || (this.linked = [])).push({doc: copy, sharedHist: options.sharedHist});
       copy.linked = [{doc: this, isParent: true, sharedHist: options.sharedHist}];
@@ -14740,14 +15017,20 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     iterLinkedDocs: function(f) {linkedDocs(this, f);},
 
     getMode: function() {return this.mode;},
-    getEditor: function() {return this.cm;}
+    getEditor: function() {return this.cm;},
+
+    splitLines: function(str) {
+      if (this.lineSep) return str.split(this.lineSep);
+      return splitLinesAuto(str);
+    },
+    lineSeparator: function() { return this.lineSep || "\n"; }
   });
 
   // Public alias.
   Doc.prototype.eachLine = Doc.prototype.iter;
 
   // Set up methods on CodeMirror's prototype to redirect to the editor's document.
-  var dontDelegate = "iter insert remove copy getEditor".split(" ");
+  var dontDelegate = "iter insert remove copy getEditor constructor".split(" ");
   for (var prop in Doc.prototype) if (Doc.prototype.hasOwnProperty(prop) && indexOf(dontDelegate, prop) < 0)
     CodeMirror.prototype[prop] = (function(method) {
       return function() {return method.apply(this.doc, arguments);};
@@ -15439,7 +15722,12 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     } while (child = child.parentNode);
   };
 
-  function activeElt() { return document.activeElement; }
+  function activeElt() {
+    var activeElement = document.activeElement;
+    while (activeElement && activeElement.root && activeElement.root.activeElement)
+      activeElement = activeElement.root.activeElement;
+    return activeElement;
+  }
   // Older versions of IE throws unspecified error when touching
   // document.activeElement in some cases (during loading, in iframe)
   if (ie && ie_version < 11) activeElt = function() {
@@ -15541,7 +15829,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   // See if "".split is the broken IE version, if so, provide an
   // alternative way to split lines.
-  var splitLines = CodeMirror.splitLines = "\n\nb".split(/\n/).length != 3 ? function(string) {
+  var splitLinesAuto = CodeMirror.splitLines = "\n\nb".split(/\n/).length != 3 ? function(string) {
     var pos = 0, result = [], l = string.length;
     while (pos <= l) {
       var nl = string.indexOf("\n", pos);
@@ -15899,12 +16187,12 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   // THE END
 
-  CodeMirror.version = "5.3.0";
+  CodeMirror.version = "5.5.0";
 
   return CodeMirror;
 });
 
-},{}],23:[function(require,module,exports){
+},{}],24:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16180,6 +16468,8 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
         override = "string-2";
       else if (valueKeywords.hasOwnProperty(word))
         override = "atom";
+      else if (colorKeywords.hasOwnProperty(word))
+        override = "keyword";
       else
         override = "error";
     }
@@ -16660,7 +16950,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
 
 });
 
-},{"../../lib/codemirror":22}],24:[function(require,module,exports){
+},{"../../lib/codemirror":23}],25:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16690,7 +16980,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
   CodeMirror.defineMIME("application/x-erb", {name: "htmlembedded", scriptingModeSpec:"ruby"});
 });
 
-},{"../../addon/mode/multiplex":21,"../../lib/codemirror":22,"../htmlmixed/htmlmixed":25}],25:[function(require,module,exports){
+},{"../../addon/mode/multiplex":22,"../../lib/codemirror":23,"../htmlmixed/htmlmixed":26}],26:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -16813,7 +17103,7 @@ CodeMirror.defineMIME("text/html", "htmlmixed");
 
 });
 
-},{"../../lib/codemirror":22,"../css/css":23,"../javascript/javascript":26,"../xml/xml":27}],26:[function(require,module,exports){
+},{"../../lib/codemirror":23,"../css/css":24,"../javascript/javascript":27,"../xml/xml":28}],27:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -17298,8 +17588,11 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   function maybetype(type) {
     if (isTS && type == ":") return cont(typedef);
   }
+  function maybedefault(_, value) {
+    if (value == "=") return cont(expressionNoComma);
+  }
   function typedef(type) {
-    if (type == "variable"){cx.marked = "variable-3"; return cont();}
+    if (type == "variable") {cx.marked = "variable-3"; return cont();}
   }
   function vardef() {
     return pass(pattern, maybetype, maybeAssign, vardefCont);
@@ -17354,7 +17647,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
   }
   function funarg(type) {
     if (type == "spread") return cont(funarg);
-    return pass(pattern, maybetype);
+    return pass(pattern, maybetype, maybedefault);
   }
   function className(type, value) {
     if (type == "variable") {register(value); return cont(classNameAfter);}
@@ -17516,7 +17809,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"../../lib/codemirror":22}],27:[function(require,module,exports){
+},{"../../lib/codemirror":23}],28:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -17628,6 +17921,7 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
       return null;
     }
   }
+  inText.isInText = true;
 
   function inTag(stream, state) {
     var ch = stream.next();
@@ -17902,7 +18196,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"../../lib/codemirror":22}],28:[function(require,module,exports){
+},{"../../lib/codemirror":23}],29:[function(require,module,exports){
 /*
  * forbject
  * http://github.amexpub.com/modules/forbject
@@ -17914,7 +18208,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 module.exports = require('./lib/forbject');
 
-},{"./lib/forbject":29}],29:[function(require,module,exports){
+},{"./lib/forbject":30}],30:[function(require,module,exports){
 /*
  * forbject
  * http://github.com/yawetse/forbject
@@ -18167,9 +18461,9 @@ forbject.prototype.setFormObj = function () {
 };
 module.exports = forbject;
 
-},{"events":41,"util":49,"util-extend":30}],30:[function(require,module,exports){
+},{"events":42,"util":50,"util-extend":31}],31:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],31:[function(require,module,exports){
+},{"dup":10}],32:[function(require,module,exports){
 /*
  * formie
  * http://github.amexpub.com/modules/formie
@@ -18181,7 +18475,7 @@ arguments[4][10][0].apply(exports,arguments)
 
 module.exports = require('./lib/formie');
 
-},{"./lib/formie":32}],32:[function(require,module,exports){
+},{"./lib/formie":33}],33:[function(require,module,exports){
 /*
  * formie
  * http://github.com/yawetse/formie
@@ -18540,7 +18834,7 @@ formie.prototype._init = function () {
 };
 module.exports = formie;
 
-},{"async":33,"classie":11,"events":41,"forbject":34,"querystring":47,"superagent":36,"util":49,"util-extend":39}],33:[function(require,module,exports){
+},{"async":34,"classie":11,"events":42,"forbject":35,"querystring":48,"superagent":37,"util":50,"util-extend":40}],34:[function(require,module,exports){
 (function (process){
 /*!
  * async
@@ -19667,11 +19961,11 @@ module.exports = formie;
 }());
 
 }).call(this,require('_process'))
-},{"_process":44}],34:[function(require,module,exports){
-arguments[4][28][0].apply(exports,arguments)
-},{"./lib/forbject":35,"dup":28}],35:[function(require,module,exports){
+},{"_process":45}],35:[function(require,module,exports){
 arguments[4][29][0].apply(exports,arguments)
-},{"dup":29,"events":41,"util":49,"util-extend":39}],36:[function(require,module,exports){
+},{"./lib/forbject":36,"dup":29}],36:[function(require,module,exports){
+arguments[4][30][0].apply(exports,arguments)
+},{"dup":30,"events":42,"util":50,"util-extend":40}],37:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -20784,7 +21078,7 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":37,"reduce":38}],37:[function(require,module,exports){
+},{"emitter":38,"reduce":39}],38:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -20950,7 +21244,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],38:[function(require,module,exports){
+},{}],39:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -20975,11 +21269,11 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}],39:[function(require,module,exports){
+},{}],40:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],40:[function(require,module,exports){
+},{"dup":10}],41:[function(require,module,exports){
 
-},{}],41:[function(require,module,exports){
+},{}],42:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -21282,7 +21576,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],42:[function(require,module,exports){
+},{}],43:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -21307,7 +21601,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],43:[function(require,module,exports){
+},{}],44:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -21535,7 +21829,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":44}],44:[function(require,module,exports){
+},{"_process":45}],45:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -21595,7 +21889,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],45:[function(require,module,exports){
+},{}],46:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -21681,7 +21975,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],46:[function(require,module,exports){
+},{}],47:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -21768,20 +22062,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],47:[function(require,module,exports){
+},{}],48:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":45,"./encode":46}],48:[function(require,module,exports){
+},{"./decode":46,"./encode":47}],49:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],49:[function(require,module,exports){
+},{}],50:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -22371,7 +22665,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":48,"_process":44,"inherits":42}],50:[function(require,module,exports){
+},{"./support/isBuffer":49,"_process":45,"inherits":43}],51:[function(require,module,exports){
 /*
  * platter
  * http://github.com/typesettin/platter
@@ -22381,7 +22675,7 @@ function hasOwnProperty(obj, prop) {
 
 module.exports = require('./lib/platter');
 
-},{"./lib/platter":51}],51:[function(require,module,exports){
+},{"./lib/platter":52}],52:[function(require,module,exports){
 /*
  * manuscript
  * http://github.com/typesettin/platter
@@ -22688,7 +22982,7 @@ module.exports = platter;
 if ( typeof window === 'object' && typeof window.document === 'object' ) {
 	window.platter = platter;
 }
-},{"classie":11,"domhelper":52,"events":41,"util":49,"util-extend":54}],52:[function(require,module,exports){
+},{"classie":11,"domhelper":53,"events":42,"util":50,"util-extend":55}],53:[function(require,module,exports){
 /*
  * domhelper
  * http://github.com/yawetse/domhelper
@@ -22698,7 +22992,7 @@ if ( typeof window === 'object' && typeof window.document === 'object' ) {
 
 module.exports = require('./lib/domhelper');
 
-},{"./lib/domhelper":53}],53:[function(require,module,exports){
+},{"./lib/domhelper":54}],54:[function(require,module,exports){
 /*
  * linotype
  * https://github.com/typesettin/linotype
@@ -23038,9 +23332,9 @@ module.exports = domhelper;
 if ( typeof window === "object" && typeof window.document === "object" ) {
 	window.domhelper = domhelper;
 }
-},{"classie":11}],54:[function(require,module,exports){
+},{"classie":11}],55:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],55:[function(require,module,exports){
+},{"dup":10}],56:[function(require,module,exports){
 /*
  * pushie
  * http://github.amexpub.com/modules/pushie
@@ -23052,7 +23346,7 @@ arguments[4][10][0].apply(exports,arguments)
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":56}],56:[function(require,module,exports){
+},{"./lib/pushie":57}],57:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -23223,13 +23517,13 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":41,"util":49,"util-extend":57}],57:[function(require,module,exports){
+},{"events":42,"util":50,"util-extend":58}],58:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}],58:[function(require,module,exports){
+},{"dup":10}],59:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
-},{"./lib/":59}],59:[function(require,module,exports){
+},{"./lib/":60}],60:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -23318,7 +23612,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":60,"./socket":62,"./url":63,"debug":67,"socket.io-parser":103}],60:[function(require,module,exports){
+},{"./manager":61,"./socket":63,"./url":64,"debug":68,"socket.io-parser":104}],61:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -23823,7 +24117,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":61,"./socket":62,"./url":63,"backo2":64,"component-bind":65,"component-emitter":66,"debug":67,"engine.io-client":68,"indexof":99,"object-component":100,"socket.io-parser":103}],61:[function(require,module,exports){
+},{"./on":62,"./socket":63,"./url":64,"backo2":65,"component-bind":66,"component-emitter":67,"debug":68,"engine.io-client":69,"indexof":100,"object-component":101,"socket.io-parser":104}],62:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -23849,7 +24143,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],62:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -24236,7 +24530,7 @@ Socket.prototype.disconnect = function(){
   return this;
 };
 
-},{"./on":61,"component-bind":65,"component-emitter":66,"debug":67,"has-binary":97,"socket.io-parser":103,"to-array":107}],63:[function(require,module,exports){
+},{"./on":62,"component-bind":66,"component-emitter":67,"debug":68,"has-binary":98,"socket.io-parser":104,"to-array":108}],64:[function(require,module,exports){
 (function (global){
 
 /**
@@ -24313,7 +24607,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":67,"parseuri":101}],64:[function(require,module,exports){
+},{"debug":68,"parseuri":102}],65:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -24400,7 +24694,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],65:[function(require,module,exports){
+},{}],66:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -24425,9 +24719,9 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],66:[function(require,module,exports){
-arguments[4][37][0].apply(exports,arguments)
-},{"dup":37}],67:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
+arguments[4][38][0].apply(exports,arguments)
+},{"dup":38}],68:[function(require,module,exports){
 
 /**
  * Expose `debug()` as the module.
@@ -24566,11 +24860,11 @@ try {
   if (window.localStorage) debug.enable(localStorage.debug);
 } catch(e){}
 
-},{}],68:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":69}],69:[function(require,module,exports){
+},{"./lib/":70}],70:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -24582,7 +24876,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":70,"engine.io-parser":82}],70:[function(require,module,exports){
+},{"./socket":71,"engine.io-parser":83}],71:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -25291,7 +25585,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":71,"./transports":72,"component-emitter":66,"debug":79,"engine.io-parser":82,"indexof":99,"parsejson":93,"parseqs":94,"parseuri":95}],71:[function(require,module,exports){
+},{"./transport":72,"./transports":73,"component-emitter":67,"debug":80,"engine.io-parser":83,"indexof":100,"parsejson":94,"parseqs":95,"parseuri":96}],72:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -25452,7 +25746,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":66,"engine.io-parser":82}],72:[function(require,module,exports){
+},{"component-emitter":67,"engine.io-parser":83}],73:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -25509,7 +25803,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":73,"./polling-xhr":74,"./websocket":76,"xmlhttprequest":77}],73:[function(require,module,exports){
+},{"./polling-jsonp":74,"./polling-xhr":75,"./websocket":77,"xmlhttprequest":78}],74:[function(require,module,exports){
 (function (global){
 
 /**
@@ -25746,7 +26040,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":75,"component-inherit":78}],74:[function(require,module,exports){
+},{"./polling":76,"component-inherit":79}],75:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -26134,7 +26428,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":75,"component-emitter":66,"component-inherit":78,"debug":79,"xmlhttprequest":77}],75:[function(require,module,exports){
+},{"./polling":76,"component-emitter":67,"component-inherit":79,"debug":80,"xmlhttprequest":78}],76:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -26381,7 +26675,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + this.hostname + port + this.path + query;
 };
 
-},{"../transport":71,"component-inherit":78,"debug":79,"engine.io-parser":82,"parseqs":94,"xmlhttprequest":77}],76:[function(require,module,exports){
+},{"../transport":72,"component-inherit":79,"debug":80,"engine.io-parser":83,"parseqs":95,"xmlhttprequest":78}],77:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -26621,7 +26915,7 @@ WS.prototype.check = function(){
   return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
 };
 
-},{"../transport":71,"component-inherit":78,"debug":79,"engine.io-parser":82,"parseqs":94,"ws":96}],77:[function(require,module,exports){
+},{"../transport":72,"component-inherit":79,"debug":80,"engine.io-parser":83,"parseqs":95,"ws":97}],78:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -26659,7 +26953,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":91}],78:[function(require,module,exports){
+},{"has-cors":92}],79:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -26667,7 +26961,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],79:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -26816,7 +27110,7 @@ function load() {
 
 exports.enable(load());
 
-},{"./debug":80}],80:[function(require,module,exports){
+},{"./debug":81}],81:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -27015,7 +27309,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":81}],81:[function(require,module,exports){
+},{"ms":82}],82:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -27128,7 +27422,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],82:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -27726,7 +28020,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":83,"after":84,"arraybuffer.slice":85,"base64-arraybuffer":86,"blob":87,"has-binary":88,"utf8":90}],83:[function(require,module,exports){
+},{"./keys":84,"after":85,"arraybuffer.slice":86,"base64-arraybuffer":87,"blob":88,"has-binary":89,"utf8":91}],84:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -27747,7 +28041,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],84:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -27777,7 +28071,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],85:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -27808,7 +28102,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],86:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -27869,7 +28163,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],87:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -27922,7 +28216,7 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],88:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 (function (global){
 
 /*
@@ -27984,12 +28278,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":89}],89:[function(require,module,exports){
+},{"isarray":90}],90:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],90:[function(require,module,exports){
+},{}],91:[function(require,module,exports){
 (function (global){
 /*! http://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -28232,7 +28526,7 @@ module.exports = Array.isArray || function (arr) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],91:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -28257,7 +28551,7 @@ try {
   module.exports = false;
 }
 
-},{"global":92}],92:[function(require,module,exports){
+},{"global":93}],93:[function(require,module,exports){
 
 /**
  * Returns `this`. Execute this without a "context" (i.e. without it being
@@ -28267,7 +28561,7 @@ try {
 
 module.exports = (function () { return this; })();
 
-},{}],93:[function(require,module,exports){
+},{}],94:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -28302,7 +28596,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],94:[function(require,module,exports){
+},{}],95:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -28341,7 +28635,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],95:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -28382,7 +28676,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],96:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -28427,7 +28721,7 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
-},{}],97:[function(require,module,exports){
+},{}],98:[function(require,module,exports){
 (function (global){
 
 /*
@@ -28489,9 +28783,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":98}],98:[function(require,module,exports){
-arguments[4][89][0].apply(exports,arguments)
-},{"dup":89}],99:[function(require,module,exports){
+},{"isarray":99}],99:[function(require,module,exports){
+arguments[4][90][0].apply(exports,arguments)
+},{"dup":90}],100:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -28502,7 +28796,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],100:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 
 /**
  * HOP ref.
@@ -28587,7 +28881,7 @@ exports.length = function(obj){
 exports.isEmpty = function(obj){
   return 0 == exports.length(obj);
 };
-},{}],101:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -28614,7 +28908,7 @@ module.exports = function parseuri(str) {
   return uri;
 };
 
-},{}],102:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -28759,7 +29053,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":104,"isarray":105}],103:[function(require,module,exports){
+},{"./is-buffer":105,"isarray":106}],104:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -29161,7 +29455,7 @@ function error(data){
   };
 }
 
-},{"./binary":102,"./is-buffer":104,"component-emitter":66,"debug":67,"isarray":105,"json3":106}],104:[function(require,module,exports){
+},{"./binary":103,"./is-buffer":105,"component-emitter":67,"debug":68,"isarray":106,"json3":107}],105:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -29178,9 +29472,9 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],105:[function(require,module,exports){
-arguments[4][89][0].apply(exports,arguments)
-},{"dup":89}],106:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
+arguments[4][90][0].apply(exports,arguments)
+},{"dup":90}],107:[function(require,module,exports){
 /*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
 ;(function (window) {
   // Convenience aliases.
@@ -30043,7 +30337,7 @@ arguments[4][89][0].apply(exports,arguments)
   }
 }(this));
 
-},{}],107:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -30058,7 +30352,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],108:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 'use strict';
 var ajaxlinks,
 	// ajaxforms,
@@ -30387,6 +30681,13 @@ var defaultAjaxFormie = function (formElement) {
 				if (typeof successfn === 'function') {
 					successfn(response);
 				}
+				if (formElement.getAttribute('data-successredirect-href')) {
+					var successredirecthref = formElement.getAttribute('data-successredirect-href');
+					loadAjaxPage({
+						datahref: successredirecthref,
+						pushState: true
+					});
+				}
 			}
 		},
 		errorcallback: function (error, response) {
@@ -30528,6 +30829,7 @@ var confirmDeleteDialog = function (e) {
 		posturl = eTarget.getAttribute('data-href'),
 		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
 		successfunction = eTarget.getAttribute('data-successfunction'),
+		beforefunction = eTarget.getAttribute('data-beforefunction'),
 		donotnotify = eTarget.getAttribute('data-donotnotify');
 	e.preventDefault();
 
@@ -30538,6 +30840,9 @@ var confirmDeleteDialog = function (e) {
 	}
 	if (successfunction) {
 		confirmDeleteYes.setAttribute('data-successfunction', successfunction);
+	}
+	if (beforefunction) {
+		confirmDeleteYes.setAttribute('data-beforefunction', beforefunction);
 	}
 	if (donotnotify) {
 		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
@@ -30759,7 +31064,8 @@ var handle_ajax_button_response = function (e) {
 			else if (eTarget.getAttribute('data-deleted-redirect-href')) {
 				var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
 				loadAjaxPage({
-					datahref: deleteredirecthref
+					datahref: deleteredirecthref,
+					pushState: true
 				});
 			}
 		}
@@ -31141,7 +31447,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../node_modules/codemirror/addon/comment/comment":13,"../../node_modules/codemirror/addon/comment/continuecomment":14,"../../node_modules/codemirror/addon/edit/matchbrackets":15,"../../node_modules/codemirror/addon/fold/brace-fold":16,"../../node_modules/codemirror/addon/fold/comment-fold":17,"../../node_modules/codemirror/addon/fold/foldcode":18,"../../node_modules/codemirror/addon/fold/foldgutter":19,"../../node_modules/codemirror/addon/fold/indent-fold":20,"../../node_modules/codemirror/mode/css/css":23,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":24,"../../node_modules/codemirror/mode/javascript/javascript":26,"./datalist":109,"./filterlist":110,"./medialist":111,"async":1,"bindie":6,"classie":11,"codemirror":22,"ejs":2,"forbject":28,"formie":31,"moment":5,"platterjs":50,"pushie":55,"querystring":47,"socket.io-client":58,"stylie":129,"stylie.modals":112,"stylie.notifications":117,"stylie.tabs":124,"superagent":131}],109:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":14,"../../node_modules/codemirror/addon/comment/continuecomment":15,"../../node_modules/codemirror/addon/edit/matchbrackets":16,"../../node_modules/codemirror/addon/fold/brace-fold":17,"../../node_modules/codemirror/addon/fold/comment-fold":18,"../../node_modules/codemirror/addon/fold/foldcode":19,"../../node_modules/codemirror/addon/fold/foldgutter":20,"../../node_modules/codemirror/addon/fold/indent-fold":21,"../../node_modules/codemirror/mode/css/css":24,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":25,"../../node_modules/codemirror/mode/javascript/javascript":27,"./datalist":110,"./filterlist":111,"./medialist":112,"async":1,"bindie":6,"classie":11,"codemirror":23,"ejs":2,"forbject":29,"formie":32,"moment":5,"platterjs":51,"pushie":56,"querystring":48,"socket.io-client":59,"stylie":130,"stylie.modals":113,"stylie.notifications":118,"stylie.tabs":125,"superagent":132}],110:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31394,7 +31700,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":6,"classie":11,"events":41,"superagent":131,"util":49,"util-extend":134}],110:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":42,"superagent":132,"util":50,"util-extend":135}],111:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31573,7 +31879,7 @@ filterlist.prototype.__init = function () {
 };
 module.exports = filterlist;
 
-},{"classie":11,"events":41,"querystring":47,"util":49,"util-extend":134}],111:[function(require,module,exports){
+},{"classie":11,"events":42,"querystring":48,"util":50,"util-extend":135}],112:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31791,7 +32097,7 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":6,"classie":11,"events":41,"superagent":131,"util":49,"util-extend":134}],112:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":42,"superagent":132,"util":50,"util-extend":135}],113:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -31803,7 +32109,7 @@ module.exports = tsmedialist;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":113}],113:[function(require,module,exports){
+},{"./lib/stylie.modals":114}],114:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -31971,337 +32277,13 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":114,"events":41,"util":49,"util-extend":134}],114:[function(require,module,exports){
+},{"classie":115,"events":42,"util":50,"util-extend":135}],115:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":116,"dup":11}],115:[function(require,module,exports){
-/* 
- * classList.js: Cross-browser full element.classList implementation.
- * 2014-07-23
- *
- * By Eli Grey, http://eligrey.com
- * Public Domain.
- * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
- */
-
-/*global self, document, DOMException, DOMTokenList */
-
-/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
-
-if ("document" in self) {
-
-    // Full polyfill for browsers with no classList support
-    if (!("classList" in document.createElement("_")) || document.createElementNS && !("classList" in document.createElementNS("http://www.w3.org/2000/svg", "g"))) {
-
-        (function(view) {
-
-            "use strict";
-
-            if (!('Element' in view)) {
-                return;
-            }
-
-            var classListProp = "classList",
-                protoProp = "prototype",
-                elemCtrProto = view.Element[protoProp],
-                objCtr = Object,
-                strTrim = String[protoProp].trim || function() {
-                    return this.replace(/^\s+|\s+$/g, "");
-                }, arrIndexOf = Array[protoProp].indexOf || function(item) {
-                    var
-                    i = 0,
-                        len = this.length;
-                    for (; i < len; i++) {
-                        if (i in this && this[i] === item) {
-                            return i;
-                        }
-                    }
-                    return -1;
-                },
-                // Vendors: please allow content code to instantiate DOMExceptions
-                DOMEx = function(type, message) {
-                    this.name = type;
-                    this.code = DOMException[type];
-                    this.message = message;
-                }, checkTokenAndGetIndex = function(classList, token) {
-                    if (token === "") {
-                        throw new DOMEx(
-                            "SYNTAX_ERR", "An invalid or illegal string was specified");
-                    }
-                    if (/\s/.test(token)) {
-                        throw new DOMEx(
-                            "INVALID_CHARACTER_ERR", "String contains an invalid character");
-                    }
-                    return arrIndexOf.call(classList, token);
-                }, ClassList = function(elem) {
-                    var
-                    trimmedClasses = strTrim.call(elem.getAttribute("class") || ""),
-                        classes = trimmedClasses ? trimmedClasses.split(/\s+/) : [],
-                        i = 0,
-                        len = classes.length;
-                    for (; i < len; i++) {
-                        this.push(classes[i]);
-                    }
-                    this._updateClassName = function() {
-                        elem.setAttribute("class", this.toString());
-                    };
-                }, classListProto = ClassList[protoProp] = [],
-                classListGetter = function() {
-                    return new ClassList(this);
-                };
-            // Most DOMException implementations don't allow calling DOMException's toString()
-            // on non-DOMExceptions. Error's toString() is sufficient here.
-            DOMEx[protoProp] = Error[protoProp];
-            classListProto.item = function(i) {
-                return this[i] || null;
-            };
-            classListProto.contains = function(token) {
-                token += "";
-                return checkTokenAndGetIndex(this, token) !== -1;
-            };
-            classListProto.add = function() {
-                var
-                tokens = arguments,
-                    i = 0,
-                    l = tokens.length,
-                    token, updated = false;
-                do {
-                    token = tokens[i] + "";
-                    if (checkTokenAndGetIndex(this, token) === -1) {
-                        this.push(token);
-                        updated = true;
-                    }
-                }
-                while (++i < l);
-
-                if (updated) {
-                    this._updateClassName();
-                }
-            };
-            classListProto.remove = function() {
-                var
-                tokens = arguments,
-                    i = 0,
-                    l = tokens.length,
-                    token, updated = false,
-                    index;
-                do {
-                    token = tokens[i] + "";
-                    index = checkTokenAndGetIndex(this, token);
-                    while (index !== -1) {
-                        this.splice(index, 1);
-                        updated = true;
-                        index = checkTokenAndGetIndex(this, token);
-                    }
-                }
-                while (++i < l);
-
-                if (updated) {
-                    this._updateClassName();
-                }
-            };
-            classListProto.toggle = function(token, force) {
-                token += "";
-
-                var
-                result = this.contains(token),
-                    method = result ?
-                        force !== true && "remove" :
-                        force !== false && "add";
-
-                if (method) {
-                    this[method](token);
-                }
-
-                if (force === true || force === false) {
-                    return force;
-                } else {
-                    return !result;
-                }
-            };
-            classListProto.toString = function() {
-                return this.join(" ");
-            };
-
-            if (objCtr.defineProperty) {
-                var classListPropDesc = {
-                    get: classListGetter,
-                    enumerable: true,
-                    configurable: true
-                };
-                try {
-                    objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
-                } catch (ex) { // IE 8 doesn't support enumerable:true
-                    if (ex.number === -0x7FF5EC54) {
-                        classListPropDesc.enumerable = false;
-                        objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
-                    }
-                }
-            } else if (objCtr[protoProp].__defineGetter__) {
-                elemCtrProto.__defineGetter__(classListProp, classListGetter);
-            }
-
-        }(self));
-
-    } else {
-        // There is full or partial native classList support, so just check if we need
-        // to normalize the add/remove and toggle APIs.
-
-        (function() {
-            "use strict";
-
-            var testElement = document.createElement("_");
-
-            testElement.classList.add("c1", "c2");
-
-            // Polyfill for IE 10/11 and Firefox <26, where classList.add and
-            // classList.remove exist but support only one argument at a time.
-            if (!testElement.classList.contains("c2")) {
-                var createMethod = function(method) {
-                    var original = DOMTokenList.prototype[method];
-
-                    DOMTokenList.prototype[method] = function(token) {
-                        var i, len = arguments.length;
-
-                        for (i = 0; i < len; i++) {
-                            token = arguments[i];
-                            original.call(this, token);
-                        }
-                    };
-                };
-                createMethod('add');
-                createMethod('remove');
-            }
-
-            testElement.classList.toggle("c3", false);
-
-            // Polyfill for IE 10 and Firefox <24, where classList.toggle does not
-            // support the second argument.
-            if (testElement.classList.contains("c3")) {
-                var _toggle = DOMTokenList.prototype.toggle;
-
-                DOMTokenList.prototype.toggle = function(token, force) {
-                    if (1 in arguments && !this.contains(token) === !force) {
-                        return force;
-                    } else {
-                        return _toggle.call(this, token);
-                    }
-                };
-
-            }
-
-            testElement = null;
-        }());
-    }
-
-}
-
-},{}],116:[function(require,module,exports){
-/*!
- * classie - class helper functions
- * from bonzo https://github.com/ded/bonzo
- * 
- * classie.has( elem, 'my-class' ) -> true/false
- * classie.add( elem, 'my-new-class' )
- * classie.remove( elem, 'my-unwanted-class' )
- * classie.toggle( elem, 'my-class' )
- */
-
-/*jshint browser: true, strict: true, undef: true */
-/*global define: false */
-'use strict';
-
-// class helper functions from bonzo https://github.com/ded/bonzo
-var classList = require('./class_list_ployfill'),
-    classie;
-
-function classReg(className) {
-    return new RegExp("(^|\\s+)" + className + "(\\s+|$)");
-}
-
-function noop() {}
-
-function isArr(classes) {
-    if (Array.isArray(classes)) {
-        return true;
-    } else if (Object.prototype.toString.call(classes) === '[object Array]') {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function removeMultiple() {
-    var c = arguments[1],
-        elem = arguments[0];
-    c.forEach(function(value) {
-        if (classie.has(elem, value)) {
-            noop();
-        }
-        classie.removeClass(elem, value);
-    });
-}
-
-
-function addMultiple() {
-    var c = arguments[1],
-        elem = arguments[0];
-    c.forEach(function(value) {
-        if (classie.has(elem, value)) {
-            noop();
-        }
-        classie.addClass(elem, value);
-    });
-}
-
-function hasClass(elem, c) {
-    return elem.classList.contains(c);
-}
-
-function addClass(elem, c) {
-    if (isArr(c)) {
-        addMultiple.apply(this, arguments);
-    } else {
-        elem.classList.add(c);
-    }
-}
-
-function removeClass(elem, c) {
-    if (isArr(c)) {
-        removeMultiple.apply(this, arguments);
-    } else {
-        elem.classList.remove(c);
-    }
-}
-
-function toggleClass(elem, c) {
-    var fn = hasClass(elem, c) ? removeClass : addClass;
-    fn(elem, c);
-}
-
-var classie = {
-    // full names
-    hasClass: hasClass,
-    addClass: addClass,
-    removeClass: removeClass,
-    toggleClass: toggleClass,
-    // short names
-    has: hasClass,
-    add: addClass,
-    remove: removeClass,
-    toggle: toggleClass
-};
-
-// transport
-
-if (typeof module === "object" && module && typeof module.exports === "object") {
-    // commonjs / browserify
-    module.exports = classie;
-} else {
-    // AMD
-    define(classie);
-}
-
-},{"./class_list_ployfill":115}],117:[function(require,module,exports){
+},{"./lib/classie":117,"dup":11}],116:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],117:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"./class_list_ployfill":116,"dup":13}],118:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32313,7 +32295,7 @@ if (typeof module === "object" && module && typeof module.exports === "object") 
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":118}],118:[function(require,module,exports){
+},{"./lib/stylie.notifications":119}],119:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32510,13 +32492,13 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":119,"detectcss":122,"events":41,"util":49,"util-extend":134}],119:[function(require,module,exports){
+},{"classie":120,"detectcss":123,"events":42,"util":50,"util-extend":135}],120:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":121,"dup":11}],120:[function(require,module,exports){
-arguments[4][115][0].apply(exports,arguments)
-},{"dup":115}],121:[function(require,module,exports){
-arguments[4][116][0].apply(exports,arguments)
-},{"./class_list_ployfill":120,"dup":116}],122:[function(require,module,exports){
+},{"./lib/classie":122,"dup":11}],121:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],122:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"./class_list_ployfill":121,"dup":13}],123:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -32526,7 +32508,7 @@ arguments[4][116][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":123}],123:[function(require,module,exports){
+},{"./lib/detectCSS":124}],124:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -32565,7 +32547,7 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],124:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -32577,7 +32559,7 @@ exports.prefixed = function(style){
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":125}],125:[function(require,module,exports){
+},{"./lib/stylie.tabs":126}],126:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -32677,13 +32659,13 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":126,"events":41,"util":49,"util-extend":134}],126:[function(require,module,exports){
+},{"classie":127,"events":42,"util":50,"util-extend":135}],127:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":128,"dup":11}],127:[function(require,module,exports){
-arguments[4][115][0].apply(exports,arguments)
-},{"dup":115}],128:[function(require,module,exports){
-arguments[4][116][0].apply(exports,arguments)
-},{"./class_list_ployfill":127,"dup":116}],129:[function(require,module,exports){
+},{"./lib/classie":129,"dup":11}],128:[function(require,module,exports){
+arguments[4][12][0].apply(exports,arguments)
+},{"dup":12}],129:[function(require,module,exports){
+arguments[4][13][0].apply(exports,arguments)
+},{"./class_list_ployfill":128,"dup":13}],130:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32695,7 +32677,7 @@ arguments[4][116][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":130}],130:[function(require,module,exports){
+},{"./lib/stylie":131}],131:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32795,7 +32777,7 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":41,"util":49,"util-extend":134}],131:[function(require,module,exports){
+},{"events":42,"util":50,"util-extend":135}],132:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -33920,10 +33902,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":132,"reduce":133}],132:[function(require,module,exports){
-arguments[4][37][0].apply(exports,arguments)
-},{"dup":37}],133:[function(require,module,exports){
+},{"emitter":133,"reduce":134}],133:[function(require,module,exports){
 arguments[4][38][0].apply(exports,arguments)
 },{"dup":38}],134:[function(require,module,exports){
+arguments[4][39][0].apply(exports,arguments)
+},{"dup":39}],135:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"dup":10}]},{},[108]);
+},{"dup":10}]},{},[109]);

@@ -1,0 +1,18 @@
+<% include ../../shared/header %>
+<% genericdoctype = "Userroles" %>
+<% genericdoctypelink = "userrole" %>
+<% genericdoctypeplurallink = "userroles" %>
+<% genericdoccount = userrolescount %>
+<% genericdocpages = userrolepages %>
+<% genericdoc_tktouse = "userroleid,title,name,author,description" %>
+<div class="ts-container">
+  <div class="ts-page-content-container">
+    <% include ../../shared/genericdoc_search_filters %>
+    <% userroles.forEach(function(genericdoc,i){%>
+    <% include ../../shared/genericdoc_list_userrole %>
+    <%})%>
+    <input type="hidden" name="_csrf" value=<%- locals.token %> >
+  </div>
+</div>
+<% include _new_userrole_modal %>
+<% include ../../shared/footer %>

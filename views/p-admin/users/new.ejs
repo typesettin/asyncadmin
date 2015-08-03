@@ -1,1 +1,12 @@
-
+<% include ../../shared/header %>
+<div class="ts-container">
+	<section class="ts-text-container ts-genericdoc">
+		<% include ../../shared/_html_inject_precontent %>
+		<form class="ts-form async-admin-ajax-forms" id="new-user-form" name="new-user-form" method="post" action="/<%- locals.adminPath %>/user/new"  onsubmit="return false;" enctype='multipart/form-data' 
+data-successredirect-href="/<%- locals.adminPath %>/users">
+			<% include _compose_user_form %>
+		</form>
+		<% include ../../shared/_html_inject_postcontent %>
+	</section>
+</div>
+<% include ../../shared/footer %>

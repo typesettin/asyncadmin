@@ -99,7 +99,7 @@ var users_new = function (req, res) {
 		viewdata = {
 			pagedata: {
 				title: 'Create User Account',
-				toplink: '&raquo; Create a new user',
+				toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; Create a new user',
 				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
 				extensions: CoreUtilities.getAdminMenu()
 			},

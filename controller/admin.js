@@ -194,6 +194,56 @@ var checkUserValidation = function (req, res, next) {
 	req.controllerData.checkuservalidation.complexity = loginSettings.complexitySettings.settings.weak;
 	next();
 };
+
+/**
+ * application settings and theme settings page
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var settings_index = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/settings/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'Application Settings',
+				toplink: '&raquo; Application Settings',
+				// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			themesettings: req.controllerData.themesettings,
+			appsettings: req.controllerData.appsettings,
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+/**
+ * settings faq page
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var settings_faq = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/settings/faq',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'Application Quick Help',
+				toplink: '&raquo; FAQ',
+				// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
 /**
  * admin controller
  * @module authController
@@ -226,6 +276,8 @@ var controller = function (resources) {
 
 	return {
 		admin_index: admin_index,
+		settings_index: settings_index,
+		settings_faq: settings_faq,
 		getMarkdownReleases: getMarkdownReleases,
 		getHomepageStats: getHomepageStats,
 		adminExtSettings: adminExtSettings,

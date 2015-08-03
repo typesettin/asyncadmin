@@ -23,7 +23,21 @@
   animation-fill-mode: both;
 }
 
+.ts-tabs nav li.ts-tab-current:before, 
+.ts-tabs nav li.ts-tab-current:after {
+  background: @dividerColor;
+}
+
 .ts{
+	.ts-tabs-content{
+		&.ts-tab-border{
+			aside{
+			  border-width: 1px;
+			  border-style: solid;
+			  border-top: none;
+			}
+		}
+	}
 	.ts-modal{
 		width:auto;
 		max-width:90%;
@@ -49,7 +63,8 @@
 			}
 		}
 		.ts-nav-overlay{
-			position: absolute;
+			position: fixed;
+			top:0;
 			height:100%;
 			width:100%;
 			background-color: rgba(255, 255, 255, 0.8);

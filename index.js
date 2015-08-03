@@ -61,6 +61,8 @@ module.exports = function (periodic) {
 	};
 	periodic.app.controller.extension.asyncadmin = {
 		admin: require('./controller/admin')(periodic),
+		settings: require('./controller/admin_settings')(periodic),
+		userroles: require('./controller/admin_userroles')(periodic),
 		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
 		socket_callback: require('./controller/server_callback')(periodic)
@@ -72,12 +74,15 @@ module.exports = function (periodic) {
 		extensionAdminRouter = periodic.express.Router(),
 		themeAdminRouter = periodic.express.Router(),
 		adminController = periodic.app.controller.extension.asyncadmin.admin,
+		adminSettingsController = periodic.app.controller.extension.asyncadmin.settings,
 		assetController = periodic.app.controller.native.asset,
 		authController = periodic.app.controller.extension.login.auth,
 		uacController = periodic.app.controller.extension.user_access_control.uac,
-		userroleController = periodic.app.controller.extension.user_access_control.userrole,
+		userroleController = periodic.app.controller.native.userrole,
+		userprivilegeController = periodic.app.controller.native.userprivilege,
 		userController = periodic.app.controller.native.user,
-		userAdminController = periodic.app.controller.extension.asyncadmin.user;
+		userAdminController = periodic.app.controller.extension.asyncadmin.user,
+		userroleAdminController = periodic.app.controller.extension.asyncadmin.userroles;
 
 	/**
 	 * access control routes
@@ -120,20 +125,53 @@ module.exports = function (periodic) {
 	userAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, userController.create);
 	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
 
-
-
 	//user roles
-	adminRouter.get('/userroles', uacController.loadUserAccesControls, userroleController.index);
-	adminRouter.get('/userrole/new', userroleController.userrole_new);
-	adminRouter.get('/userrole/:id', uacController.loadUserrole, userroleController.show);
-	adminRouter.get('/userrole/edit/:id', uacController.loadUserrole, userroleController.show);
-	adminRouter.post('/userrole/new/:id', uacController.skipInvalid, uacController.loadUserrole, userroleController.create);
-	adminRouter.post('/userrole/new', userroleController.create);
-	adminRouter.post('/userrole/edit', userroleController.update);
-	adminRouter.post('/userrole/:id/delete', uacController.loadUserrole, userroleController.remove);
-	adminRouter.get('/userroles/search.:ext', global.CoreCache.disableCache, uacController.loadUserroles, uacController.userroleSearchResults);
-	adminRouter.get('/userroles/search', global.CoreCache.disableCache, uacController.loadUserroles, uacController.userroleSearchResults);
+	adminRouter.get('/userroles',
+		userroleController.loadUserrolesWithCount,
+		userroleController.loadUserrolesWithDefaultLimit,
+		userroleController.loadUserroles,
+		userroleAdminController.index);
+	adminRouter.get('/userrole/new', userroleAdminController.userrole_new);
+	adminRouter.get('/userrole/:id/edit',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		userroleAdminController.show);
+	adminRouter.get('/userrole/edit/:id',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		userroleAdminController.show);
+	adminRouter.post('/userrole/new/:id',
+		uacController.skipInvalid,
+		userroleController.loadUserrole,
+		userroleAdminController.getRoleIdCount,
+		userroleController.create);
+	adminRouter.post('/userrole/new',
+		userroleController.create);
+	adminRouter.post('/userrole/edit',
+		userroleController.update);
+	adminRouter.post('/userrole/:id/delete', userroleController.loadUserrole,
+		userroleController.remove);
+	// adminRouter.get('/userroles/search.:ext', global.CoreCache.disableCache, userroleController.loadUACCounts, uacController.loadUserroles, uacController.userroleSearchResults);
+	// adminRouter.get('/userroles/search', global.CoreCache.disableCache, userroleController.loadUACCounts, uacController.loadUserroles, uacController.userroleSearchResults);
+	adminRouter.post('/userprivilege/new/:id',
+		uacController.skipInvalid,
+		userprivilegeController.loadUserprivilege,
+		userroleAdminController.getPrivilegeIdCount,
+		userprivilegeController.create);
+	// 
 
+	/**
+	 * admin/settings routes
+	 */
+	settingsAdminRouter.get('/', adminSettingsController.load_app_settings, adminSettingsController.load_theme_settings, adminController.settings_index);
+	// settingsAdminRouter.get('/faq', adminController.settings_faq);
+	settingsAdminRouter.post('/restart', adminSettingsController.restart_app);
+	settingsAdminRouter.post('/updateapp', adminSettingsController.update_app);
+	settingsAdminRouter.post('/updateappsettings', adminSettingsController.update_app_settings);
+	settingsAdminRouter.post('/updatethemesettings', adminSettingsController.update_theme_settings);
+
+	settingsAdminRouter.post('/updateextfiledata', adminSettingsController.update_ext_filedata);
+	settingsAdminRouter.post('/themefiledata', adminSettingsController.update_theme_filedata);
 
 	//user priviliges
 	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);

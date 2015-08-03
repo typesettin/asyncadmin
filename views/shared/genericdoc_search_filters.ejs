@@ -7,7 +7,7 @@
   <details class="ts-genericdoc">
     <summary>
       <span class="ts-text-xx ts-text-bold">Manage &rsaquo; <%-genericdoctype%>s</span>
-      <% if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag" ) {%>
+      <% if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag"  || genericdoctypelink ==="userrole" || genericdoctypelink==="userprivilege" ) {%>
         <a class=" ts-button ts-pull-right ts-open-modal" href="/<%- locals.adminPath %>/content/<%- genericdoctypelink  %>/new" data-tsmodal-id="new-<%- genericdoctypelink  %>-modal">New <%- genericdoctype %></a>
       <%}else if(genericdoctypelink ==="user" ) {%>
         <a class="async-admin-ajax-link ts-button ts-pull-right" href="/<%- locals.adminPath %>/<%- genericdoctypelink  %>/new">New <%- genericdoctype %></a>

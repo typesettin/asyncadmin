@@ -326,6 +326,13 @@ var defaultAjaxFormie = function (formElement) {
 				if (typeof successfn === 'function') {
 					successfn(response);
 				}
+				if (formElement.getAttribute('data-successredirect-href')) {
+					var successredirecthref = formElement.getAttribute('data-successredirect-href');
+					loadAjaxPage({
+						datahref: successredirecthref,
+						pushState: true
+					});
+				}
 			}
 		},
 		errorcallback: function (error, response) {
@@ -467,6 +474,7 @@ var confirmDeleteDialog = function (e) {
 		posturl = eTarget.getAttribute('data-href'),
 		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
 		successfunction = eTarget.getAttribute('data-successfunction'),
+		beforefunction = eTarget.getAttribute('data-beforefunction'),
 		donotnotify = eTarget.getAttribute('data-donotnotify');
 	e.preventDefault();
 
@@ -477,6 +485,9 @@ var confirmDeleteDialog = function (e) {
 	}
 	if (successfunction) {
 		confirmDeleteYes.setAttribute('data-successfunction', successfunction);
+	}
+	if (beforefunction) {
+		confirmDeleteYes.setAttribute('data-beforefunction', beforefunction);
 	}
 	if (donotnotify) {
 		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
@@ -698,7 +709,8 @@ var handle_ajax_button_response = function (e) {
 			else if (eTarget.getAttribute('data-deleted-redirect-href')) {
 				var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
 				loadAjaxPage({
-					datahref: deleteredirecthref
+					datahref: deleteredirecthref,
+					pushState: true
 				});
 			}
 		}
