@@ -82,7 +82,7 @@ module.exports = function (periodic) {
 		userprivilegeController = periodic.app.controller.native.userprivilege,
 		userController = periodic.app.controller.native.user,
 		userAdminController = periodic.app.controller.extension.asyncadmin.user,
-		userroleAdminController = periodic.app.controller.extension.asyncadmin.userroles;
+		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles;
 
 	/**
 	 * access control routes
@@ -130,34 +130,46 @@ module.exports = function (periodic) {
 		userroleController.loadUserrolesWithCount,
 		userroleController.loadUserrolesWithDefaultLimit,
 		userroleController.loadUserroles,
-		userroleAdminController.index);
-	adminRouter.get('/userrole/new', userroleAdminController.userrole_new);
+		UACAdminController.index);
+	adminRouter.get('/userrole/new', UACAdminController.userrole_new);
 	adminRouter.get('/userrole/:id/edit',
 		userprivilegeController.loadUserprivileges,
 		userroleController.loadUserrole,
-		userroleAdminController.show);
+		UACAdminController.show);
 	adminRouter.get('/userrole/edit/:id',
 		userprivilegeController.loadUserprivileges,
 		userroleController.loadUserrole,
-		userroleAdminController.show);
+		UACAdminController.show);
 	adminRouter.post('/userrole/new/:id',
 		uacController.skipInvalid,
 		userroleController.loadUserrole,
-		userroleAdminController.getRoleIdCount,
-		userroleController.create);
+		UACAdminController.getRoleIdCount,
+		userroleController.create); //new from tag list
 	adminRouter.post('/userrole/new',
-		userroleController.create);
+		userroleController.create); //new from modal
 	adminRouter.post('/userrole/edit',
 		userroleController.update);
 	adminRouter.post('/userrole/:id/delete', userroleController.loadUserrole,
 		userroleController.remove);
-	// adminRouter.get('/userroles/search.:ext', global.CoreCache.disableCache, userroleController.loadUACCounts, uacController.loadUserroles, uacController.userroleSearchResults);
-	// adminRouter.get('/userroles/search', global.CoreCache.disableCache, userroleController.loadUACCounts, uacController.loadUserroles, uacController.userroleSearchResults);
+	// user privileges
+	adminRouter.get('/userprivileges',
+		userprivilegeController.loadUserprivilegesWithCount,
+		userprivilegeController.loadUserprivilegesWithDefaultLimit,
+		userprivilegeController.loadUserprivileges,
+		UACAdminController.userprivilege_index);
 	adminRouter.post('/userprivilege/new/:id',
 		uacController.skipInvalid,
 		userprivilegeController.loadUserprivilege,
-		userroleAdminController.getPrivilegeIdCount,
-		userprivilegeController.create);
+		UACAdminController.getPrivilegeIdCount,
+		userprivilegeController.create); //new from tag list
+	adminRouter.post('/userprivilege/new',
+		userprivilegeController.create); //new from modal
+	adminRouter.get('/userprivilege/edit/:id',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.post('/userprivilege/edit',
+		userprivilegeController.update);
 	// 
 
 	/**

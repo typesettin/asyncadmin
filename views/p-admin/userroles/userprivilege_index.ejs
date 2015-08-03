@@ -1,0 +1,18 @@
+<% include ../../shared/header %>
+<% genericdoctype = "Userprivileges" %>
+<% genericdoctypelink = "userprivilege" %>
+<% genericdoctypeplurallink = "userprivileges" %>
+<% genericdoccount = userprivilegescount %>
+<% genericdocpages = userprivilegepages %>
+<% genericdoc_tktouse = "userprivilegeid,title,name,author,description" %>
+<div class="ts-container">
+  <div class="ts-page-content-container">
+    <% include ../../shared/genericdoc_search_filters %>
+    <% userprivileges.forEach(function(genericdoc,i){%>
+    <% include ../../shared/genericdoc_list_userprivilege %>
+    <%})%>
+    <input type="hidden" name="_csrf" value=<%- locals.token %> >
+  </div>
+</div>
+<% include _new_userprivilege_modal %>
+<% include ../../shared/footer %>

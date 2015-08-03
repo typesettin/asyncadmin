@@ -1,19 +1,31 @@
 <div class="ts-modal-hidden-container">
-  <div id="new-userrole-modal" data-name="new-userrole-modal" class="ts-modal ts-modal-effect-1">
+  <div id="new-userprivilege-modal" data-name="new-userprivilege-modal" class="ts-modal ts-modal-effect-1 ts-width-66">
     <section class="ts-modal-content ts-bg-text-primary-color  ts-no-heading-margin ts-padding-md ts-shadow ">
-      <form class="ts-form async-admin-ajax-forms" name="new-userrole-form" id="new-userrole-form" method="post" action="/<%- locals.adminPath %>/content/userrole/new" data-successsubmitfunction="adminRefresh">
+      <form class="ts-form async-admin-ajax-forms" name="new-userprivilege-form" id="new-userprivilege-form" method="post" action="/<%- locals.adminPath %>/userprivilege/new" data-successsubmitfunction="adminRefresh">
         <input type="hidden" name="_csrf" value=<%- locals.token %> >
-        <div  id="new-userrole-modal-content">
+        <div  id="new-userprivilege-modal-content">
           <div class="ts-row ts-form-row">
             <div>
-              <label class="ts-label">Content Type Title</label>
+              <label class="ts-label">Title</label>
             </div>
             <input type="text" placeholder="title" class="ts-input" name="title">
+          </div>
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">ID</label>
+            </div>
+            <input type="text" placeholder="userprivilegeid" class="ts-input" name="userprivilegeid">
+          </div>
+          <div class="ts-row ts-form-row">
+            <div>
+              <label class="ts-label">Description</label>
+            </div>
+            <input type="text" placeholder="description" class="ts-input" name="description">
           </div>
         </div>
         <div class="ts-row ts-form-row">
           <div class="ts-col-span12 ts-text-center">
-            <input type="submit" name="new_userrole_button" value="create content type" class="ts-button ts-button-primary-color ts-modal-close"/>
+            <input type="submit" name="new_userprivilege_button" value="create user privilege" class="ts-button ts-button-primary-color ts-modal-close"/>
             <a class="ts-button ts-modal-close">cancel</a>
           </div>
         </div>

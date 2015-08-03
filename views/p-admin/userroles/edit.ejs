@@ -5,9 +5,9 @@
 		<script type="text/javascript">
 		<%- locals.viewhelper.passObjToClient(userrole.privileges,"userproleuseprivileges") %>
 		</script>
-		<form class="ts-form async-admin-ajax-forms" id="edit-userrole-form" name="edit-userrole-form" method="post" action="/<%- locals.adminPath %>/user/edit"  onsubmit="return false;" enctype='multipart/form-data' 
-data-successsubmitfunction="adminRefresh">
+		<form class="ts-form async-admin-ajax-forms" id="edit-userrole-form" name="edit-userrole-form" method="post" action="/<%- locals.adminPath %>/userrole/edit"  onsubmit="return false;" >
 			<input type="hidden" name="_csrf" value=<%- locals.token %> >
+			<input type="hidden" name="docid" value=<%- userrole._id %> >
 			<div class="ts-page-content-container-profile-page">
 				<div class="ts-row">
 					<div class="ts-genericdoc-entry ts-col-span7 ts-screensm-col-span12 ts-screenxs-col-span12">
@@ -51,11 +51,15 @@ data-successsubmitfunction="adminRefresh">
 		                  name="privileges-ts-datalist-tagged" 
 		                  />
 		          </div>
+		          <div class="ts-row ts-form-row ts-text-center">
+		          	<div class="ts-col-span12 ts-padding-lg">
+			          	<input type="submit" class="ts-button ts-button-accent-color" value="update user role" name="update-user-role-button" />
+		          	</div>
+							</div>
 		        </div>
-						<%- userrole %>
 					</div>
 					<div class=" ts-col-span5 ts-screensm-col-span12 ts-screenxs-col-span12">
-						<h6>All Privileges</h6>
+						<h4>All Privileges</h4>
 						<% userprivileges.forEach(function(userprivilege){%>
 							<span class="ts-button ts-text-xs">#<%- userprivilege.name %> (<%- userprivilege.userprivilegeid %>)</span>
 						<%} );%>

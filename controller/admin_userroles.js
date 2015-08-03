@@ -91,6 +91,25 @@ var index = function (req, res) {
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
+var userprivilege_index = function (req, res) {
+	// console.log('req.controllerData', req.controllerData);
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/userprivilege_index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = merge(req.controllerData, {
+			pagedata: {
+				title: 'Manage Users Privileges',
+				toplink: '&raquo; <a href="/' + adminPath + '/userprivileges" class="async-admin-ajax-link">User Privileges</a>',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		});
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+
 /**
  * create a new usr role
  * @param  {object} req 
@@ -142,6 +161,24 @@ var show = function (req, res) {
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
+var userprivilege_show = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/userprivilege_edit',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: req.controllerData.userprivilege.title,
+				toplink: '&raquo; <a href="/' + adminPath + '/userprivileges" class="async-admin-ajax-link">User Privileges</a> &raquo; ' + req.controllerData.userprivilege.title,
+				// headerjs: ['/extensions/periodicjs.ext.asyncadmin/js/useraccess.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			userprivilege: req.controllerData.userprivilege, //req.controllerData.userrole
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
 
 /**
  * user role controller
@@ -171,9 +208,10 @@ var controller = function (resources) {
 		getRoleIdCount: getRoleIdCount,
 		getPrivilegeIdCount: getPrivilegeIdCount,
 		index: index,
-		// create: create,
+		userprivilege_index: userprivilege_index,
 		userrole_new: userrole_new,
 		show: show,
+		userprivilege_show: userprivilege_show,
 		// update: update,
 		// remove: remove
 	};
