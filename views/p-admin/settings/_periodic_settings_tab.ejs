@@ -1,18 +1,18 @@
 <aside class="ts-padding-md ts-border-divider-text-color">
-	<form class="ts-form ts-ajax-form noFormSubmit" method="post" action="/p-admin/settings/updateappsettings">
+	<form id="update-periodic-settings-form" name="update-periodic-settings-form" class="ts-form ts-form async-admin-ajax-forms" method="post" action="/p-admin/settings/updateappsettings" data-successsubmitfunction="restartAppResponse">
 		<input type="hidden" name="_csrf" value=<%- locals.token %> >
 		<p>Updating settings updates <a class="ts-button ts-text-sm">content/config/environment/<%- appsettings.environment %>.json</a> and restarts your application. Your theme can be changed by updating <a href="/p-admin/themes">theme settings</a>.</p>
-		<h3>Configuration Options [<%- appsettings.environment %>]</h3>
+		<h5>Configuration Options [<%- appsettings.environment %>]</h5>
 		<p class="extra-padding">
 			<div id="appsettings-config"></div>
 		</p>
-		<h3>Read Only</h3>
+		<p class="ts-text-center">
+			<button type="submit" class=" ts-button ts-color-info " style="font-size: 110%;">Update Application Settings</button>
+		</p>
+		<h5>Read Only</h5>
 		<p class="extra-padding">
 			<div id="appsettings-readonly"></div>
 		</p>
 
-		<p class="ts-text-center">
-				<button type="submit" class=" ts-button ts-color-info " style="font-size: 110%;">Update Application Settings</button>
-		</p>
 	</form>
 </aside>

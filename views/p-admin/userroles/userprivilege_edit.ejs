@@ -1,0 +1,46 @@
+<% include ../../shared/header %>
+<div class="ts-container">
+	<section class="ts-text-container ts-genericdoc">
+		<% include ../../shared/_html_inject_precontent %>
+		<form class="ts-form async-admin-ajax-forms" id="edit-userprivilege-form" name="edit-userprivilege-form" method="post" action="/<%- locals.adminPath %>/userprivilege/edit"  onsubmit="return false;" >
+			<input type="hidden" name="_csrf" value=<%- locals.token %> >
+			<input type="hidden" name="docid" value=<%- userprivilege._id %> >
+			<div class="ts-page-content-container-profile-page">
+				<div class="ts-row">
+					<div class="ts-genericdoc-entry ts-col-nofloat ts-col-span7 ts-screensm-col-span12 ts-screenxs-col-span12">
+						<h4>User Privilege</h4>
+						<div  id="new-userprivilege-modal-content">
+		          <div class="ts-row ts-form-row">
+		            <div>
+		              <label class="ts-label">Title</label>
+		            </div>
+		            <input type="text" placeholder="title" class="ts-input" name="title" value="<%- userprivilege.title %>">
+		          </div>
+		          <div class="ts-row ts-form-row">
+		            <div>
+		              <label class="ts-label">ID</label>
+		            </div>
+		            <input type="text" placeholder="userprivilegeid" class="ts-input" name="userprivilegeid"  value="<%- userprivilege.userprivilegeid %>">
+		          </div>
+		          <div class="ts-row ts-form-row">
+		            <div>
+		              <label class="ts-label">Description</label>
+		            </div>
+		            <input type="text" placeholder="description" class="ts-input" name="description"  value="<%- userprivilege.description %>">
+		          </div>
+		          <div class="ts-row ts-form-row ts-text-center">
+		          	<div class="ts-col-span12 ts-padding-lg">
+			          	<input type="submit" class="ts-button ts-button-accent-color" value="update user privilege" name="update-user-privilege-button" />
+		          	</div>
+							</div>
+		        </div>
+					</div>
+				</div>
+			</div>
+		</form>
+		<% include ../../shared/_html_inject_postcontent %>
+	</section>
+</div>
+<% include ../../shared/_template_compose_taxonomies %>
+
+<% include ../../shared/footer %>

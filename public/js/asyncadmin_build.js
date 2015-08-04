@@ -30411,6 +30411,7 @@ var ajaxlinks,
 	StylieDatalist = require('./datalist'),
 	StylieMedialist = require('./medialist'),
 	StylieFilterlist = require('./filterlist'),
+	StylieSortlist = require('./sortlist'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -30438,6 +30439,7 @@ var ajaxlinks,
 	datalistelements,
 	medialistelements,
 	filterlistelements,
+	sortlistelements,
 	AdminFormies = {},
 	StylieDataLists = {},
 	StylieTab = {};
@@ -30458,19 +30460,6 @@ require('../../node_modules/codemirror/mode/javascript/javascript');
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
-
-
-var handleUncaughtError = function (e, errorMessageTitle) {
-	endPreloader();
-	logToAdminConsole({
-		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
-		level: 'log',
-		meta: e
-	});
-	window.showErrorNotificaton({
-		message: e.message
-	});
-};
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -30571,7 +30560,8 @@ var initCodemirrors = function () {
 				'overflow-x': 'auto',
 				lint: true,
 				gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-				foldGutter: true
+				foldGutter: true,
+				readOnly: (codeMirrorJSEditorsElements[cm].getAttribute('readonly')) ? 'nocursor' : false
 			}
 		);
 	}
@@ -30603,6 +30593,13 @@ var initFilterlists = function () {
 		StylieDataLists[filterlistelements[q].id] = new StylieFilterlist({
 			element: filterlistelements[q],
 			filterkeys: filterlistelements[q].getAttribute('data-filterkeys')
+		});
+	}
+	sortlistelements = document.querySelectorAll('.asyncadmin-ts-sortlist');
+	for (var r = 0; r < sortlistelements.length; r++) {
+		StylieDataLists[sortlistelements[r].id] = new StylieSortlist({
+			element: sortlistelements[r],
+			sortkeys: sortlistelements[r].getAttribute('data-sortkeys')
 		});
 	}
 };
@@ -30644,6 +30641,18 @@ var logToAdminConsole = function (data) {
 			clearTimeout(t);
 		}, 5000);
 	}
+};
+
+var handleUncaughtError = function (e, errorMessageTitle) {
+	endPreloader();
+	logToAdminConsole({
+		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
+		level: 'log',
+		meta: e
+	});
+	window.showErrorNotificaton({
+		message: e.message
+	});
 };
 
 var defaultLoadAjaxPageFormie = function (formElement) {
@@ -31413,6 +31422,32 @@ window.adminRefresh = function () {
 	});
 };
 
+
+window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
+	// window.adminRefresh();
+	var t;
+
+	window.adminSocket.on('disconnect', function () {
+		t = setTimeout(function () {
+			window.StylieNotificationObject.dismiss();
+		}, 500);
+		// window.StylieNotificationObject.dismiss();
+		window.showStylieAlert({
+			message: 'Shutting down application and restarting Periodic. (' + new Date() + ')'
+		});
+		window.showPreloader();
+	});
+	window.adminSocket.on('connect', function () {
+		window.StylieNotificationObject.dismiss();
+		window.showStylieAlert({
+			message: 'Periodic application restarted.(' + new Date() + ')'
+		});
+		clearTimeout(t);
+		window.adminRefresh();
+	});
+};
+
+
 window.addEventListener('load', function () {
 	window.domLoadEventFired = true;
 	adminConsoleElement = document.querySelector('#ts-admin-console');
@@ -31475,7 +31510,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../node_modules/codemirror/addon/comment/comment":14,"../../node_modules/codemirror/addon/comment/continuecomment":15,"../../node_modules/codemirror/addon/edit/matchbrackets":16,"../../node_modules/codemirror/addon/fold/brace-fold":17,"../../node_modules/codemirror/addon/fold/comment-fold":18,"../../node_modules/codemirror/addon/fold/foldcode":19,"../../node_modules/codemirror/addon/fold/foldgutter":20,"../../node_modules/codemirror/addon/fold/indent-fold":21,"../../node_modules/codemirror/mode/css/css":24,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":25,"../../node_modules/codemirror/mode/javascript/javascript":27,"./datalist":112,"./filterlist":113,"./medialist":114,"async":1,"bindie":6,"classie":11,"codemirror":23,"ejs":2,"forbject":29,"formie":32,"moment":5,"platterjs":51,"pushie":58,"querystring":48,"socket.io-client":61,"stylie":131,"stylie.modals":115,"stylie.notifications":120,"stylie.tabs":127,"superagent":133}],112:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":14,"../../node_modules/codemirror/addon/comment/continuecomment":15,"../../node_modules/codemirror/addon/edit/matchbrackets":16,"../../node_modules/codemirror/addon/fold/brace-fold":17,"../../node_modules/codemirror/addon/fold/comment-fold":18,"../../node_modules/codemirror/addon/fold/foldcode":19,"../../node_modules/codemirror/addon/fold/foldgutter":20,"../../node_modules/codemirror/addon/fold/indent-fold":21,"../../node_modules/codemirror/mode/css/css":24,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":25,"../../node_modules/codemirror/mode/javascript/javascript":27,"./datalist":112,"./filterlist":113,"./medialist":114,"./sortlist":115,"async":1,"bindie":6,"classie":11,"codemirror":23,"ejs":2,"forbject":29,"formie":32,"moment":5,"platterjs":51,"pushie":58,"querystring":48,"socket.io-client":61,"stylie":132,"stylie.modals":116,"stylie.notifications":121,"stylie.tabs":128,"superagent":134}],112:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31728,7 +31763,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":6,"classie":11,"events":42,"superagent":133,"util":50,"util-extend":136}],113:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":42,"superagent":134,"util":50,"util-extend":137}],113:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31907,7 +31942,7 @@ filterlist.prototype.__init = function () {
 };
 module.exports = filterlist;
 
-},{"classie":11,"events":42,"querystring":48,"util":50,"util-extend":136}],114:[function(require,module,exports){
+},{"classie":11,"events":42,"querystring":48,"util":50,"util-extend":137}],114:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -32125,7 +32160,145 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":6,"classie":11,"events":42,"superagent":133,"util":50,"util-extend":136}],115:[function(require,module,exports){
+},{"bindie":6,"classie":11,"events":42,"superagent":134,"util":50,"util-extend":137}],115:[function(require,module,exports){
+'use strict';
+
+var util = require('util'),
+	events = require('events'),
+	classie = require('classie'),
+	querystring = require('querystring'),
+	extend = require('util-extend');
+
+/**
+ * A module that represents a sortlist object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/sortlist}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor sortlist
+ * @requires module:events
+ * @requires module:util-extend
+ * @requires module:util
+ * @param {object} options configuration options
+ * @example 
+		sortlist_id: token(),
+		push_state_support: true,
+		replacecallback: function (data) {
+			console.log(data);
+		},
+		popcallback: function (data) {
+			console.log(data);
+		},
+		pushcallback: function (data) {
+			console.log(data);
+		}
+ */
+var sortlist = function (options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		element: {},
+		sortkeys: []
+	};
+	this.options = extend(defaultOptions, options);
+	// this.options.element = this.options.element.querySelector('.ts-sortlist-element-container');
+	this.options.forbject_name = this.options.element.getAttribute('data-formelement');
+	this.init = this.__init;
+	this.init();
+	// this.addBinder = this._addBinder;
+};
+
+util.inherits(sortlist, events.EventEmitter);
+
+var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
+	var sortkeys = sortkeyslist.split(','),
+		set_sq_input_val = function (valEvent) {
+			var parentElem = valEvent.target.parentElement,
+				hidden_input_value = '';
+			if (parentElem.querySelector('.ts-sq-op').value === 'dsc') {
+				hidden_input_value += '-';
+			}
+			hidden_input_value += parentElem.querySelector('.ts-sq-key').value;
+
+			parentElem.querySelector('.ts-sq-h-name').setAttribute('value', hidden_input_value);
+			// parentElem.querySelector('.ts-sq-h-name').setAttribute('checked', 'checked');
+			window.AdminFormies[forbject_name].setFormElements();
+			window.AdminFormies[forbject_name].refresh();
+
+		};
+
+
+	var sort_query_key_select = document.createElement('select'),
+		sort_query_key_op = document.createElement('select'),
+		sort_query_span = document.createElement('span'),
+		sort_query_sortlabel = document.createElement('span'),
+		sort_query_hidden_input = document.createElement('input'),
+		sort_query_container = document.createElement('span');
+
+	sort_query_span.innerHTML = '|';
+	sort_query_sortlabel.innerHTML = 'sort ';
+
+	sort_query_hidden_input.setAttribute('name', 'sort');
+	sort_query_hidden_input.setAttribute('type', 'hidden');
+	sort_query_hidden_input.setAttribute('class', 'ts-sq-h-name ts-hidden');
+	// if (precheked) {
+	// 	sort_query_hidden_input.setAttribute('checked', 'checked');
+	// }
+	sort_query_hidden_input.setAttribute('value', '');
+
+	// sort_query_hidden_input.type = 'hidden';
+
+	sort_query_key_select.setAttribute('class', 'ts-sq-key ');
+	sortkeys.forEach(function (fkey) {
+		sort_query_key_select.innerHTML += '<option value="' + fkey + '">' + fkey + '</option>';
+	});
+
+	sort_query_key_op.setAttribute('class', 'ts-sq-op ');
+	sort_query_key_op.innerHTML = '<option value="dsc"> desc </option>';
+	sort_query_key_op.innerHTML += '<option value="asc"> asc </option>';
+
+	sort_query_container.appendChild(sort_query_sortlabel);
+	sort_query_container.appendChild(sort_query_key_select);
+	sort_query_container.appendChild(sort_query_key_op);
+	sort_query_container.appendChild(sort_query_hidden_input);
+	sort_query_container.appendChild(sort_query_span);
+	elem.innerHTML = '';
+	elem.appendChild(sort_query_container);
+
+	// sort_query_key_select.addEventListener('change', set_sq_input_val, false);
+	// sort_query_key_op.addEventListener('change', set_sq_input_val, false);
+	sort_query_key_select.addEventListener('change', set_sq_input_val, false);
+	sort_query_key_op.addEventListener('change', set_sq_input_val, false);
+
+	if (e.generate_from_url) {
+		sort_query_key_select.value = e.key_select_from_url;
+		sort_query_key_op.value = e.op_select_from_url;
+		sort_query_hidden_input.value = e.hidden_select_from_url;
+	}
+};
+
+/**
+ * sets detects support for history push/pop/replace state and can set initial data
+ * @emits initialized
+ */
+sortlist.prototype.__init = function () {
+	var windowqueryobj = querystring.parse(window.location.search),
+		e = {};
+	if (windowqueryobj.sort) {
+		e = ({
+			generate_from_url: true,
+			key_select_from_url: (windowqueryobj.sort.charAt(0) === '-') ? windowqueryobj.sort.substr(1) : windowqueryobj.sort,
+			op_select_from_url: (windowqueryobj.sort.charAt(0) === '-') ? 'dsc' : 'asc',
+			hidden_select_from_url: windowqueryobj.sort,
+		});
+		// generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name, true);
+	}
+	generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name);
+
+	this.emit('initialized');
+};
+module.exports = sortlist;
+
+},{"classie":11,"events":42,"querystring":48,"util":50,"util-extend":137}],116:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -32137,7 +32310,7 @@ module.exports = tsmedialist;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":116}],116:[function(require,module,exports){
+},{"./lib/stylie.modals":117}],117:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -32305,13 +32478,13 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":117,"events":42,"util":50,"util-extend":136}],117:[function(require,module,exports){
+},{"classie":118,"events":42,"util":50,"util-extend":137}],118:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":119,"dup":11}],118:[function(require,module,exports){
+},{"./lib/classie":120,"dup":11}],119:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],119:[function(require,module,exports){
+},{"dup":12}],120:[function(require,module,exports){
 arguments[4][13][0].apply(exports,arguments)
-},{"./class_list_ployfill":118,"dup":13}],120:[function(require,module,exports){
+},{"./class_list_ployfill":119,"dup":13}],121:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32323,7 +32496,7 @@ arguments[4][13][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":121}],121:[function(require,module,exports){
+},{"./lib/stylie.notifications":122}],122:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32520,13 +32693,13 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":122,"detectcss":125,"events":42,"util":50,"util-extend":136}],122:[function(require,module,exports){
+},{"classie":123,"detectcss":126,"events":42,"util":50,"util-extend":137}],123:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":124,"dup":11}],123:[function(require,module,exports){
+},{"./lib/classie":125,"dup":11}],124:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"dup":12}],124:[function(require,module,exports){
+},{"dup":12}],125:[function(require,module,exports){
 arguments[4][13][0].apply(exports,arguments)
-},{"./class_list_ployfill":123,"dup":13}],125:[function(require,module,exports){
+},{"./class_list_ployfill":124,"dup":13}],126:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -32536,7 +32709,7 @@ arguments[4][13][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":126}],126:[function(require,module,exports){
+},{"./lib/detectCSS":127}],127:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -32575,7 +32748,7 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],127:[function(require,module,exports){
+},{}],128:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -32587,7 +32760,7 @@ exports.prefixed = function(style){
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":128}],128:[function(require,module,exports){
+},{"./lib/stylie.tabs":129}],129:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -32687,11 +32860,11 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":129,"events":42,"util":50,"util-extend":136}],129:[function(require,module,exports){
+},{"classie":130,"events":42,"util":50,"util-extend":137}],130:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"./lib/classie":130,"dup":11}],130:[function(require,module,exports){
+},{"./lib/classie":131,"dup":11}],131:[function(require,module,exports){
 arguments[4][54][0].apply(exports,arguments)
-},{"dup":54}],131:[function(require,module,exports){
+},{"dup":54}],132:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32703,7 +32876,7 @@ arguments[4][54][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":132}],132:[function(require,module,exports){
+},{"./lib/stylie":133}],133:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32803,7 +32976,7 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":42,"util":50,"util-extend":136}],133:[function(require,module,exports){
+},{"events":42,"util":50,"util-extend":137}],134:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -33928,10 +34101,10 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":134,"reduce":135}],134:[function(require,module,exports){
+},{"emitter":135,"reduce":136}],135:[function(require,module,exports){
 arguments[4][38][0].apply(exports,arguments)
-},{"dup":38}],135:[function(require,module,exports){
+},{"dup":38}],136:[function(require,module,exports){
 arguments[4][39][0].apply(exports,arguments)
-},{"dup":39}],136:[function(require,module,exports){
+},{"dup":39}],137:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
 },{"dup":10}]},{},[111]);

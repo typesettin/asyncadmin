@@ -164,7 +164,7 @@ module.exports = function (periodic) {
 		userprivilegeController.create); //new from tag list
 	adminRouter.post('/userprivilege/new',
 		userprivilegeController.create); //new from modal
-	adminRouter.get('/userprivilege/edit/:id',
+	adminRouter.get('/userprivilege/:id/edit',
 		userprivilegeController.loadUserprivileges,
 		userprivilegeController.loadUserprivilege,
 		UACAdminController.userprivilege_show);

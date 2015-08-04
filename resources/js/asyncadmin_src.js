@@ -28,6 +28,7 @@ var ajaxlinks,
 	StylieDatalist = require('./datalist'),
 	StylieMedialist = require('./medialist'),
 	StylieFilterlist = require('./filterlist'),
+	StylieSortlist = require('./sortlist'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -55,6 +56,7 @@ var ajaxlinks,
 	datalistelements,
 	medialistelements,
 	filterlistelements,
+	sortlistelements,
 	AdminFormies = {},
 	StylieDataLists = {},
 	StylieTab = {};
@@ -75,19 +77,6 @@ require('../../node_modules/codemirror/mode/javascript/javascript');
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
-
-
-var handleUncaughtError = function (e, errorMessageTitle) {
-	endPreloader();
-	logToAdminConsole({
-		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
-		level: 'log',
-		meta: e
-	});
-	window.showErrorNotificaton({
-		message: e.message
-	});
-};
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -188,7 +177,8 @@ var initCodemirrors = function () {
 				'overflow-x': 'auto',
 				lint: true,
 				gutters: ['CodeMirror-linenumbers', 'CodeMirror-foldgutter'],
-				foldGutter: true
+				foldGutter: true,
+				readOnly: (codeMirrorJSEditorsElements[cm].getAttribute('readonly')) ? 'nocursor' : false
 			}
 		);
 	}
@@ -220,6 +210,13 @@ var initFilterlists = function () {
 		StylieDataLists[filterlistelements[q].id] = new StylieFilterlist({
 			element: filterlistelements[q],
 			filterkeys: filterlistelements[q].getAttribute('data-filterkeys')
+		});
+	}
+	sortlistelements = document.querySelectorAll('.asyncadmin-ts-sortlist');
+	for (var r = 0; r < sortlistelements.length; r++) {
+		StylieDataLists[sortlistelements[r].id] = new StylieSortlist({
+			element: sortlistelements[r],
+			sortkeys: sortlistelements[r].getAttribute('data-sortkeys')
 		});
 	}
 };
@@ -261,6 +258,18 @@ var logToAdminConsole = function (data) {
 			clearTimeout(t);
 		}, 5000);
 	}
+};
+
+var handleUncaughtError = function (e, errorMessageTitle) {
+	endPreloader();
+	logToAdminConsole({
+		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
+		level: 'log',
+		meta: e
+	});
+	window.showErrorNotificaton({
+		message: e.message
+	});
 };
 
 var defaultLoadAjaxPageFormie = function (formElement) {
@@ -1029,6 +1038,32 @@ window.adminRefresh = function () {
 		datahref: window.location.href
 	});
 };
+
+
+window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
+	// window.adminRefresh();
+	var t;
+
+	window.adminSocket.on('disconnect', function () {
+		t = setTimeout(function () {
+			window.StylieNotificationObject.dismiss();
+		}, 500);
+		// window.StylieNotificationObject.dismiss();
+		window.showStylieAlert({
+			message: 'Shutting down application and restarting Periodic. (' + new Date() + ')'
+		});
+		window.showPreloader();
+	});
+	window.adminSocket.on('connect', function () {
+		window.StylieNotificationObject.dismiss();
+		window.showStylieAlert({
+			message: 'Periodic application restarted.(' + new Date() + ')'
+		});
+		clearTimeout(t);
+		window.adminRefresh();
+	});
+};
+
 
 window.addEventListener('load', function () {
 	window.domLoadEventFired = true;

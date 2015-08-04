@@ -6,7 +6,6 @@ var path = require('path'),
 	fs = require('fs-extra'),
 	str2json = require('string-to-json'),
 	merge = require('utils-merge'),
-	ejs = require('ejs'),
 	CoreUtilities,
 	CoreController,
 	CoreExtension,
@@ -15,34 +14,10 @@ var path = require('path'),
 	dbSettings,
 	mongoose,
 	AppDBSetting,
+	appenvironment,
 	logger,
 	restartfile = path.join(process.cwd(), '/content/config/restart.json'),
-	changedemailtemplate,
-	emailtransport;
-
-/**
- * default email settings, sends mail with nodemailer and mail core extension
- * @param  {object} options - contains email options and nodemailer transport
- * @param  {Function} callbackk async callback
- */
-var sendEmail = function (options, callback) {
-	var mailtransport = options.mailtransport,
-		user = options.user,
-		mailoptions = {};
-
-	mailoptions.to = (options.to) ? options.to : appSettings.adminnotificationemail;
-	mailoptions.cc = user.email; //options.cc;
-	mailoptions.bcc = options.bcc;
-	mailoptions.replyTo = options.replyTo;
-	mailoptions.subject = options.subject;
-	if (options.generatetextemail) {
-		mailoptions.generateTextFromHTML = true;
-	}
-	mailoptions.html = options.html;
-	mailoptions.text = options.text;
-	mailtransport.sendMail(mailoptions, callback);
-};
-
+	changedemailtemplate;
 
 /**
  * send setting update email
@@ -50,12 +25,33 @@ var sendEmail = function (options, callback) {
  * @param  {Function} callbackk async callback
  */
 var sendSettingEmail = function (options, callback) {
-	var settingemailoptions = options;
-	settingemailoptions.subject = (options.subject) ? options.subject : appSettings.name + ' -Admin Email Notification';
-	settingemailoptions.generatetextemail = true;
-	settingemailoptions.html = ejs.render(options.emailtemplate, settingemailoptions);
-	// console.log('settingemailoptions',settingemailoptions);
-	sendEmail(settingemailoptions, callback);
+	CoreMailer.sendEmail({
+		appenvironment: appenvironment,
+		to: appSettings.adminnotificationemail,
+		cc: options.user.email,
+		bcc: options.bcc,
+		replyTo: options.replyTo,
+		generatetextemail: true,
+		// replyTo: 'Promise Financial [Do Not Reply] <no-reply@promisefin.com>',
+		from: appSettings.adminnotificationemail,
+		subject: (options.subject) ? options.subject : appSettings.name + ' -Admin Email Notification',
+		// bcc: ilsConfig.emailtosalesforce,
+		emailtemplatefilepath: options.emailtemplate,
+		emailtemplatedata: options.emaildata
+	}, function (err, emailstatus) {
+		if (err) {
+			CoreController.logError({
+				err: err,
+				req: options.req
+			});
+		}
+		else {
+			logger.debug('settings change email sent', emailstatus);
+		}
+		if (callback) {
+			callback(err, emailstatus);
+		}
+	});
 };
 
 /**
@@ -65,9 +61,6 @@ var sendSettingEmail = function (options, callback) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var restart_app = function (req, res) {
-	CoreUtilities.restart_app({
-		restartfile: restartfile
-	});
 	CoreController.handleDocumentQueryRender({
 		req: req,
 		res: res,
@@ -77,34 +70,30 @@ var restart_app = function (req, res) {
 			data: 'restarted'
 		}
 	});
-	if (changedemailtemplate && emailtransport) {
-		var d = new Date();
-		fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
-			if (err) {
-				logger.err(err);
-			}
-			else if (templatestring) {
-				sendSettingEmail({
-					subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Restart Notification',
-					user: req.user,
-					hostname: req.headers.host,
-					appname: appSettings.name,
-					appenvironment: appSettings.application.environment,
-					appport: appSettings.application.port,
-					settingmessage: 'Your application was restarted from the admin interface - ' + d,
-					emailtemplate: templatestring,
-					mailtransport: emailtransport
-				}, function (err, status) {
-					if (err) {
-						logger.error(err);
-					}
-					else {
-						console.info('email status', status);
-					}
-				});
-			}
+	var d = new Date();
+	sendSettingEmail({
+		user: req.user,
+		emaildata: {
+			user: req.user,
+			hostname: req.headers.host,
+			appname: appSettings.name,
+			appenvironment: appSettings.application.environment,
+			appport: appSettings.application.port,
+			settingmessage: 'Your application was restarted from the admin interface - ' + d,
+		},
+		subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Restart Notification',
+		emailtemplate: changedemailtemplate,
+	}, function (err, status) {
+		CoreUtilities.restart_app({
+			restartfile: restartfile
 		});
-	}
+		if (err) {
+			logger.error(err);
+		}
+		else {
+			console.info('email status', status);
+		}
+	});
 };
 
 /**
@@ -497,15 +486,27 @@ var update_app_settings = function (req, res) {
 			var originalconfig = appconfig || {},
 				mergedconfig = merge(originalconfig, updatedAppSettings);
 
-			fs.writeJson(appsettingsfile, mergedconfig, function (err) {
-				if (err) {
-					CoreController.handleDocumentQueryErrorResponse({
-						err: err,
-						res: res,
-						req: req
-					});
-				}
-				else {
+			async.series({
+				update_app_setting: function (asynccb) {
+					fs.writeJson(appsettingsfile, mergedconfig, asynccb);
+				},
+				send_email_notification: function (asynccb) {
+					sendSettingEmail({
+						user: req.user,
+						req: req,
+						emaildata: {
+							user: req.user,
+							hostname: req.headers.host,
+							appname: appSettings.name,
+							appenvironment: appSettings.application.environment,
+							appport: appSettings.application.port,
+							settingmessage: '<p>Your application was configuration was changed from the admin interface - ' + new Date() + '</p><p><pre>' + JSON.stringify(mergedconfig, null, '\t') + '</pre></p>',
+						},
+						subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Configuration Change Notification',
+						emailtemplate: changedemailtemplate,
+					}, asynccb);
+				},
+				send_server_response: function (asynccb) {
 					CoreController.handleDocumentQueryRender({
 						req: req,
 						res: res,
@@ -514,41 +515,22 @@ var update_app_settings = function (req, res) {
 							result: 'success',
 							data: 'app config updated'
 						},
-						callback: function () {
-							CoreUtilities.restart_app({
-								restartfile: restartfile
-							});
-						}
+						callback: asynccb
 					});
-
-					if (changedemailtemplate && emailtransport) {
-						var d = new Date();
-						fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
-							if (err) {
-								logger.err(err);
-							}
-							else if (templatestring) {
-								sendSettingEmail({
-									subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Configuration Change Notification',
-									user: req.user,
-									hostname: req.headers.host,
-									appname: appSettings.name,
-									appenvironment: appSettings.application.environment,
-									appport: appSettings.application.port,
-									settingmessage: '<p>Your application was configuration was changed from the admin interface - ' + d + '</p><p><pre>' + JSON.stringify(mergedconfig, null, '\t') + '</pre></p>',
-									emailtemplate: templatestring,
-									mailtransport: emailtransport
-								}, function (err, status) {
-									if (err) {
-										logger.error(err);
-									}
-									else {
-										console.info('email status', status);
-									}
-								});
-							}
-						});
-					}
+				}
+			}, function (err, results) {
+				if (err) {
+					CoreController.handleDocumentQueryErrorResponse({
+						err: err,
+						res: res,
+						req: req
+					});
+				}
+				else {
+					logger.debug('update_app_settings async series results', results);
+					CoreUtilities.restart_app({
+						restartfile: restartfile
+					});
 				}
 			});
 		}
@@ -563,82 +545,80 @@ var update_app_settings = function (req, res) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var update_theme_settings = function (req, res) {
-	var updatedThemeSettings = CoreUtilities.removeEmptyObjectValues(req.body),
-		themesettingsfile = path.join(process.cwd(), 'content/config/themes', appSettings.theme, 'periodicjs.theme.json');
+	var updatedThemeSettings = JSON.parse(req.body['themesettings-codemirror']), //CoreUtilities.removeEmptyObjectValues(req.body),
+		themesettingsfile = path.join(process.cwd(), 'content/config/themes', appSettings.theme, 'periodicjs.theme.json'),
+		originalsettings,
+		mergedsettings,
+		newthemeconfig;
 
 	updatedThemeSettings = CoreUtilities.replaceBooleanStringObjectValues(updatedThemeSettings);
 	delete updatedThemeSettings._csrf;
 
-	fs.readJson(themesettingsfile, function (err, themeconfig) {
-		if (err) {
-			CoreController.handleDocumentQueryErrorResponse({
-				err: err,
-				res: res,
-				req: req
-			});
-		}
-		else {
-			updatedThemeSettings = str2json.convert(updatedThemeSettings);
-			var originalsettings = themeconfig.settings[appSettings.application.environment],
-				mergedsettings = merge(originalsettings, updatedThemeSettings),
-				newthemeconfig = themeconfig;
-			newthemeconfig.settings[appSettings.application.environment] = mergedsettings;
-
-			fs.writeJson(themesettingsfile, newthemeconfig, function (err) {
-				if (err) {
-					CoreController.handleDocumentQueryErrorResponse({
-						err: err,
-						res: res,
-						req: req
-					});
-				}
-				else {
-					CoreController.handleDocumentQueryRender({
-						req: req,
-						res: res,
-						redirecturl: '/p-admin/settings',
-						responseData: {
-							result: 'success',
-							data: 'theme config updated'
-						},
-						callback: function () {
-							CoreUtilities.restart_app({
-								restartfile: restartfile
-							});
-						}
-					});
-					if (changedemailtemplate && emailtransport) {
-						var d = new Date();
-						fs.readFile(changedemailtemplate, 'utf8', function (err, templatestring) {
-							if (err) {
-								logger.err(err);
-							}
-							else if (templatestring) {
-								sendSettingEmail({
-									subject: appSettings.name + '[env:' + appSettings.application.environment + '] Application Theme Setting Change Notification',
-									user: req.user,
-									hostname: req.headers.host,
-									appname: appSettings.name,
-									appenvironment: appSettings.application.environment,
-									appport: appSettings.application.port,
-									settingmessage: '<p>Your theme configuration was changed from the admin interface - ' + d + '</p><p><pre>' + JSON.stringify(newthemeconfig, null, '\t') + '</pre></p>',
-									emailtemplate: templatestring,
-									mailtransport: emailtransport
-								}, function (err, status) {
-									if (err) {
-										logger.error(err);
-									}
-									else {
-										console.info('email status', status);
-									}
-								});
-							}
-						});
+	async.series({
+			read_theme_files: function (asynccb) {
+				fs.readJson(themesettingsfile, function (err, themeconfig) {
+					if (err) {
+						asynccb(err);
 					}
-				}
-			});
-		}
-	});
+					else {
+						// updatedThemeSettings = str2json.convert(updatedThemeSettings);
+						originalsettings = themeconfig.settings[appenvironment];
+						mergedsettings = merge(originalsettings, updatedThemeSettings);
+						newthemeconfig = themeconfig;
+						newthemeconfig.settings[appSettings.application.environment] = mergedsettings;
+						asynccb(null, 'updated with new theme settings');
+					}
+				});
+			},
+			write_new_settings: function (asynccb) {
+				fs.writeJson(themesettingsfile, newthemeconfig, function (err) {
+					asynccb(err, 'saved new theme settings');
+				});
+			},
+			send_server_response: function (asynccb) {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/settings',
+					responseData: {
+						result: 'success',
+						data: 'theme config updated'
+					},
+					callback: asynccb
+				});
+			},
+			send_email_notification: function (asynccb) {
+				sendSettingEmail({
+					req: req,
+					user: req.user,
+					emaildata: {
+						user: req.user,
+						hostname: req.headers.host,
+						appname: appSettings.name,
+						appenvironment: appenvironment,
+						appport: appSettings.application.port,
+						settingmessage: '<p>Your theme [' + appenvironment + '] configuration was changed from the admin interface - ' + new Date() + '</p><p><pre>' + JSON.stringify(newthemeconfig.settings[appenvironment], null, '\t') + '</pre></p>',
+					},
+					subject: appSettings.name + '[env:' + appenvironment + '] Application Theme Setting Change Notification',
+					emailtemplate: changedemailtemplate,
+				}, asynccb);
+			}
+		},
+		function (err, results) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				logger.debug('update_theme_settings async results', results);
+				CoreUtilities.restart_app({
+					restartfile: restartfile
+				});
+			}
+		});
 };
 
 /**
@@ -669,6 +649,7 @@ var controller = function (resources) {
 	CoreExtension = resources.core.extension;
 	CoreMailer = resources.core.mailer;
 	AppDBSetting = mongoose.model('Setting');
+	appenvironment = appSettings.application.environment;
 
 	CoreController.getPluginViewDefaultTemplate({
 			viewname: 'p-admin/email/settings/notification',
@@ -676,21 +657,11 @@ var controller = function (resources) {
 		},
 		function (err, templatepath) {
 			if (templatepath === 'p-admin/email/settings/notification') {
-				templatepath = path.resolve(process.cwd(), 'node_modules/periodicjs.ext.admin/views', templatepath + '.' + appSettings.templatefileextension);
+				templatepath = path.resolve(process.cwd(), 'node_modules/periodicjs.ext.asyncadmin/views', templatepath + '.' + appSettings.templatefileextension);
 			}
 			changedemailtemplate = templatepath;
 		}
 	);
-	CoreMailer.getTransport({
-		appenvironment: appSettings.application.environment
-	}, function (err, transport) {
-		if (err) {
-			console.error(err);
-		}
-		else {
-			emailtransport = transport;
-		}
-	});
 
 	return {
 		load_extension_settings: load_extension_settings,

@@ -14,10 +14,15 @@
       <%}else{%>
         <a class="async-admin-ajax-link ts-button ts-pull-right" href="/<%- locals.adminPath %>/content/<%- genericdoctypelink  %>/new">New <%- genericdoctype %></a>
       <%}%>
+    <div class="ts-row ts-form-row">
+      <div class="ts-col-span4 ts-text-sm">
+        Search: <input name="search" class="ts-button" value="<%- request.query.search %>"/>
+      </div>
+      <div class="ts-col-span8 ts-text-right ts-text-sm"> 
 
-    <div>
-      Search: <input name="search" value="<%- request.query.search %>"/>
-      <div class="ts-pull-right"> 
+        <span id="ts-search-sort" class="asyncadmin-ts-sortlist" data-sortkeys="<%- fk_to_use %>" data-formelement="search-options-form">
+        </span> 
+        showing 
         <% var genericdocsperpage = [{
         "value":"15",
         "label":"15"
