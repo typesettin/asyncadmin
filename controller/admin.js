@@ -216,6 +216,7 @@ var settings_index = function (req, res) {
 			},
 			themesettings: req.controllerData.themesettings,
 			appsettings: req.controllerData.appsettings,
+			config: req.controllerData.config,
 			user: req.user
 		};
 	CoreController.renderView(req, res, viewtemplate, viewdata);

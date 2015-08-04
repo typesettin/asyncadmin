@@ -63,11 +63,11 @@ var init = function () {
 			jsonobject: window.appsettings.configuration,
 			idnameprepend: 'asc'
 		});
-		appsettingsReadOnly.innerHTML = jsonFormElements({
-			jsonobject: window.appsettings.readonly,
-			readonly: true,
-			idnameprepend: 'asro'
-		});
+		// appsettingsReadOnly.innerHTML = jsonFormElements({
+		// 	jsonobject: window.appsettings.readonly,
+		// 	readonly: true,
+		// 	idnameprepend: 'asro'
+		// });
 	}
 	if (window.themesettings) {
 

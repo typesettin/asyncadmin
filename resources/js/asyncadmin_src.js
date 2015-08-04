@@ -57,6 +57,7 @@ var ajaxlinks,
 	medialistelements,
 	filterlistelements,
 	sortlistelements,
+	alreadyAttachedAppResponse = false,
 	AdminFormies = {},
 	StylieDataLists = {},
 	StylieTab = {};
@@ -1043,25 +1044,27 @@ window.adminRefresh = function () {
 window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
 	// window.adminRefresh();
 	var t;
-
-	window.adminSocket.on('disconnect', function () {
-		t = setTimeout(function () {
+	if (alreadyAttachedAppResponse === false) {
+		window.adminSocket.on('disconnect', function () {
+			t = setTimeout(function () {
+				window.StylieNotificationObject.dismiss();
+			}, 500);
+			// window.StylieNotificationObject.dismiss();
+			window.showStylieAlert({
+				message: 'Shutting down application and restarting Periodic. (' + new Date() + ')'
+			});
+			window.showPreloader();
+		});
+		window.adminSocket.on('connect', function () {
 			window.StylieNotificationObject.dismiss();
-		}, 500);
-		// window.StylieNotificationObject.dismiss();
-		window.showStylieAlert({
-			message: 'Shutting down application and restarting Periodic. (' + new Date() + ')'
+			window.showStylieAlert({
+				message: 'Periodic application restarted.(' + new Date() + ')'
+			});
+			clearTimeout(t);
+			window.adminRefresh();
 		});
-		window.showPreloader();
-	});
-	window.adminSocket.on('connect', function () {
-		window.StylieNotificationObject.dismiss();
-		window.showStylieAlert({
-			message: 'Periodic application restarted.(' + new Date() + ')'
-		});
-		clearTimeout(t);
-		window.adminRefresh();
-	});
+		alreadyAttachedAppResponse = true;
+	}
 };
 
 

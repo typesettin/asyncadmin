@@ -25,15 +25,18 @@ var path = require('path'),
  * @param  {Function} callbackk async callback
  */
 var sendSettingEmail = function (options, callback) {
+	if (appSettings.adminnotificationemail_bcc) {
+		options.adminnotificationemail_bcc = appSettings.adminnotificationemail_bcc;
+	}
 	CoreMailer.sendEmail({
 		appenvironment: appenvironment,
 		to: appSettings.adminnotificationemail,
 		cc: options.user.email,
-		bcc: options.bcc,
+		bcc: options.adminnotificationemail_bcc,
 		replyTo: options.replyTo,
 		generatetextemail: true,
 		// replyTo: 'Promise Financial [Do Not Reply] <no-reply@promisefin.com>',
-		from: appSettings.adminnotificationemail,
+		from: appSettings.serverfromemail,
 		subject: (options.subject) ? options.subject : appSettings.name + ' -Admin Email Notification',
 		// bcc: ilsConfig.emailtosalesforce,
 		emailtemplatefilepath: options.emailtemplate,
@@ -396,7 +399,10 @@ var update_ext_filedata = function (req, res) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var load_app_settings = function (req, res, next) {
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+
 	var appsettings = {
+
 		readonly: {
 			application: appSettings.application,
 			cookies: appSettings.cookies,
@@ -420,10 +426,33 @@ var load_app_settings = function (req, res, next) {
 			name: appSettings.name,
 		}
 	};
-
-	req.controllerData = (req.controllerData) ? req.controllerData : {};
-	req.controllerData.appsettings = appsettings;
-	next();
+	async.parallel({
+		env_config: function (asynccb) {
+			fs.readJson(path.join(process.cwd(), 'content/config/environment', appenvironment + '.json'), asynccb);
+		},
+		default_config: function (asynccb) {
+			fs.readJson(path.join(process.cwd(), 'content/config/environment/default.json'), asynccb);
+		},
+		global_config: function (asynccb) {
+			fs.readJson(path.join(process.cwd(), 'content/config/config.json'), asynccb);
+		}
+	}, function (err, results) {
+		if (err) {
+			next(err);
+		}
+		else {
+			var configReturn = {};
+			for (var key in appSettings) {
+				configReturn[key] = appSettings[key];
+			}
+			req.controllerData.config = results;
+			req.controllerData.config.app_config = configReturn;
+			req.controllerData.config.app_config.themeSettings = '[theme config]';
+			req.controllerData.config.app_config.extconf = '[extension config]';
+			req.controllerData.appsettings = appsettings;
+			next();
+		}
+	});
 };
 
 /**
@@ -571,7 +600,9 @@ var update_theme_settings = function (req, res) {
 				});
 			},
 			write_new_settings: function (asynccb) {
-				fs.writeJson(themesettingsfile, newthemeconfig, function (err) {
+				fs.writeJson(themesettingsfile, newthemeconfig, {
+					spaces: 2
+				}, function (err) {
 					asynccb(err, 'saved new theme settings');
 				});
 			},
@@ -600,6 +631,95 @@ var update_theme_settings = function (req, res) {
 						settingmessage: '<p>Your theme [' + appenvironment + '] configuration was changed from the admin interface - ' + new Date() + '</p><p><pre>' + JSON.stringify(newthemeconfig.settings[appenvironment], null, '\t') + '</pre></p>',
 					},
 					subject: appSettings.name + '[env:' + appenvironment + '] Application Theme Setting Change Notification',
+					emailtemplate: changedemailtemplate,
+				}, asynccb);
+			}
+		},
+		function (err, results) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				logger.debug('update_theme_settings async results', results);
+				CoreUtilities.restart_app({
+					restartfile: restartfile
+				});
+			}
+		});
+};
+
+
+/**
+ * form upload handler to update theme settings, and sends notification email
+ * @param  {object} req
+ * @param  {object} res
+ * @param {object} next async callback
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var update_config_json_files = function (req, res) {
+	var bodyjson,
+		configfilejsonpath,
+		configname;
+
+	if (req.body['defaultconfig-codemirror']) {
+		bodyjson = JSON.parse(req.body['defaultconfig-codemirror']);
+		configfilejsonpath = path.join(process.cwd(), '/content/config/environment/default.json');
+		configname = 'default.json';
+	}
+	else if (req.body['envconfig-codemirror']) {
+		bodyjson = JSON.parse(req.body['envconfig-codemirror']);
+		configfilejsonpath = path.join(process.cwd(), '/content/config/environment/' + appenvironment + '.json');
+		configname = appenvironment + '.json';
+	}
+	else if (req.body['globalconfig-codemirror']) {
+		bodyjson = JSON.parse(req.body['globalconfig-codemirror']);
+		configfilejsonpath = path.join(process.cwd(), '/content/config/config.json');
+		configname = 'config.json';
+	}
+
+	async.series({
+			write_new_settings: function (asynccb) {
+				fs.writeJson(configfilejsonpath, bodyjson, {
+					spaces: 2
+				}, function (err) {
+					asynccb(err, 'saved new theme settings');
+				});
+			},
+			send_server_response: function (asynccb) {
+				CoreController.handleDocumentQueryRender({
+					req: req,
+					res: res,
+					redirecturl: '/p-admin/settings',
+					responseData: {
+						result: 'success',
+						data: configname + ' updated'
+					},
+					callback: asynccb
+				});
+			},
+			send_email_notification: function (asynccb) {
+				if (bodyjson.cookies && bodyjson.cookies.cookieParser) {
+					bodyjson.cookies.cookieParser = '[redacted]';
+				}
+				if (bodyjson.session_secret) {
+					bodyjson.session_secret = '[redacted]';
+				}
+				sendSettingEmail({
+					req: req,
+					user: req.user,
+					emaildata: {
+						user: req.user,
+						hostname: req.headers.host,
+						appname: appSettings.name,
+						appenvironment: appenvironment,
+						appport: appSettings.application.port,
+						settingmessage: '<p>Your ' + configname + ' configuration was changed from the admin interface - ' + new Date() + '</p><p><pre>' + JSON.stringify(bodyjson, null, '\t') + '</pre></p>',
+					},
+					subject: appSettings.name + '[env:' + appenvironment + '] ' + configname + ' Change Notification',
 					emailtemplate: changedemailtemplate,
 				}, asynccb);
 			}
@@ -665,6 +785,7 @@ var controller = function (resources) {
 
 	return {
 		load_extension_settings: load_extension_settings,
+		update_config_json_files: update_config_json_files,
 		update_ext_filedata: update_ext_filedata,
 		update_theme_filedata: update_theme_filedata,
 		load_app_settings: load_app_settings,

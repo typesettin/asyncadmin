@@ -184,6 +184,7 @@ module.exports = function (periodic) {
 
 	settingsAdminRouter.post('/updateextfiledata', adminSettingsController.update_ext_filedata);
 	settingsAdminRouter.post('/themefiledata', adminSettingsController.update_theme_filedata);
+	settingsAdminRouter.post('/updateconfigjson', adminSettingsController.update_config_json_files);
 
 	//user priviliges
 	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
