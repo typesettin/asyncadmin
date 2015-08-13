@@ -153,7 +153,7 @@
     }
   }
 
-  var menu_logout = {
+  var menu_logout = (user)? {
     "tree-item": "file",
     "tree-item-label": "Log Out",
     "tree-item-id": "asyncadmin.logout",
@@ -161,6 +161,15 @@
     "tree-item-attributes": {
       "class": "ts-force-link",
       "title": "Log out of your account"
+    }
+  } : {
+    "tree-item": "file",
+    "tree-item-label": "Log In",
+    "tree-item-id": "asyncadmin.login",
+    "tree-item-link": "/auth/login",
+    "tree-item-attributes": {
+      "class": "ts-force-link",
+      "title": "Log in to your account"
     }
   };
 
@@ -175,25 +184,26 @@
       "title": "Periodic Admin Dashboard"
     }
   };
- 
-   var menu_account_settings = {
-    "tree-item": "file",
-    "tree-item-label": "Account Settings",
-    "tree-item-id": "asyncadmin.accountsettings",
-    "tree-item-link": "/%locals.adminPath%/user/"+user._id+"/edit",
-    "tree-item-attributes": {
-      "class": "async-admin-ajax-link",
-      "title": "Edit your profile"
-    }
-  };
-
-  navmenu.tree.push(menu_account_settings);
   navmenu.tree.push(menu_dashboard);
+ 
+  if(user){
+    var menu_account_settings = {
+      "tree-item": "file",
+      "tree-item-label": "Account Settings",
+      "tree-item-id": "asyncadmin.accountsettings",
+      "tree-item-link": "/%locals.adminPath%/user/"+user._id+"/edit",
+      "tree-item-attributes": {
+        "class": "async-admin-ajax-link",
+        "title": "Edit your profile"
+      }
+    };
+    navmenu.tree.push(menu_account_settings);
+  }
 
   if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Global){
     for (var x in locals.themeasyncadmin.menu.Global){
       if(typeof locals.themeasyncadmin.menu.Global[x].userprivilege !=='undefined'){
-        if(user.privileges[locals.themeasyncadmin.menu.Global[x].userprivilege] || user.accounttype==='admin'){
+        if(user && (user.privileges[locals.themeasyncadmin.menu.Global[x].userprivilege] || user.accounttype==='admin')){
           navmenu.tree.push(locals.themeasyncadmin.menu.Global[x]);
         }
       }
@@ -206,7 +216,7 @@
   if(pagedata.extensions.menu && pagedata.extensions.menu.Global){
     for (var x in pagedata.extensions.menu.Global){
       if(typeof pagedata.extensions.menu.Global[x].userprivilege !=='undefined'){
-        if(user.privileges[pagedata.extensions.menu.Global[x].userprivilege] || user.accounttype==='admin'){
+        if(user && (user.privileges[pagedata.extensions.menu.Global[x].userprivilege] || user.accounttype==='admin')){
           navmenu.tree.push(pagedata.extensions.menu.Global[x]);
         }
       }
@@ -216,14 +226,16 @@
     }
   }
 
-  if(user.privileges['120'] || user.accounttype==='admin'){
-    navmenu.tree.push(menu_themes);
-  }
-  if(user.privileges['130'] || user.accounttype==='admin'){
-    navmenu.tree.push(menu_extensions);
-  }
-  if(user.privileges['140'] || user.accounttype==='admin'){
-    navmenu.tree.push(menu_settings);
+  if(user){
+    if(user.privileges['120'] || user.accounttype==='admin'){
+      navmenu.tree.push(menu_themes);
+    }
+    if(user.privileges['130'] || user.accounttype==='admin'){
+      navmenu.tree.push(menu_extensions);
+    }
+    if(user.privileges['140'] || user.accounttype==='admin'){
+      navmenu.tree.push(menu_settings);
+    }
   }
   navmenu.tree.push(menu_logout);
 

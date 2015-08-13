@@ -1,7 +1,3 @@
-<%
-var display_account_name = user.username || user.email
-var display_account_link = user.username || user._id
-%>
 <header id="nav-header" class="ts-position-fixed ts-position-top ts-width-100 ts-z-index-1000 ts-bg-text-primary-color ts-serif-clean ts-row ts-padding-md minimize" style="border-bottom: 1px solid black;">
 	<div class="ts-page-content-container ">
 	  <div id="trigger" class="ts-position-absolute ts-position-left ts-position-top">
@@ -10,8 +6,16 @@ var display_account_link = user.username || user._id
 	    </a>
 	  </div>
 	  <div class="ts-pull-right ">
+	  	<%
+	  	if(user){
+				var display_account_name = user.username || user.email;
+				var display_account_link = user.username || user._id;	%>
 	  	<a href="/<%-locals.adminPath%>/user/<%-display_account_link%>/edit" class="async-admin-ajax-link"><%- display_account_name %></a> | 
 	  	<a href="/auth/logout">logout</a>
+	  	<%} 
+	  	else{%>
+	  	<a href="/auth/login" class="async-admin-ajax-link">login</a>
+			<%}%>
 	  </div>
 	  <div id="menu-header-stylie" class="ts-text-md ts-text-left">
 	  	<a href="/<%-locals.adminPath%>" class="async-admin-ajax-link">Admin</a> 
