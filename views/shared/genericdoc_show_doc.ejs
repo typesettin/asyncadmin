@@ -1,0 +1,26 @@
+<!-- < % genericdoc = content % >
+< % genericdocid = genericdoc._id % >
+< % genericdoctype = "Content" % >
+< % genericdoctypelink = "content" % >
+< % genericdoctypeplurallink = "contents" % > -->
+
+<div class="ts-container ts-serif-clean">
+  <div class="ts-page-content-container">
+    <div class="ts-text-container ts-genericdoc">
+      <form 
+      	id="edit-<%- genericdoctypelink %>-form" 
+      	name="edit-<%- genericdoctypelink %>-form" 
+      	class="ts-form async-admin-ajax-forms" 
+      	method="post" 
+				<%if(genericdoc){%>
+      	action="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/edit" 
+				<%}else{%>
+      	action="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/new"
+      	data-successredirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypeplurallink %>"
+				<%}%>
+      	>
+        <% include genericdoc_compose_content_form %>
+      </form> 
+    </div>  
+  </div>
+</div>

@@ -1,0 +1,59 @@
+<details open="open" class="ts-text-sm">
+  <summary>Publish Options</summary>
+  <aside>
+    <%if(genericdoc){%>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span2">
+          <label class="ts-label"  for="docidlabel">ID:</label>
+        </div>
+        <div class="ts-col-span10">
+          <input type="text" id="docidlabel" disabled="disabled" class="ts-input ts-text-sm" value="<%- genericdoc._id %>" >
+        </div>
+      </div>
+      <%if(genericdoc.identification){%>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span2">
+          <label  class="ts-label" id="docnamelabel">Guid:</label>
+        </div>
+        <div class="ts-col-span10">
+          <input type="text" id="docnamelabel"  disabled="disabled" class="ts-input ts-text-sm" name="guid" value="<%- genericdoc.identification.guid %>" >
+        </div>
+      </div>
+      <%}%>
+      <%if(genericdoc.fileurl){%>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span2">
+          <label  class="ts-label" id="docnamelabel">fileurl:</label>
+        </div>
+        <div class="ts-col-span10">
+          <input type="text" id="docnamelabel"  disabled="disabled" class="ts-input ts-text-sm" name="guid" value="<%- genericdoc.fileurl %>" >
+        </div>
+      </div>
+      <%}%>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span2">
+          <label class="ts-label">Created:</label>
+        </div>
+        <div class="ts-col-span10">
+          <input type="text" id="doccreatedatlabel" disabled="disabled" class="ts-input ts-text-sm" disabled="disabled"  value="<%- genericdoc.createdat %>" >
+        </div>
+      </div>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span2">
+          <label class="ts-label">Updated:</label>
+        </div>
+        <div class="ts-col-span10">
+          <input type="text" id="docupdatedatlabel" disabled="disabled" class="ts-input ts-text-sm" disabled="disabled"  value="<%- genericdoc.updatedat %>" >
+        </div>
+      </div>
+    <%}%>
+
+    <div class="ts-row  ts-text-center ts-text-sm ts-padding-lg">
+      <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">Save
+        </button>
+      <%if(genericdoc){%>
+        <a data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/delete" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypeplurallink %>" class="ts-button ts-button-error-color ts-dialog-delete"/>Delete</a>
+      <%}%>
+    </div>
+  </aside>
+</details>

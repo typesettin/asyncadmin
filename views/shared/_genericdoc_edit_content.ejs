@@ -1,0 +1,15 @@
+<details open="open" class="ts-text-sm">
+  <summary>
+    <!-- <div class="ts-pull-right">
+        <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">save
+        </button>
+    </div> -->
+    <%- genericdoctype %>
+  </summary>
+  <aside>
+    <div id="codejsoneditor" class="ts-row ts-form-row">
+      <!-- <label for="generic-content" class="ts-label">Content</label> -->
+      <textarea  id="genericdoc-codemirror" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;"><%if(genericdoc){%><%- JSON.stringify(genericdoc,null,4) %><%}else{%><%}%></textarea>
+    </div>
+  </aside>
+</details>
