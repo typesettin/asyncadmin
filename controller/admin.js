@@ -4,6 +4,7 @@ var async = require('async'),
 	path = require('path'),
 	marked = require('marked'),
 	fs = require('fs-extra'),
+	merge = require('utils-merge'),
 	CoreExtension,
 	CoreUtilities,
 	CoreController,
@@ -43,6 +44,17 @@ var admin_index = function (req, res) {
 			};
 		CoreController.renderView(req, res, viewtemplate, viewdata);
 	}
+};
+
+var fixCodeMirrorSubmit = function (req, res, next) {
+	req.controllerData = req.controllerData || {};
+	req.controllerData.encryptFields = true;
+	var jsonbody = JSON.parse(req.body.genericdocjson);
+	delete req.body.genericdocjson;
+	req.body = merge(req.body, jsonbody);
+	delete req.body._id;
+	delete req.body.__v;
+	next();
 };
 
 /**
@@ -277,6 +289,7 @@ var controller = function (resources) {
 
 	return {
 		admin_index: admin_index,
+		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
 		settings_index: settings_index,
 		settings_faq: settings_faq,
 		getMarkdownReleases: getMarkdownReleases,
