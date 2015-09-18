@@ -6,6 +6,7 @@ var path = require('path'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
 	stylietreeview = require('stylie.treeview'),
+	data_tables = require('./controller/data_tables'),
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
@@ -51,6 +52,7 @@ module.exports = function (periodic) {
 	}
 
 	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
@@ -65,7 +67,8 @@ module.exports = function (periodic) {
 		userroles: require('./controller/admin_userroles')(periodic),
 		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
-		socket_callback: require('./controller/server_callback')(periodic)
+		socket_callback: require('./controller/server_callback')(periodic),
+		data_tables: data_tables
 	};
 
 	var adminRouter = periodic.express.Router(),
