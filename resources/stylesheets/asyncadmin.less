@@ -6,6 +6,12 @@
 @import (inline) "../../node_modules/codemirror/lib/codemirror.css";
 @import (inline) "../../node_modules/codemirror/addon/fold/foldgutter.css";
 @import (inline) "../../node_modules/codemirror/addon/lint/lint.css";
+.ts .ts-nav-image {
+    height: 2.75rem;
+    padding: 0.75rem;
+    top: 0.5rem;
+    position: relative;
+}
 .CodeMirror{
 	height:auto;
 	font-size: 65%;
@@ -198,6 +204,16 @@
 	}
 	#ts-asyncadmin-content-wrapper{
 		margin-bottom: @sizexx;
+	}
+	.ts-button{
+		&.ts-button-transparent{
+			background-color: transparent;
+			border: none;
+			background: none;
+			&.bottom-border{
+				border-bottom:1px solid black;
+			}
+		}
 	}
 }
 

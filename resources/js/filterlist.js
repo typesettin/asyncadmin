@@ -75,12 +75,12 @@ var generate_filter_container = function (elem, e, filterkeyslist, forbject_name
 
 	// filter_query_hidden_input.type = 'hidden';
 
-	filter_query_key_select.setAttribute('class', 'ts-fq-key ts-button ts-col-span4');
+	filter_query_key_select.setAttribute('class', 'ts-fq-key ts-button ts-button-transparent bottom-border ts-col-span4');
 	filterkeys.forEach(function (fkey) {
 		filter_query_key_select.innerHTML += '<option value="' + fkey + '">' + fkey + '</option>';
 	});
 
-	filter_query_key_op.setAttribute('class', 'ts-fq-op ts-button ts-col-span2');
+	filter_query_key_op.setAttribute('class', 'ts-fq-op ts-button ts-button-transparent bottom-border ts-col-span2');
 	filter_query_key_op.innerHTML = '<option value="is"> = </option>';
 	filter_query_key_op.innerHTML += '<option value="like"> % like % </option>';
 	filter_query_key_op.innerHTML += '<option value="not"> != </option>';
@@ -99,10 +99,10 @@ var generate_filter_container = function (elem, e, filterkeyslist, forbject_name
 	filter_query_key_op.innerHTML += '<option value="lt-date">before date</option>';
 	filter_query_key_op.innerHTML += '<option value="gte-date">after or same date</option>';
 	filter_query_key_op.innerHTML += '<option value="gt-date">after  date</option>';
-	filter_query_key_input.setAttribute('class', 'ts-fq-val ts-button ts-col-span4');
+	filter_query_key_input.setAttribute('class', 'ts-fq-val ts-button ts-button-transparent bottom-border ts-col-span4');
 
 	filter_query_remove_button.innerHTML = 'x';
-	filter_query_remove_button.setAttribute('class', 'ts-button remove-ts-filter-button');
+	filter_query_remove_button.setAttribute('class', 'ts-button ts-button-transparent bottom-border remove-ts-filter-button');
 
 	filter_query_container.setAttribute('class', 'ts-form-row ts-row');
 	// console.log('e', e);

@@ -1,11 +1,11 @@
-<header id="nav-header" class="ts-position-fixed ts-position-top ts-width-100 ts-z-index-1000 ts-bg-text-primary-color ts-serif-clean ts-row ts-padding-md minimize" style="border-bottom: 1px solid black;">
+<header id="nav-header" class="ts-position-fixed ts-position-top ts-width-100 ts-z-index-1000 ts-bg-text-primary-color ts-serif-clean ts-row ts-padding-md minimize" style="border-bottom: 1px solid black; height:3em; overflow:auto;">
 	<div class="ts-page-content-container ">
 	  <div id="trigger" class="ts-position-absolute ts-position-left ts-position-top">
 	    <a href="#" id="trigger" class="ts-icon-menu-trigger ts-">
 	      <img class="ts-nav-image" src="/images/elements/menu.white.png">
 	    </a>
 	  </div>
-	  <div class="ts-pull-right ">
+	  <div class="ts-pull-right ts-screenxs-hidden ts-screensm-hidden ts-screenmd-hidden">
 	  	<%
 	  	if(user){
 				var display_account_name = user.username || user.email;

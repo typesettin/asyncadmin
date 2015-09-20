@@ -348,19 +348,30 @@ var defaultAjaxFormie = function (formElement) {
 		errorcallback: function (error, response) {
 			// console.log('error', error);
 			// console.log('response.response', response.response);
-			if (error.message) {
+
+			try {
+				var errormessage, jsonmessage;
+				if (response.body && response.body.error && response.body.error.message) {
+					errormessage = response.body.error.message;
+				}
+				else if (response.body && response.body.result && response.body.result === 'error') {
+					errormessage = response.body.data.error.message || response.body.data.error;
+				}
+				else {
+					jsonmessage = JSON.parse(response.response);
+					errormessage = jsonmessage;
+				}
 				window.showErrorNotificaton({
-					message: error.message
+					message: errormessage
 				});
 			}
-			else {
-				try {
-					var jsonmessage = JSON.parse(response.response);
+			catch (e) {
+				if (error.message) {
 					window.showErrorNotificaton({
-						message: jsonmessage.data.error
+						message: error.message
 					});
 				}
-				catch (e) {
+				else {
 					window.showErrorNotificaton({
 						message: error
 					});

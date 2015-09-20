@@ -72,7 +72,7 @@ var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
 		sort_query_container = document.createElement('span');
 
 	sort_query_span.innerHTML = '|';
-	sort_query_sortlabel.innerHTML = 'sort ';
+	sort_query_sortlabel.innerHTML = 'sort by ';
 
 	sort_query_hidden_input.setAttribute('name', 'sort');
 	sort_query_hidden_input.setAttribute('type', 'hidden');
@@ -84,12 +84,12 @@ var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
 
 	// sort_query_hidden_input.type = 'hidden';
 
-	sort_query_key_select.setAttribute('class', 'ts-sq-key ');
+	sort_query_key_select.setAttribute('class', 'ts-sq-key ts-button ts-button-transparent');
 	sortkeys.forEach(function (fkey) {
 		sort_query_key_select.innerHTML += '<option value="' + fkey + '">' + fkey + '</option>';
 	});
 
-	sort_query_key_op.setAttribute('class', 'ts-sq-op ');
+	sort_query_key_op.setAttribute('class', 'ts-sq-op ts-button ts-button-transparent');
 	sort_query_key_op.innerHTML = '<option value="dsc"> desc </option>';
 	sort_query_key_op.innerHTML += '<option value="asc"> asc </option>';
 
@@ -113,6 +113,19 @@ var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
 	}
 };
 
+var go_to_page = function (pagenum) {
+	document.querySelector('.pagenum-input').value = pagenum;
+	window.AdminFormies['search-options-form'].refresh();
+};
+
+var next_page_click_handler = function () {
+	go_to_page(parseInt(document.querySelector('.pagenum-input').value) + 1);
+};
+
+var prev_page_click_handler = function () {
+	go_to_page(parseInt(document.querySelector('.pagenum-input').value) - 1);
+};
+
 /**
  * sets detects support for history push/pop/replace state and can set initial data
  * @emits initialized
@@ -130,6 +143,14 @@ sortlist.prototype.__init = function () {
 		// generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name, true);
 	}
 	generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name);
+	var next_search_button = document.querySelector('.search-filter-next-page');
+	var prev_search_button = document.querySelector('.search-filter-prev-page');
+	if (next_search_button) {
+		next_search_button.addEventListener('click', next_page_click_handler, false);
+	}
+	if (prev_search_button) {
+		prev_search_button.addEventListener('click', prev_page_click_handler, false);
+	}
 
 	this.emit('initialized');
 };

@@ -51,8 +51,12 @@ module.exports = function (periodic) {
 		});
 	}
 
-	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.default_responsive_collapse = data_tables.default_responsive_collapse;
+	periodic.app.locals.default_responsive_expand = data_tables.default_responsive_expand;
+	periodic.app.locals.default_thead = data_tables.default_thead;
+	periodic.app.locals.default_custom_tfoot = data_tables.default_custom_tfoot;
 	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
+	periodic.app.locals.numeral = numeral;
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
