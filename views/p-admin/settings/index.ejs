@@ -30,6 +30,71 @@
 					</div>
 				</div>
 			</div>
+			<hr>
+			<div class="ts-row">
+				<h5>Advanced Configuration Options</h5>
+				<p>Your application settings are a combination of:
+					<li>your default configuration file <a class="ts-button ts-text-sm">content/config/environment/default.json</a></li>
+					<li>which is overwriten by your environment specific configuration file <a class="ts-button ts-text-sm">content/config/environment/<%- appsettings.environment %>.json</a></li> 
+					<li>which is overwritten by your global configuration file. <a class="ts-button ts-text-sm">content/config/config.json</a> </li>
+				</p>
+				<p> Only update the settings below if you are comfortable with modify JSON files manually.</p>
+			</div>
+			<div class="ts-row">
+				<div class="ts-col-span12">
+					<div id="periodic-settings-tabs-config" class="ts-tabs">
+						<nav>
+							<ul class="ts-col-span12 ts-text-center">
+								<li class="ts-col-span3 ts-no-margin">Active Config</li>
+								<li class="ts-col-span3 ts-no-margin">Global Config</li>
+								<li class="ts-col-span3 ts-no-margin">Environment Config</li>
+								<li class="ts-col-span3 ts-no-margin">Default Config</li>
+							</ul>
+						</nav>
+						<div class="ts-tabs-content ts-tab-border">
+							<section class="ts-no-padding">
+								<h5>Active Application Settings</h5>
+								<div id="themesettings-jsoneditor" class="ts-row ts-form-row" style="min-height:20em;">
+						      <textarea  id="appsettings-codemirror" name="appsettings-codemirror"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" readonly="true" ="" style="height:60em;"><%- JSON.stringify(config.app_config,null,4) %></textarea>
+						    </div>
+							</section>
+							<section class="ts-no-padding">
+								<h5>Global Config</h5>
+								<div id="globalconfig-jsoneditor" class="ts-row ts-form-row" style="min-height:20em;">
+									<form id="update-periodic-globalconfig-form" name="update-periodic-globalconfig-form" class="ts-form ts-form async-admin-ajax-forms" method="post" action="/p-admin/settings/updateconfigjson" data-successsubmitfunction="restartAppResponse">
+							      <textarea  id="globalconfig-codemirror" name="globalconfig-codemirror"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;"><%- JSON.stringify(config.global_config,null,4) %></textarea>
+									<p class="ts-text-center">
+										<button type="submit" class=" ts-button ts-button-primary-color " style="font-size: 110%;">update config.json</button>
+									</p>
+						      </form>
+						    </div>
+							</section>
+							<section class="ts-no-padding">
+								<h5>[<%- appsettings.environment %>] Environment Config</h5>
+								<div id="envconfig-jsoneditor" class="ts-row ts-form-row" style="min-height:20em;">
+									<form id="update-periodic-envconfig-form" name="update-periodic-envconfig-form" class="ts-form ts-form async-admin-ajax-forms" method="post" action="/p-admin/settings/updateconfigjson" data-successsubmitfunction="restartAppResponse">
+							      <textarea  id="envconfig-codemirror" name="envconfig-codemirror"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;"><%- JSON.stringify(config.env_config,null,4) %></textarea>
+										<p class="ts-text-center">
+											<button type="submit" class=" ts-button ts-button-primary-color " style="font-size: 110%;">update <%- appsettings.environment %>.json</button>
+										</p>
+						      </form>
+						    </div>
+							</section>
+							<section class="ts-no-padding">
+								<h5>Default Config</h5>
+								<div id="defaultconfig-jsoneditor" class="ts-row ts-form-row" style="min-height:20em;">
+									<form id="update-periodic-defaultconfig-form" name="update-periodic-defaultconfig-form" class="ts-form ts-form async-admin-ajax-forms" method="post" action="/p-admin/settings/updateconfigjson" data-successsubmitfunction="restartAppResponse">
+							      <textarea  id="defaultconfig-codemirror" name="defaultconfig-codemirror"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;"><%- JSON.stringify(config.default_config,null,4) %></textarea>
+							      <p class="ts-text-center">
+											<button type="submit" class=" ts-button ts-button-primary-color " style="font-size: 110%;">update default.json</button>
+										</p>
+						      </form>
+						    </div>
+							</section>
+						</div>
+					</div>
+				</div>
+			</div>
 		</section>
 	</div>
 <script type="text/javascript">

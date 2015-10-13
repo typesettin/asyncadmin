@@ -871,7 +871,7 @@ var adminConsolePlatterConfig = function () {
 		var spanSeparator = document.createElement('span'),
 			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
 
-		spanSeparator.innerHTML = ' | ';
+		// spanSeparator.innerHTML = ' | ';
 		adminConsoleSpanContainer.appendChild(adminButtonElement);
 		adminConsoleSpanContainer.appendChild(data.element);
 		adminConsoleSpanContainer.appendChild(spanSeparator);

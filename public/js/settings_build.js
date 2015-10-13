@@ -137,6 +137,26 @@ var styleWindowResizeEventHandler = function () {
 // 	});
 // };
 
+
+var initAdvancedCodemirror = function () {
+	if (window.StylieTab && window.StylieTab['periodic-settings-tabs-config']) {
+		window.StylieTab['periodic-settings-tabs-config'].on('tabsShowIndex', function (idex) {
+			if (idex === 0 && window.codeMirrors && window.codeMirrors['themesettings-codemirror']) {
+				window.codeMirrors['themesettings-codemirror'].refresh();
+			}
+			else if (idex === 1 && window.codeMirrors && window.codeMirrors['globalconfig-codemirror']) {
+				window.codeMirrors['globalconfig-codemirror'].refresh();
+			}
+			else if (idex === 2 && window.codeMirrors && window.codeMirrors['envconfig-codemirror']) {
+				window.codeMirrors['envconfig-codemirror'].refresh();
+			}
+			else if (idex === 3 && window.codeMirrors && window.codeMirrors['defaultconfig-codemirror']) {
+				window.codeMirrors['defaultconfig-codemirror'].refresh();
+			}
+		});
+	}
+};
+
 var init = function () {
 	elementSelectors();
 	eventHandlers();
@@ -164,6 +184,7 @@ var init = function () {
 			idnameprepend: 'tsro'
 		});
 	}
+	initAdvancedCodemirror();
 	styleWindowResizeEventHandler();
 
 };

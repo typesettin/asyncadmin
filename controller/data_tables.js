@@ -108,7 +108,7 @@ var get_data_table_html = function (options) {
 
 var default_responsive_collapse = function (options) {
 	return function (data_item) {
-		var collapseName =(typeof options.getCollapseNameFunction ==='function')? options.getCollapseNameFunction(data_item) : data_item.name;
+		var collapseName = (typeof options.getCollapseNameFunction === 'function') ? options.getCollapseNameFunction(data_item) : data_item.name;
 		var editlink = options.editlink.replace('|||_id|||', data_item._id);
 		var deletelink = options.deletelink.replace('|||_id|||', data_item._id);
 		var drcHTML = '<div class="ts-pull-right">';
@@ -137,7 +137,7 @@ var default_custom_tfoot = function (options) {
 	var colspan = options.colspan || 10;
 	var returnHTML = '<tfoot class="ts-table-foot">';
 	returnHTML += '<tr>';
-	returnHTML += '<td class="ts-text-center" colspan="'+colspan+'">showing ' + options.total + ' of ' + options.count + ' total';
+	returnHTML += '<td class="ts-text-center" colspan="' + colspan + '">showing ' + options.total + ' of ' + options.count + ' total';
 	returnHTML += '</td>';
 	returnHTML += '</tr>';
 	returnHTML += '</tfoot>';

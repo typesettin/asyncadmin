@@ -60,6 +60,7 @@ module.exports = function (periodic) {
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
+	periodic.app.locals.adminExtSettings = adminExtSettings;
 	periodic.app.locals.stylietreeview = stylietreeview;
 
 	periodic.app.controller.extension.asyncadmin = {

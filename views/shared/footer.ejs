@@ -11,15 +11,19 @@
 					<div class="ts-row ">
 					  <div class="ts-col-span6 ts-text-left ts-text-sm">
 					    <%- periodic.name %>
-					    <span class="ts-screenxs-hidden"> | <a href="http://getperiodic.org" target="_blank">Periodic</a>
-					    </span>
+					    <%if(locals.adminExtSettings.settings.show_periodic_credit){%>
+								<span class="ts-screenxs-hidden"> | <a href="http://getperiodic.org" target="_blank">Periodic</a>
+								</span>
+					    <%}%>
 					  </div>
 					  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
 					    <span id="admin-console-span-container"></span>
-					    <span class=" ts-screenxs-hidden ts-screensm-hidden ts-screenmd-hidden">Version <%= periodic.version %>
-								<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
-					    <%var d=new Date();%>
-					      <%- d.getFullYear() %> 
+					    <%if(locals.adminExtSettings.settings.show_periodic_credit){%>
+						     | <span class=" ts-screenxs-hidden ts-screensm-hidden ts-screenmd-hidden">Version <%= periodic.version %>
+									<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
+						    <%var d=new Date();%>
+						      <%- d.getFullYear() %> 
+					    <%}%>
 					    <!-- <%- locals.appenvironment %> -->
 					    </span>
 					  </div>

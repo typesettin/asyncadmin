@@ -8,10 +8,46 @@
 <div class="ts-container">
   <div class="ts-page-content-container">
     <% include ../../shared/genericdoc_search_filters %>
-    <% userprivileges.forEach(function(genericdoc,i){%>
-    <% include ../../shared/genericdoc_list_userprivilege %>
-    <%})%>
     <input type="hidden" name="_csrf" value=<%- locals.token %> >
+    <%- locals.get_data_table_html({
+			data: userprivileges,
+			data_attributes:[
+			 {label: 'Name'},
+			 {label: 'Privilege ID'},
+			 {label: 'Label'},
+			 {label: 'Description'},
+			 {label: 'Options'},
+			 ],
+			responsive_table :true,
+			responsive_collapse: locals.default_responsive_collapse({getCollapseNameFunction:function(obj){return obj.email},
+				editlink: '/'+locals.adminPath+'/userprivilege/|||_id|||',
+				deletelink: '/'+locals.adminPath +'/userprivilege/|||_id|||/delete',
+				deleterefreshlink: '/'+locals.adminPath +'/userprivileges/'
+			}),
+			responsive_expand:locals.default_responsive_expand(),
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml;
+					// jsontablehtml = '<td><a href="/' + options.adminPath + '/' + content_path + '/' + obj.identification.guid + '"  class="async-admin-ajax-link">' + obj.identification.guid + '</a></td>';
+					jsontablehtml = '<td><a href="/'+locals.adminPath +'/userprivilege/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj.title + '</a></td>'; 
+					jsontablehtml += '<td>' + obj.userprivilegeid + '</td>';
+					
+					jsontablehtml += '<td>'+ obj.name +'</td>';
+
+					jsontablehtml += '<td>' + obj.description + '</td>';
+					jsontablehtml += '<td> <a href="/'+locals.adminPath +'/userprivilege/' + obj._id + '/edit" class="async-admin-ajax-link">edit</a> | <a alt="delete" class=" ts-dialog-delete" data-href="/'+locals.adminPath +'/userprivileges/' + obj._id + '/delete" data-deleted-redirect-href="/'+locals.adminPath +'/userprivileges">delete</a>	</td>';
+					return jsontablehtml;
+				}
+			},
+			custom_tfoot: locals.default_custom_tfoot({
+				total:userprivileges.length,
+				count:userprivilegescount,
+				colspan: 5
+			})
+		}) %>
   </div>
 </div>
 <% include _new_userprivilege_modal %>

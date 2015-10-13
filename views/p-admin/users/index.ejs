@@ -8,10 +8,63 @@
 <div class="ts-container">
   <div class="ts-page-content-container">
     <% include ../../shared/genericdoc_search_filters %>
-    <% users.forEach(function(genericdoc,i){%>
-    <% include ../../shared/genericdoc_list_user %>
-    <%})%>
     <input type="hidden" name="_csrf" value=<%- locals.token %> >
+		<%- locals.get_data_table_html({
+			data: users,
+			data_attributes:[
+			 {label: 'Email'},
+			 {label: 'Create Date'},
+			 {label: 'First Name'},
+			 {label: 'Last Name'},
+			 {label: 'Activated'},
+			 {label: 'Account Type'},
+			 {label: 'ID'},
+			 {label: 'User Roles'},
+			 {label: 'Options'},
+			 ],
+			responsive_table :true,
+			responsive_collapse: locals.default_responsive_collapse({getCollapseNameFunction:function(obj){return obj.email},
+				editlink: '/'+locals.adminPath+'/users/|||_id|||',
+				deletelink: '/'+locals.adminPath +'/users/|||_id|||/delete',
+				deleterefreshlink: '/'+locals.adminPath +'/users/'
+			}),
+			responsive_expand:locals.default_responsive_expand(),
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml;
+					// jsontablehtml = '<td><a href="/' + options.adminPath + '/' + content_path + '/' + obj.identification.guid + '"  class="async-admin-ajax-link">' + obj.identification.guid + '</a></td>';
+					jsontablehtml = '<td><a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj.email + '</a></td>'; 
+					jsontablehtml += '<td>' + new locals.viewhelper.moment(obj.createdat).format('MM/DD/YYYY |  hh:mm:ssa') + '</td>';
+					jsontablehtml += '<td>' + obj.firstname + '</td>';
+					jsontablehtml += '<td>' + obj.lastname + '</td>'; 
+					jsontablehtml += '<td>' + obj.activated + '</td>';
+					jsontablehtml += '<td>' + obj.accounttype + '</td>';
+					jsontablehtml += '<td><a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj._id + '</a></td>';
+					
+					jsontablehtml += '<td>';
+					if(obj.userroles && obj.userroles.length>0){
+						obj.userroles.forEach(function(generictax,i){
+							jsontablehtml += '<a  class="async-admin-ajax-link" href="/'+locals.adminPath +'/userrole/'+generictax._id+'/edit" >'+generictax.title+'</a>'; 
+							if(i !== (generictaxomony.length-1)){
+								jsontablehtml += ',';
+							}
+						});
+					}
+					jsontablehtml += '</td>';
+
+					jsontablehtml += '<td> <a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">edit</a> | <a alt="delete" class=" ts-dialog-delete" data-href="/p-admin/users/' + obj._id + '/delete" data-deleted-redirect-href="/p-admin/users">delete</a>	</td>';
+					return jsontablehtml;
+				}
+			},
+			custom_tfoot: locals.default_custom_tfoot({
+				total:users.length,
+				count:userscount,
+				colspan: 9
+			})
+		}) %>
   </div>
 </div>
 <% include ../../shared/footer %>
