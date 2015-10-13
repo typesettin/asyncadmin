@@ -12,10 +12,10 @@
     <%- locals.get_data_table_html({
 			data: userprivileges,
 			data_attributes:[
-			 {label: 'Name'},
-			 {label: 'Privilege ID'},
-			 {label: 'Label'},
-			 {label: 'Description'},
+			 {label: 'Name',sortactive:true,sortid:'title',sortorder:'asc'},
+			 {label: 'Privilege ID',sortactive:true,sortid:'userprivilegeid',sortorder:'asc'},
+			 {label: 'Label',sortactive:true,sortid:'name',sortorder:'asc'},
+			 {label: 'Description',sortactive:true,sortid:'description',sortorder:'asc'},
 			 {label: 'Options'},
 			 ],
 			responsive_table :true,
@@ -44,7 +44,10 @@
 			},
 			custom_tfoot: locals.default_custom_tfoot({
 				total:userprivileges.length,
+				pages:userprivilegepages,
 				count:userprivilegescount,
+				currentlimit:request.query.limit,
+				currentpage:request.query.pagenum,
 				colspan: 5
 			})
 		}) %>

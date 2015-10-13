@@ -31606,6 +31606,7 @@ var get_data_element_doc = function (options) {
 
 var get_generic_doc = function (options) {
 	var dataobjtouse = options.data;
+	console.log('dataobjtouse', dataobjtouse);
 	dataobjtouse.name = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.name;
 	dataobjtouse.title = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.title;
 	return dataobjtouse;
@@ -31651,10 +31652,15 @@ tsdatalist.prototype.__addValueToDataList = function () {
 				});
 			}
 			else {
+				console.log('res.body', res.body);
 				var dataobjectresponse = (res.body.data) ? res.body.data.doc : res.body.author,
-					dataobjtouse = get_generic_doc({
-						data: dataobjectresponse
-					});
+					dataobjtouse;
+				if (typeof dataobjectresponse === 'undefined') {
+					dataobjectresponse = res.body;
+				}
+				dataobjtouse = get_generic_doc({
+					data: dataobjectresponse
+				});
 				this.options.dataitems[dataobjtouse._id] = get_data_element_doc({
 					data: dataobjtouse,
 					ajaxprop: this.options.ajaxprop
@@ -32181,7 +32187,8 @@ var util = require('util'),
 	events = require('events'),
 	classie = require('classie'),
 	querystring = require('querystring'),
-	extend = require('util-extend');
+	extend = require('util-extend'),
+	sortTables;
 
 /**
  * A module that represents a sortlist object, a componentTab is a page composition tool.
@@ -32222,6 +32229,11 @@ var sortlist = function (options) {
 };
 
 util.inherits(sortlist, events.EventEmitter);
+
+var update_limit_value = function (event) {
+	document.querySelector('[name="limit"]').value = event.target.value;
+	window.AdminFormies['search-options-form'].refresh();
+};
 
 var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
 	var sortkeys = sortkeyslist.split(','),
@@ -32288,6 +32300,32 @@ var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
 		sort_query_key_op.value = e.op_select_from_url;
 		sort_query_hidden_input.value = e.hidden_select_from_url;
 	}
+
+
+
+	//TODO: this needs to be contained to a specific table
+	var handleSortClicks = function (event) {
+		var eventTarget = event.target;
+		// console.log('eventTarget', eventTarget);
+		if (classie.has(eventTarget, 'sort_tr_true')) {
+			document.querySelector('.ts-sq-key').value = eventTarget.getAttribute('data-sortid');
+
+			document.querySelector('.ts-sq-op').value = (document.querySelector('.ts-sq-op').value === 'dsc') ? 'asc' : 'dsc';
+			set_sq_input_val({
+				target: document.querySelector('.ts-sq-key')
+			});
+		}
+	};
+
+	var initSortTables = function () {
+		sortTables = document.querySelectorAll('.ts-sort-table');
+		if (sortTables && sortTables.length > 0) {
+			for (var s = 0; s < sortTables.length; s++) {
+				sortTables[s].addEventListener('click', handleSortClicks, false);
+			}
+		}
+	};
+	initSortTables();
 };
 
 var go_to_page = function (pagenum) {
@@ -32302,6 +32340,8 @@ var next_page_click_handler = function () {
 var prev_page_click_handler = function () {
 	go_to_page(parseInt(document.querySelector('.pagenum-input').value) - 1);
 };
+
+
 
 /**
  * sets detects support for history push/pop/replace state and can set initial data
@@ -32320,14 +32360,27 @@ sortlist.prototype.__init = function () {
 		// generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name, true);
 	}
 	generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name);
-	var next_search_button = document.querySelector('.search-filter-next-page');
-	var prev_search_button = document.querySelector('.search-filter-prev-page');
+	var next_search_button = document.querySelectorAll('.search-filter-next-page');
+	var prev_search_button = document.querySelectorAll('.search-filter-prev-page');
 	if (next_search_button) {
-		next_search_button.addEventListener('click', next_page_click_handler, false);
+		for (var nsb = 0; nsb < next_search_button.length; nsb++) {
+			next_search_button[nsb].addEventListener('click', next_page_click_handler, false);
+		}
 	}
 	if (prev_search_button) {
-		prev_search_button.addEventListener('click', prev_page_click_handler, false);
+		for (var psb = 0; psb < prev_search_button.length; psb++) {
+			prev_search_button[psb].addEventListener('click', prev_page_click_handler, false);
+		}
 	}
+	var change_limit_options = document.querySelectorAll('.table-search-limit');
+	if (change_limit_options) {
+		for (var clo = 0; clo < change_limit_options.length; clo++) {
+			change_limit_options[clo].addEventListener('change', update_limit_value, false);
+		}
+	}
+
+
+	// initSortTables();
 
 	this.emit('initialized');
 };

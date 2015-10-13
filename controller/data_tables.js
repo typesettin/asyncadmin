@@ -2,6 +2,7 @@
 
 var json2html = require('node-json2html'),
 	moment = require('moment'),
+	querystring = require('querystring'),
 	merge = require('util-extend');
 
 var get_attribute_tags = function (attributes) {
@@ -24,7 +25,7 @@ var get_data_table_html = function (options) {
 	var dataObj = options.data,
 		responsive_table = options.responsive_table,
 		table_attributes = merge({
-			class: 'ts-table ts-table-padding-md ts-text-left ts-width-100 ts-text-xs '
+			class: 'ts-table ts-sort-table ts-table-padding-md ts-text-left ts-width-100 ts-text-xs '
 		}, options.table_head_attributes),
 		thead_attributes = merge({
 			class: 'ts-table-head'
@@ -129,15 +130,54 @@ var default_responsive_expand = function ( /* options */ ) {
 var default_thead = function ( /* options */ ) {
 	return {
 		tag: 'th',
-		html: '${label}'
+		html: '<span class="sort_tr sort_tr_${sortactive}" data-sortid="${sortid}" data-sortorder="${sortorder}" >${label}</span>'
 	};
 };
 
 var default_custom_tfoot = function (options) {
-	var colspan = options.colspan || 10;
+	var colspan = options.colspan || 10,
+		genericdocsperpage = [{
+			'value': '15',
+			'label': '15'
+		}, {
+			'value': '30',
+			'label': '30'
+		}, {
+			'value': '50',
+			'label': '50'
+		}, {
+			'value': '250',
+			'label': '250'
+		}, {
+			'value': '500',
+			'label': '500'
+		}, {
+			'value': options.count,
+			'label': options.count
+		}],
+		currentlimit = options.currentlimit || 15,
+		currentpage = options.currentpage || 1;
+
 	var returnHTML = '<tfoot class="ts-table-foot">';
 	returnHTML += '<tr>';
-	returnHTML += '<td class="ts-text-center" colspan="' + colspan + '">showing ' + options.total + ' of ' + options.count + ' total';
+	returnHTML += '<td class="ts-text-center" colspan="' + colspan + '">';
+	if (currentpage > 1) {
+		returnHTML += '<a class="search-filter-prev-page"> <span class="ts-text-text-primary-color ts-cursor-pointer">&lsaquo; prev</span></a> | ';
+	}
+	returnHTML += 'showing <select class="table-search-limit">';
+	genericdocsperpage.forEach(function (iperpage) {
+		returnHTML += '<option ';
+		if (currentlimit === iperpage.value) {
+			returnHTML += ' selected="selected" ';
+		}
+		returnHTML += ' value="' + iperpage.value + '"> ';
+		returnHTML += iperpage.label + '</option>';
+	});
+	returnHTML += '</select>';
+	returnHTML += ' of ' + options.count + ' total';
+	if (currentpage < options.pages) {
+		returnHTML += ' | <a class="search-filter-next-page"> <span class="ts-text-text-primary-color ts-cursor-pointer">next &rsaquo;</span></a>';
+	}
 	returnHTML += '</td>';
 	returnHTML += '</tr>';
 	returnHTML += '</tfoot>';

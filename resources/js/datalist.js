@@ -79,6 +79,7 @@ var get_data_element_doc = function (options) {
 
 var get_generic_doc = function (options) {
 	var dataobjtouse = options.data;
+	console.log('dataobjtouse', dataobjtouse);
 	dataobjtouse.name = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.name;
 	dataobjtouse.title = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.title;
 	return dataobjtouse;
@@ -124,10 +125,15 @@ tsdatalist.prototype.__addValueToDataList = function () {
 				});
 			}
 			else {
+				console.log('res.body', res.body);
 				var dataobjectresponse = (res.body.data) ? res.body.data.doc : res.body.author,
-					dataobjtouse = get_generic_doc({
-						data: dataobjectresponse
-					});
+					dataobjtouse;
+				if (typeof dataobjectresponse === 'undefined') {
+					dataobjectresponse = res.body;
+				}
+				dataobjtouse = get_generic_doc({
+					data: dataobjectresponse
+				});
 				this.options.dataitems[dataobjtouse._id] = get_data_element_doc({
 					data: dataobjtouse,
 					ajaxprop: this.options.ajaxprop

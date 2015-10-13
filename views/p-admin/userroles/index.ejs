@@ -12,10 +12,10 @@
     <%- locals.get_data_table_html({
 			data: userroles,
 			data_attributes:[
-			 {label: 'Name'},
-			 {label: 'Role ID'},
+			 {label: 'Name',sortactive:true,sortid:'name',sortorder:'asc'},
+			 {label: 'Role ID',sortactive:true,sortid:'userroleid',sortorder:'asc'},
 			 {label: 'Privileges'},
-			 {label: 'Description'},
+			 {label: 'Description',sortactive:true,sortid:'description',sortorder:'asc'},
 			 {label: 'Options'},
 			 ],
 			responsive_table :true,
@@ -39,7 +39,7 @@
 					if(obj.privileges && obj.privileges.length>0){
 						obj.privileges.forEach(function(generictax,i){
 							jsontablehtml += '<a  class="async-admin-ajax-link" href="/'+locals.adminPath +'/userprivilege/'+generictax._id+'/edit" >'+generictax.title+'</a>'; 
-							if(i !== (generictaxomony.length-1)){
+							if(i !== (obj.privileges.length-1)){
 								jsontablehtml += ',';
 							}
 						});
@@ -54,6 +54,9 @@
 			custom_tfoot: locals.default_custom_tfoot({
 				total:userroles.length,
 				count:userrolescount,
+				pages:userrolepages,
+				currentlimit:request.query.limit,
+				currentpage:request.query.pagenum,
 				colspan: 5
 			})
 		}) %>

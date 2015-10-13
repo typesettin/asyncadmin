@@ -12,12 +12,12 @@
 		<%- locals.get_data_table_html({
 			data: users,
 			data_attributes:[
-			 {label: 'Email'},
-			 {label: 'Create Date'},
-			 {label: 'First Name'},
-			 {label: 'Last Name'},
-			 {label: 'Activated'},
-			 {label: 'Account Type'},
+			 {label: 'Email',sortactive:true,sortid:'email',sortorder:'asc'},
+			 {label: 'Create Date',sortactive:true,sortid:'createdat',sortorder:'asc'},
+			 {label: 'First Name',sortactive:true,sortid:'firstname',sortorder:'asc'},
+			 {label: 'Last Name',sortactive:true,sortid:'lastname',sortorder:'asc'},
+			 {label: 'Activated',sortactive:true,sortid:'activated',sortorder:'asc'},
+			 {label: 'Account Type',sortactive:true,sortid:'accounttype',sortorder:'asc'},
 			 {label: 'ID'},
 			 {label: 'User Roles'},
 			 {label: 'Options'},
@@ -48,7 +48,7 @@
 					if(obj.userroles && obj.userroles.length>0){
 						obj.userroles.forEach(function(generictax,i){
 							jsontablehtml += '<a  class="async-admin-ajax-link" href="/'+locals.adminPath +'/userrole/'+generictax._id+'/edit" >'+generictax.title+'</a>'; 
-							if(i !== (generictaxomony.length-1)){
+							if(i !== (obj.userroles.length-1)){
 								jsontablehtml += ',';
 							}
 						});
@@ -62,6 +62,9 @@
 			custom_tfoot: locals.default_custom_tfoot({
 				total:users.length,
 				count:userscount,
+				pages:userpages,
+				currentlimit:request.query.limit,
+				currentpage:request.query.pagenum,
 				colspan: 9
 			})
 		}) %>
