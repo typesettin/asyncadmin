@@ -5,6 +5,7 @@ var path = require('path'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
+	prettysize = require('prettysize'),
 	stylietreeview = require('stylie.treeview'),
 	data_tables = require('./controller/data_tables'),
 	adminExtSettings,
@@ -57,6 +58,7 @@ module.exports = function (periodic) {
 	periodic.app.locals.default_custom_tfoot = data_tables.default_custom_tfoot;
 	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
 	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.prettysize = prettysize;
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
@@ -108,8 +110,8 @@ module.exports = function (periodic) {
 	 * admin routes
 	 */
 	// adminRouter.get('/', adminController.admin_index);
-	adminRouter.get('/', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.admin_index);
-	adminRouter.get('/dashboard', adminController.getMarkdownReleases, adminController.getHomepageStats, adminController.admin_index);
+	adminRouter.get('/', adminController.getHomepageStats, adminController.admin_index);
+	adminRouter.get('/dashboard', adminController.getHomepageStats, adminController.admin_index);
 	// adminRouter.get('/extensions', adminController.loadExtensions, adminController.extensions_index);
 	// adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
 	// adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, uacController.loadUacUsers, adminController.users_index);

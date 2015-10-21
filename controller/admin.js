@@ -107,24 +107,63 @@ var getMarkdownReleases = function (req, res, next) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var getHomepageStats = function (req, res, next) {
+	var databaseCountData=[],
+		databaseFeedData=[];
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
-
 	async.parallel({
-		extensionsCount: function (cb) {
-			CoreExtension.getExtensions({
-					periodicsettings: appSettings
-				},
-				function (err, extensions) {
-					if (err) {
-						cb(err, null);
+		databaseFeed: function(cb){
+			async.each(Object.keys(mongoose.models),
+			function(DBModel,asyncEachCB){
+				mongoose.model(DBModel).find({}).limit(5).sort({createdat:'desc'}).exec(function (err, data_feed_results) {
+					if(err){
+						asyncEachCB(err);
 					}
-					else {
-						cb(null, extensions.length);
+					else{
+						data_feed_results.forEach(function(data_result){
+							if(data_result.createdat){
+								databaseFeedData.push(data_result);
+							}
+						});
+						// databaseFeedData[DBModel]=count;
+						asyncEachCB();
 					}
 				});
-
+			},function(err){
+				databaseFeedData = databaseFeedData.sort(CoreUtilities.sortObject('desc', 'createdat'));
+				cb(err,databaseFeedData);
+			});
 		},
-		themesCount: function (cb) {
+		databaseCount: function(cb){
+			async.each(Object.keys(mongoose.models),
+			function(DBModel,asyncEachCB){
+				mongoose.model(DBModel).count({}, function (err, count) {
+					if(err){
+						asyncEachCB(err);
+					}
+					else{
+						databaseCountData.push({collection:DBModel,
+							count:count});
+						asyncEachCB();
+					}
+				});
+			},function(err){
+				cb(err,databaseCountData);
+			});
+		},
+		extensions:function(cb){
+			CoreExtension.getExtensions({
+				periodicsettings: appSettings
+			},
+			function (err, extensions) {
+				if (err) {
+					cb(err, null);
+				}
+				else {
+					cb(null, extensions);
+				}
+			});
+		},
+		themes:function(cb){
 			var themedir = path.resolve(process.cwd(), 'content/themes/'),
 				returnFiles = [];
 			fs.readdir(themedir, function (err, files) {
@@ -135,54 +174,19 @@ var getHomepageStats = function (req, res, next) {
 					if (files) {
 						for (var x = 0; x < files.length; x++) {
 							if (files[x].match('periodicjs.theme')) {
-								returnFiles.push(files[x]);
+								returnFiles.push({themename:files[x],active:(files[x]===appSettings.theme)?true:false});
 							}
 						}
 					}
-					cb(null, returnFiles.length);
+					cb(null, returnFiles);
 				}
-			});
-		},
-		itemsCount: function (cb) {
-			Item.count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		collectionsCount: function (cb) {
-			Collection.count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		assetsCount: function (cb) {
-			mongoose.model('Asset').count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		contenttypesCount: function (cb) {
-			Contenttype.count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		tagsCount: function (cb) {
-			mongoose.model('Tag').count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		categoriesCount: function (cb) {
-			mongoose.model('Category').count({}, function (err, count) {
-				cb(err, count);
-			});
-		},
-		usersCount: function (cb) {
-			User.count({}, function (err, count) {
-				cb(err, count);
 			});
 		}
 	}, function (err, results) {
 		if (err) {
 			logger.error(err);
 		}
-		// console.log('results', results);
+		// console.log('results.extensions', results.extensions);
 		req.controllerData.contentcounts = results;
 		next();
 	});
