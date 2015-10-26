@@ -92,7 +92,8 @@ module.exports = function (periodic) {
 		userprivilegeController = periodic.app.controller.native.userprivilege,
 		userController = periodic.app.controller.native.user,
 		userAdminController = periodic.app.controller.extension.asyncadmin.user,
-		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles;
+		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles,
+		mailController = periodic.app.controller.extension.mailer.mailer;
 
 	/**
 	 * access control routes
@@ -199,6 +200,10 @@ module.exports = function (periodic) {
 	//user priviliges
 	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
 	adminRouter.get('/userprivileges/search', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
+
+	//mail settings
+	periodic.app.get('/' + periodic.app.locals.adminPath + '/mailer/test', mailController.testemail);
+	periodic.app.post('/' + periodic.app.locals.adminPath + '/mailer/sendmail', mailController.sendmail);
 
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);

@@ -9,6 +9,7 @@ var async = require('async'),
 	CoreUtilities,
 	CoreController,
 	appSettings,
+	appenvironment,
 	mongoose,
 	logger,
 	// configError,
@@ -107,63 +108,69 @@ var getMarkdownReleases = function (req, res, next) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var getHomepageStats = function (req, res, next) {
-	var databaseCountData=[],
-		databaseFeedData=[];
+	var databaseCountData = [],
+		databaseFeedData = [];
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	async.parallel({
-		databaseFeed: function(cb){
+		databaseFeed: function (cb) {
 			async.each(Object.keys(mongoose.models),
-			function(DBModel,asyncEachCB){
-				mongoose.model(DBModel).find({}).limit(5).sort({createdat:'desc'}).exec(function (err, data_feed_results) {
-					if(err){
-						asyncEachCB(err);
-					}
-					else{
-						data_feed_results.forEach(function(data_result){
-							if(data_result.createdat){
-								databaseFeedData.push(data_result);
-							}
-						});
-						// databaseFeedData[DBModel]=count;
-						asyncEachCB();
-					}
+				function (DBModel, asyncEachCB) {
+					mongoose.model(DBModel).find({}).limit(5).sort({
+						createdat: 'desc'
+					}).exec(function (err, data_feed_results) {
+						if (err) {
+							asyncEachCB(err);
+						}
+						else {
+							data_feed_results.forEach(function (data_result) {
+								if (data_result.createdat) {
+									databaseFeedData.push(data_result);
+								}
+							});
+							// databaseFeedData[DBModel]=count;
+							asyncEachCB();
+						}
+					});
+				},
+				function (err) {
+					databaseFeedData = databaseFeedData.sort(CoreUtilities.sortObject('desc', 'createdat'));
+					cb(err, databaseFeedData);
 				});
-			},function(err){
-				databaseFeedData = databaseFeedData.sort(CoreUtilities.sortObject('desc', 'createdat'));
-				cb(err,databaseFeedData);
-			});
 		},
-		databaseCount: function(cb){
+		databaseCount: function (cb) {
 			async.each(Object.keys(mongoose.models),
-			function(DBModel,asyncEachCB){
-				mongoose.model(DBModel).count({}, function (err, count) {
-					if(err){
-						asyncEachCB(err);
-					}
-					else{
-						databaseCountData.push({collection:DBModel,
-							count:count});
-						asyncEachCB();
-					}
+				function (DBModel, asyncEachCB) {
+					mongoose.model(DBModel).count({}, function (err, count) {
+						if (err) {
+							asyncEachCB(err);
+						}
+						else {
+							databaseCountData.push({
+								collection: DBModel,
+								count: count
+							});
+							asyncEachCB();
+						}
+					});
+				},
+				function (err) {
+					cb(err, databaseCountData);
 				});
-			},function(err){
-				cb(err,databaseCountData);
-			});
 		},
-		extensions:function(cb){
+		extensions: function (cb) {
 			CoreExtension.getExtensions({
-				periodicsettings: appSettings
-			},
-			function (err, extensions) {
-				if (err) {
-					cb(err, null);
-				}
-				else {
-					cb(null, extensions);
-				}
-			});
+					periodicsettings: appSettings
+				},
+				function (err, extensions) {
+					if (err) {
+						cb(err, null);
+					}
+					else {
+						cb(null, extensions);
+					}
+				});
 		},
-		themes:function(cb){
+		themes: function (cb) {
 			var themedir = path.resolve(process.cwd(), 'content/themes/'),
 				returnFiles = [];
 			fs.readdir(themedir, function (err, files) {
@@ -174,7 +181,10 @@ var getHomepageStats = function (req, res, next) {
 					if (files) {
 						for (var x = 0; x < files.length; x++) {
 							if (files[x].match('periodicjs.theme')) {
-								returnFiles.push({themename:files[x],active:(files[x]===appSettings.theme)?true:false});
+								returnFiles.push({
+									themename: files[x],
+									active: (files[x] === appSettings.theme) ? true : false
+								});
 							}
 						}
 					}
@@ -261,6 +271,7 @@ var settings_faq = function (req, res) {
 		};
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
+
 /**
  * admin controller
  * @module authController
@@ -287,7 +298,7 @@ var controller = function (resources) {
 	Item = mongoose.model('Item');
 	User = mongoose.model('User');
 	// AppDBSetting = mongoose.model('Setting');
-	// var appenvironment = appSettings.application.environment;
+	appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
 	loginSettings = resources.app.controller.extension.login.loginExtSettings;
 

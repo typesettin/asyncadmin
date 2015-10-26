@@ -63,6 +63,15 @@ var ajaxlinks,
 	StylieTab = {};
 
 require('../../node_modules/codemirror/addon/edit/matchbrackets');
+require('../../node_modules/codemirror/addon/hint/css-hint');
+require('../../node_modules/codemirror/addon/hint/html-hint');
+require('../../node_modules/codemirror/addon/hint/javascript-hint');
+require('../../node_modules/codemirror/addon/hint/show-hint');
+require('../../node_modules/codemirror/addon/lint/css-lint');
+require('../../node_modules/codemirror/addon/lint/javascript-lint');
+// require('../../node_modules/codemirror/addon/lint/json-lint');
+require('../../node_modules/codemirror/addon/lint/lint');
+// require('../../node_modules/codemirror/addon/lint/html-lint');
 require('../../node_modules/codemirror/addon/comment/comment');
 require('../../node_modules/codemirror/addon/comment/continuecomment');
 require('../../node_modules/codemirror/addon/fold/foldcode');
@@ -72,6 +81,7 @@ require('../../node_modules/codemirror/addon/fold/brace-fold');
 require('../../node_modules/codemirror/addon/fold/foldgutter');
 require('../../node_modules/codemirror/mode/css/css');
 require('../../node_modules/codemirror/mode/htmlembedded/htmlembedded');
+require('../../node_modules/codemirror/mode/htmlmixed/htmlmixed');
 require('../../node_modules/codemirror/mode/javascript/javascript');
 
 // window.ajaxFormies = ajaxFormies;
@@ -171,7 +181,7 @@ var initCodemirrors = function () {
 				lineWrapping: true,
 				matchBrackets: true,
 				autoCloseBrackets: true,
-				mode: 'application/json',
+				mode: (codeMirrorJSEditorsElements[cm].getAttribute('data-htmlonly')) ? 'text/html' : 'application/json',
 				indentUnit: 2,
 				indentWithTabs: true,
 				'overflow-y': 'hidden',
