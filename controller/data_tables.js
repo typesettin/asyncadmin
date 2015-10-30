@@ -136,7 +136,12 @@ var default_thead = function ( /* options */ ) {
 
 var default_custom_tfoot = function (options) {
 	var colspan = options.colspan || 10,
+		currentlimit = options.currentlimit || 15,
+		currentpage = options.currentpage || 1,
 		genericdocsperpage = [{
+			'value':currentlimit,
+			'label':currentlimit
+		},{
 			'value': '15',
 			'label': '15'
 		}, {
@@ -154,9 +159,7 @@ var default_custom_tfoot = function (options) {
 		}, {
 			'value': options.count,
 			'label': options.count
-		}],
-		currentlimit = options.currentlimit || 15,
-		currentpage = options.currentpage || 1;
+		}];
 
 	var returnHTML = '<tfoot class="ts-table-foot">';
 	returnHTML += '<tr>';
