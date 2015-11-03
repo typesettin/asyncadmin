@@ -3,7 +3,7 @@ var ajaxlinks,
 	// ajaxforms,
 	// ajaxFormies = {},
 	// summernotes,
-	// summernoteContentEditors = {},
+	summernoteContentEditors = {},
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
@@ -29,6 +29,7 @@ var ajaxlinks,
 	StylieMedialist = require('./medialist'),
 	StylieFilterlist = require('./filterlist'),
 	StylieSortlist = require('./sortlist'),
+	StylieTextEditor = require('./stylieeditor'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -128,21 +129,17 @@ var endPreloader = function (element) {
 window.endPreloader = endPreloader;
 
 var initSummernote = function () {
-	var summernoteObj,
-		summernoteObjID,
-		summernoteJQueryObj,
-		$ = window.$;
 	var summernotes = document.querySelectorAll('.ts-summernote');
 
 	try {
 		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
 			for (var x = 0; x < summernotes.length; x++) {
-				summernoteObj = summernotes[x];
-				summernoteObjID = '#' + summernoteObj.getAttribute('id');
-				summernoteJQueryObj = $(summernoteObjID);
-				summernoteJQueryObj.summernote({});
+				summernoteContentEditors[summernotes[x].getAttribute('id')] = new StylieTextEditor({
+					element: summernotes[x]
+				}).init();
 			}
 		}
+		window.summernoteContentEditors = summernoteContentEditors;
 	}
 	catch (e) {
 		console.error(e);

@@ -79,9 +79,9 @@
   ],
   "directories": {},
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@5.9.95",
-  "_shasum": "2cadd4539b059f05859b45e16e415c2188892840",
-  "_from": "periodicjs.ext.asyncadmin@latest",
+  "_id": "periodicjs.ext.asyncadmin@5.9.97",
+  "_shasum": "abf9128f8f88769d35140b1eadd36fc8cdb1452c",
+  "_from": "periodicjs.ext.asyncadmin@5.9.97",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.6",
   "_npmUser": {
@@ -89,10 +89,8 @@
     "email": "yaw.etse@gmail.com"
   },
   "dist": {
-    "shasum": "0d0e0ab653aa01ea08dd31356d42b1a1599a4689",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.8.tgz"
+    "shasum": "abf9128f8f88769d35140b1eadd36fc8cdb1452c",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.97.tgz"
   },
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.8.tgz",
-  "readme": "# periodicjs.ext.login\n\nAn authentication extension that uses passport to authenticate user sessions.\n\n [API Documentation](https://github.com/typesettin/periodicjs.ext.login/blob/master/doc/api.md)\n\n## Installation\n\n```\n$ npm install periodicjs.ext.login\n```\n\n## Configure\n\nyou can define your own passort authentication strategies, after the extension has been installed, the extension configuration is located in `content/config/extensions/periodicjs.ext.login/transport.json`\n\n##Development\n*Make sure you have grunt installed*\n```\n$ npm install -g grunt-cli\n```\n\nThen run grunt watch\n```\n$ grunt watch\n```\nFor generating documentation\n```\n$ grunt doc\n$ jsdoc2md controller/**/*.js index.js install.js uninstall.js > doc/api.md\n```\n##Notes\n* Check out https://github.com/typesettin/periodicjs for the full Periodic Documentation",
-  "readmeFilename": "README.md"
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.97.tgz"
 }

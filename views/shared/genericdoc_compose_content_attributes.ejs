@@ -1,0 +1,138 @@
+<%
+contenttypestouse =false;
+if(!genericdoc && default_contentypes){
+	contenttypestouse = default_contentypes;
+}
+else if(genericdoc && genericdoc.contenttypes){
+	contenttypestouse = genericdoc.contenttypes;
+}
+%>
+<details class="ts-text-sm" <%if(contenttypestouse && contenttypestouse.length >0){%>open<%}%>>
+	<summary>Content Type Attributes</summary>
+	<aside id="doc-ct-attr">
+		<div>
+			<%
+			if(contenttypestouse && contenttypestouse.length >0){
+				contenttypestouse.forEach(function(ct){
+					%>
+					<div>
+						<strong style="margin-top:0;"><%- ct.title %><small> <a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a></small></strong>
+						<% if(ct.attributes){
+							ct.attributes.forEach(function(attr){
+								var defaultVal = attr.defaultvalue;
+
+								if(genericdoc && genericdoc.contenttypeattributes && genericdoc.contenttypeattributes[ct.name] && genericdoc.contenttypeattributes[ct.name][attr.name]){
+									defaultVal = genericdoc.contenttypeattributes[ct.name][attr.name];
+								}
+								%>
+								<div class="ts-row ts-form-row">
+									<label class="ts-label ts-col-span3">
+										<%- attr.title %>
+									</label>
+									<div class="ts-col-span9">
+									<% 
+										if(attr.datatype==='array' && attr.defaultvalue){
+											var selectOptionsFromDefaultVal = attr.defaultvalue.split(',');
+											%>
+											<select class="ts-input noFormSubmit ts-text-sm" name="contenttypeattributes.<%- ct.name %>.<%- attr.name %>">
+												<% selectOptionsFromDefaultVal.forEach(function(ctvalues,i){
+													%>
+													<option <% if(selectOptionsFromDefaultVal[i] === defaultVal ){%> selected="selected"
+													<%}%> value="<%- ctvalues %>"><%- ctvalues %></option>
+													<%
+												}); %>
+											</select>
+											<%
+										} 
+										else if(attr.datatype==='textarea' ){
+											%>
+											<textarea style="min-height:10em" class="ts-input noFormSubmit ts-text-sm"  placeholder="<%- attr.title %>" name="contenttypeattributes.<%- ct.name %>.<%- attr.name %>"><%- defaultVal %></textarea>
+											<%
+										} 
+										else if(attr.datatype==='url' || attr.datatype==='number'  || attr.datatype==='date'  || attr.datatype==='time'  || attr.datatype==='datetime'  || attr.datatype==='tel'  || attr.datatype==='range'  || attr.datatype==='email'   || attr.datatype==='color' ){
+											%>
+											<input class="ts-input noFormSubmit ts-text-sm" type="<%- attr.datatype %>" placeholder="<%- attr.title %>" value="<%- defaultVal %>" <%if(attr.datatype==='color'){%>style="min-height:2rem;"<%}%> name="contenttypeattributes.<%- ct.name %>.<%- attr.name %>">
+											<%
+										} 
+										else{%>
+											<input class="ts-input noFormSubmit ts-text-sm " type="text" placeholder="<%- attr.title %>" value="<%- defaultVal %>" name="contenttypeattributes.<%- ct.name %>.<%- attr.name %>">
+											<%if(attr.datatype==='image'){%> 
+											<div class="ts-width-100 ts-no-x-overflow"><img  class="ts-width-100" src="<%- defaultVal %>"/></div>
+											<%} %>
+									<%}%>
+									</div>
+								</div>
+							<%});
+						} %>
+					</div>
+					<%
+				});
+			} %>
+		</div>
+	</aside>
+</details>
+<script type="template/javascript" id="ct-attr-template">
+	<div>
+			<? 
+			var contenttypestouse;
+			if(!genericdoc && default_contentypes){
+				contenttypestouse = default_contentypes;
+			}
+			else if(genericdoc && genericdoc.contenttypes){
+				contenttypestouse = genericdoc.contenttypes;
+			}
+			if(contenttypestouse){
+				contenttypestouse.forEach(function(ct){
+					?>
+					<div>
+						<strong style="margin-top:0;"><?= ct.title ?><small> <a href="/p-admin/content/contenttype/<?=ct.name?>">(edit)</a></small></strong>
+						<? if(ct.attributes){
+							ct.attributes.forEach(function(attr){
+								var defaultVal = attr.defaultvalue;
+
+								if(genericdoc && genericdoc.contenttypeattributes && genericdoc.contenttypeattributes[ct.name] && genericdoc.contenttypeattributes[ct.name][attr.name]){
+									defaultVal = genericdoc.contenttypeattributes[ct.name][attr.name];
+								}
+								?>
+								<div class="ts-row ts-form-row">
+									<label class="ts-label ts-col-span3">
+										<?= attr.title ?>
+									</label>
+									<div class="ts-col-span9">
+									<? 
+										if(attr.datatype==='array' && attr.defaultvalue){
+											var selectOptionsFromDefaultVal = attr.defaultvalue.split(',');
+											?>
+											<select class="ts-input noFormSubmit ts-text-sm" name="contenttypeattributes.<?= ct.name ?>.<?= attr.name ?>">
+												<? selectOptionsFromDefaultVal.forEach(function(ctvalues,i){
+													?>
+													<option <? if(selectOptionsFromDefaultVal[i] === defaultVal ){?> selected="selected"
+													<?}?> value="<?= ctvalues ?>"><?= ctvalues ?></option>
+													<?
+												}); ?>
+											</select>
+											<?
+										} 
+										else if(attr.datatype==='textarea' ){
+											?>
+											<textarea style="min-height:10em" class="ts-input noFormSubmit ts-text-sm"  placeholder="<?- attr.title ?>" name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>"><?- defaultVal ?></textarea>
+											<?
+										} 
+										else if(attr.datatype==='url' || attr.datatype==='number'  || attr.datatype==='date'  || attr.datatype==='time'  || attr.datatype==='datetime'  || attr.datatype==='tel'  || attr.datatype==='range'  || attr.datatype==='email'   || attr.datatype==='color' ){
+											?>
+											<input class="ts-input noFormSubmit ts-text-sm" type="<?- attr.datatype ?>" placeholder="<?- attr.title ?>" value="<?- defaultVal ?>"  <?if(attr.datatype==='color'){?>style="min-height:2rem;"<?}?> name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>">
+											<?
+										} 
+										else{?>
+											<input class="ts-input noFormSubmit ts-text-sm" type="text" placeholder="<?= attr.title ?>" value="<?- defaultVal ?>" name="contenttypeattributes.<?= ct.name ?>.<?= attr.name ?>">
+									<?}?>
+									</div>
+								</div>
+							<?});
+						} ?>
+					</div>
+					<?
+				});
+			} ?>
+		</div>
+</script>

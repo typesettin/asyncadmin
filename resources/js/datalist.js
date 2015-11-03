@@ -79,7 +79,7 @@ var get_data_element_doc = function (options) {
 
 var get_generic_doc = function (options) {
 	var dataobjtouse = options.data;
-	console.log('dataobjtouse', dataobjtouse);
+	// console.log('dataobjtouse', dataobjtouse);
 	dataobjtouse.name = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.name;
 	dataobjtouse.title = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.title;
 	return dataobjtouse;
@@ -125,7 +125,7 @@ tsdatalist.prototype.__addValueToDataList = function () {
 				});
 			}
 			else {
-				console.log('res.body', res.body);
+				// console.log('res.body', res.body);
 				var dataobjectresponse = (res.body.data) ? res.body.data.doc : res.body.author,
 					dataobjtouse;
 				if (typeof dataobjectresponse === 'undefined') {
@@ -173,7 +173,7 @@ tsdatalist.prototype.__init = function () {
 				delete this.options.dataitems[e.target.value];
 				this.__updateBindie();
 			}
-			console.log('e.target.checked', e.target.checked);
+			// console.log('e.target.checked', e.target.checked);
 		}
 	}.bind(this), false);
 	this.options.parentElement = this.options.element.parentElement;

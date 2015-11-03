@@ -5514,7 +5514,7 @@ bindie.prototype._render = function (options) {
 };
 module.exports = bindie;
 
-},{"ejs":8,"events":41,"util":49,"util-extend":131}],8:[function(require,module,exports){
+},{"ejs":8,"events":41,"util":49,"util-extend":132}],8:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -20248,7 +20248,7 @@ forbject.prototype.setFormObj = function () {
 };
 module.exports = forbject;
 
-},{"events":41,"util":49,"util-extend":131}],38:[function(require,module,exports){
+},{"events":41,"util":49,"util-extend":132}],38:[function(require,module,exports){
 /*
  * formie
  * http://github.amexpub.com/modules/formie
@@ -20657,7 +20657,7 @@ formie.prototype._init = function () {
 };
 module.exports = formie;
 
-},{"async":1,"events":41,"forbject":36,"querystring":47,"superagent":128,"util":49,"util-extend":131}],40:[function(require,module,exports){
+},{"async":1,"events":41,"forbject":36,"querystring":47,"superagent":129,"util":49,"util-extend":132}],40:[function(require,module,exports){
 
 },{}],41:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
@@ -22401,7 +22401,7 @@ module.exports = platter;
 if ( typeof window === 'object' && typeof window.document === 'object' ) {
 	window.platter = platter;
 }
-},{"classie":10,"domhelper":52,"events":41,"util":49,"util-extend":131}],52:[function(require,module,exports){
+},{"classie":10,"domhelper":52,"events":41,"util":49,"util-extend":132}],52:[function(require,module,exports){
 /*
  * domhelper
  * http://github.com/yawetse/domhelper
@@ -22934,7 +22934,7 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":41,"util":49,"util-extend":131}],56:[function(require,module,exports){
+},{"events":41,"util":49,"util-extend":132}],56:[function(require,module,exports){
 
 module.exports = require('./lib/');
 
@@ -29925,7 +29925,7 @@ var ajaxlinks,
 	// ajaxforms,
 	// ajaxFormies = {},
 	// summernotes,
-	// summernoteContentEditors = {},
+	summernoteContentEditors = {},
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
@@ -29951,6 +29951,7 @@ var ajaxlinks,
 	StylieMedialist = require('./medialist'),
 	StylieFilterlist = require('./filterlist'),
 	StylieSortlist = require('./sortlist'),
+	StylieTextEditor = require('./stylieeditor'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -30050,21 +30051,17 @@ var endPreloader = function (element) {
 window.endPreloader = endPreloader;
 
 var initSummernote = function () {
-	var summernoteObj,
-		summernoteObjID,
-		summernoteJQueryObj,
-		$ = window.$;
 	var summernotes = document.querySelectorAll('.ts-summernote');
 
 	try {
 		if (typeof summernotes !== 'undefined' && summernotes.length > 0) {
 			for (var x = 0; x < summernotes.length; x++) {
-				summernoteObj = summernotes[x];
-				summernoteObjID = '#' + summernoteObj.getAttribute('id');
-				summernoteJQueryObj = $(summernoteObjID);
-				summernoteJQueryObj.summernote({});
+				summernoteContentEditors[summernotes[x].getAttribute('id')] = new StylieTextEditor({
+					element: summernotes[x]
+				}).init();
 			}
 		}
+		window.summernoteContentEditors = summernoteContentEditors;
 	}
 	catch (e) {
 		console.error(e);
@@ -31073,7 +31070,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../node_modules/codemirror/addon/comment/comment":13,"../../node_modules/codemirror/addon/comment/continuecomment":14,"../../node_modules/codemirror/addon/edit/matchbrackets":15,"../../node_modules/codemirror/addon/fold/brace-fold":16,"../../node_modules/codemirror/addon/fold/comment-fold":17,"../../node_modules/codemirror/addon/fold/foldcode":18,"../../node_modules/codemirror/addon/fold/foldgutter":19,"../../node_modules/codemirror/addon/fold/indent-fold":20,"../../node_modules/codemirror/addon/hint/css-hint":21,"../../node_modules/codemirror/addon/hint/html-hint":22,"../../node_modules/codemirror/addon/hint/javascript-hint":23,"../../node_modules/codemirror/addon/hint/show-hint":24,"../../node_modules/codemirror/addon/lint/css-lint":26,"../../node_modules/codemirror/addon/lint/javascript-lint":27,"../../node_modules/codemirror/addon/lint/lint":28,"../../node_modules/codemirror/mode/css/css":31,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":32,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":33,"../../node_modules/codemirror/mode/javascript/javascript":34,"./datalist":105,"./filterlist":106,"./medialist":107,"./sortlist":108,"async":1,"bindie":6,"classie":10,"codemirror":30,"ejs":2,"forbject":36,"formie":38,"moment":5,"platterjs":50,"pushie":54,"querystring":47,"socket.io-client":56,"stylie":126,"stylie.modals":109,"stylie.notifications":114,"stylie.tabs":121,"superagent":128}],105:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":13,"../../node_modules/codemirror/addon/comment/continuecomment":14,"../../node_modules/codemirror/addon/edit/matchbrackets":15,"../../node_modules/codemirror/addon/fold/brace-fold":16,"../../node_modules/codemirror/addon/fold/comment-fold":17,"../../node_modules/codemirror/addon/fold/foldcode":18,"../../node_modules/codemirror/addon/fold/foldgutter":19,"../../node_modules/codemirror/addon/fold/indent-fold":20,"../../node_modules/codemirror/addon/hint/css-hint":21,"../../node_modules/codemirror/addon/hint/html-hint":22,"../../node_modules/codemirror/addon/hint/javascript-hint":23,"../../node_modules/codemirror/addon/hint/show-hint":24,"../../node_modules/codemirror/addon/lint/css-lint":26,"../../node_modules/codemirror/addon/lint/javascript-lint":27,"../../node_modules/codemirror/addon/lint/lint":28,"../../node_modules/codemirror/mode/css/css":31,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":32,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":33,"../../node_modules/codemirror/mode/javascript/javascript":34,"./datalist":105,"./filterlist":106,"./medialist":107,"./sortlist":108,"./stylieeditor":109,"async":1,"bindie":6,"classie":10,"codemirror":30,"ejs":2,"forbject":36,"formie":38,"moment":5,"platterjs":50,"pushie":54,"querystring":47,"socket.io-client":56,"stylie":127,"stylie.modals":110,"stylie.notifications":115,"stylie.tabs":122,"superagent":129}],105:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31155,7 +31152,7 @@ var get_data_element_doc = function (options) {
 
 var get_generic_doc = function (options) {
 	var dataobjtouse = options.data;
-	console.log('dataobjtouse', dataobjtouse);
+	// console.log('dataobjtouse', dataobjtouse);
 	dataobjtouse.name = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.name;
 	dataobjtouse.title = (dataobjtouse.username) ? dataobjtouse.username : dataobjtouse.title;
 	return dataobjtouse;
@@ -31201,7 +31198,7 @@ tsdatalist.prototype.__addValueToDataList = function () {
 				});
 			}
 			else {
-				console.log('res.body', res.body);
+				// console.log('res.body', res.body);
 				var dataobjectresponse = (res.body.data) ? res.body.data.doc : res.body.author,
 					dataobjtouse;
 				if (typeof dataobjectresponse === 'undefined') {
@@ -31249,7 +31246,7 @@ tsdatalist.prototype.__init = function () {
 				delete this.options.dataitems[e.target.value];
 				this.__updateBindie();
 			}
-			console.log('e.target.checked', e.target.checked);
+			// console.log('e.target.checked', e.target.checked);
 		}
 	}.bind(this), false);
 	this.options.parentElement = this.options.element.parentElement;
@@ -31332,7 +31329,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":6,"classie":10,"events":41,"superagent":128,"util":49,"util-extend":131}],106:[function(require,module,exports){
+},{"bindie":6,"classie":10,"events":41,"superagent":129,"util":49,"util-extend":132}],106:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31511,7 +31508,7 @@ filterlist.prototype.__init = function () {
 };
 module.exports = filterlist;
 
-},{"classie":10,"events":41,"querystring":47,"util":49,"util-extend":131}],107:[function(require,module,exports){
+},{"classie":10,"events":41,"querystring":47,"util":49,"util-extend":132}],107:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31729,7 +31726,7 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":6,"classie":10,"events":41,"superagent":128,"util":49,"util-extend":131}],108:[function(require,module,exports){
+},{"bindie":6,"classie":10,"events":41,"superagent":129,"util":49,"util-extend":132}],108:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -31935,7 +31932,179 @@ sortlist.prototype.__init = function () {
 };
 module.exports = sortlist;
 
-},{"classie":10,"events":41,"querystring":47,"util":49,"util-extend":131}],109:[function(require,module,exports){
+},{"classie":10,"events":41,"querystring":47,"util":49,"util-extend":132}],109:[function(require,module,exports){
+/*
+ * stylie.treeview
+ * https://github.com/typesettin/stylie.treeview
+ *
+ * Copyright (c) 2015 Yaw Joseph Etse. All rights reserved.
+ */
+'use strict';
+
+var extend = require('util-extend'),
+	CodeMirror = require('codemirror'),
+	events = require('events'),
+	util = require('util');
+
+require('../../node_modules/codemirror/addon/edit/matchbrackets');
+require('../../node_modules/codemirror/addon/hint/css-hint');
+require('../../node_modules/codemirror/addon/hint/html-hint');
+require('../../node_modules/codemirror/addon/hint/javascript-hint');
+require('../../node_modules/codemirror/addon/hint/show-hint');
+require('../../node_modules/codemirror/addon/lint/css-lint');
+require('../../node_modules/codemirror/addon/lint/javascript-lint');
+// require('../../node_modules/codemirror/addon/lint/json-lint');
+require('../../node_modules/codemirror/addon/lint/lint');
+// require('../../node_modules/codemirror/addon/lint/html-lint');
+require('../../node_modules/codemirror/addon/comment/comment');
+require('../../node_modules/codemirror/addon/comment/continuecomment');
+require('../../node_modules/codemirror/addon/fold/foldcode');
+require('../../node_modules/codemirror/addon/fold/comment-fold');
+require('../../node_modules/codemirror/addon/fold/indent-fold');
+require('../../node_modules/codemirror/addon/fold/brace-fold');
+require('../../node_modules/codemirror/addon/fold/foldgutter');
+require('../../node_modules/codemirror/mode/css/css');
+require('../../node_modules/codemirror/mode/htmlembedded/htmlembedded');
+require('../../node_modules/codemirror/mode/htmlmixed/htmlmixed');
+require('../../node_modules/codemirror/mode/javascript/javascript');
+
+
+/**
+ * A module that represents a StylieTextEditor object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/stylie.treeview}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2015 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor StylieTextEditor
+ * @requires module:util-extent
+ * @requires module:util
+ * @requires module:events
+ * @param {object} el element of tab container
+ * @param {object} options configuration options
+ */
+var StylieTextEditor = function (options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		type: 'html'
+	};
+
+	this.options = extend(defaultOptions, options);
+	return this;
+	// this.getTreeHTML = this.getTreeHTML;
+};
+
+util.inherits(StylieTextEditor, events.EventEmitter);
+
+StylieTextEditor.prototype.init = function () {
+	try {
+		var previewEditibleDiv = document.createElement('div');
+		previewEditibleDiv.setAttribute('contenteditable', 'true');
+		previewEditibleDiv.setAttribute('tabindex', '1');
+		this.options.element = this.options.element || document.querySelector(this.options.elementSelector);
+		previewEditibleDiv.innerHTML = this.options.element.innerHTML;
+		this.options.previewElement = previewEditibleDiv;
+		this.options.element.parentNode.insertBefore(previewEditibleDiv, this.options.element);
+		//now add code mirror
+		this.options.codemirror = CodeMirror.fromTextArea(
+			this.options.element, {
+				lineNumbers: true,
+				lineWrapping: true,
+				matchBrackets: true,
+				autoCloseBrackets: true,
+				mode: (this.options.type === 'ejs') ? 'text/ejs' : 'text/html',
+				indentUnit: 2,
+				indentWithTabs: true,
+				'overflow-y': 'hidden',
+				'overflow-x': 'auto',
+				lint: true,
+				gutters: [
+					'CodeMirror-linenumbers',
+					'CodeMirror-foldgutter',
+					// 'CodeMirror-lint-markers'
+				],
+				foldGutter: true
+			}
+		);
+		this.options.codemirror.on('blur', function (instance) {
+			// console.log('editor lost focuss', instance, change);
+			this.options.previewElement.innerHTML = instance.getValue();
+		}.bind(this));
+		this.options.previewElement.addEventListener('blur', function () {
+			this.options.codemirror.getDoc().setValue(this.options.previewElement.innerHTML);
+		}.bind(this));
+		//set initial code mirror
+		this.options.codemirror.getDoc().setValue(this.options.previewElement.innerHTML);
+		this.options.codemirror.refresh();
+		return this;
+	}
+	catch (e) {
+		console.error(e);
+	}
+};
+
+// StylieTextEditor.prototype.getTreeFolder = function (treeitem) {
+// 	var returnHTML = '<li>';
+// 	returnHTML += '<label for="' + treeitem['tree-item-id'] + '"  ' + this.getTreeItemAttributes(treeitem['tree-item-attributes']) + ' >' + treeitem['tree-item-label'] + '</label>';
+// 	returnHTML += '<input type="checkbox" id="' + treeitem['tree-item-id'] + '" ' + this.getTreeItemAttributes(treeitem['tree-item-input-attributes']) + ' />';
+// 	returnHTML += '<ol>';
+// 	treeitem['tree-item-folder-contents'].forEach(function (nestedTreeItem) {
+// 		if (nestedTreeItem['tree-item'] === 'file') {
+// 			returnHTML += this.getTreeFile(nestedTreeItem);
+// 		}
+// 		if (nestedTreeItem['tree-item'] === 'folder') {
+// 			returnHTML += this.getTreeFolder(nestedTreeItem);
+// 		}
+// 	}.bind(this));
+// 	returnHTML += '</ol>';
+// 	returnHTML += '</li>';
+// 	return returnHTML;
+// };
+
+// StylieTextEditor.prototype.getTreeFile = function (treeitem) {
+// 	var returnHTML = '<li class="ts-file ">';
+// 	returnHTML += '<a class="' + treeitem['tree-item-attributes']['class'] + '" ';
+// 	returnHTML += 'id="' + treeitem['tree-item-id'] + '"  ';
+// 	returnHTML += this.getTreeItemAttributes(treeitem['tree-item-attributes']);
+// 	returnHTML += ' href="' + treeitem['tree-item-link'] + '">';
+// 	returnHTML += treeitem['tree-item-label'];
+// 	returnHTML += '</a>';
+// 	returnHTML += '</li>';
+
+// 	return returnHTML;
+// };
+
+// StylieTextEditor.prototype.getTreeItem = function (treeitem) {
+// 	if (treeitem['tree-item'] === 'file') {
+// 		return this.getTreeFile(treeitem);
+// 	}
+// 	if (treeitem['tree-item'] === 'folder') {
+// 		return this.getTreeFolder(treeitem);
+// 	}
+// };
+
+
+// /**
+//  * Shows a modal component.
+//  * @param {string} modal name
+//  * @emits showModal
+//  */
+// StylieTextEditor.prototype.getTreeHTML = function () {
+// 	var treeobject = this.options.tree,
+// 		addedMainTreeId = treeobject['tree-item-id'] || '',
+// 		addedMainTreeAttributes = treeobject['tree-item-attributes'],
+// 		addedMainTreeClass = (addedMainTreeAttributes) ? addedMainTreeAttributes['class'] : '',
+// 		returnHTML = '<ol class="ts-tree ' + addedMainTreeClass + '" id="' + addedMainTreeId + '" ' + this.getTreeItemAttributes(addedMainTreeAttributes) + ' >';
+// 	treeobject.tree.forEach(function (treeitem) {
+// 		returnHTML += this.getTreeItem(treeitem);
+// 	}.bind(this));
+// 	returnHTML += '</ol>';
+
+// 	return returnHTML;
+// };
+
+module.exports = StylieTextEditor;
+
+},{"../../node_modules/codemirror/addon/comment/comment":13,"../../node_modules/codemirror/addon/comment/continuecomment":14,"../../node_modules/codemirror/addon/edit/matchbrackets":15,"../../node_modules/codemirror/addon/fold/brace-fold":16,"../../node_modules/codemirror/addon/fold/comment-fold":17,"../../node_modules/codemirror/addon/fold/foldcode":18,"../../node_modules/codemirror/addon/fold/foldgutter":19,"../../node_modules/codemirror/addon/fold/indent-fold":20,"../../node_modules/codemirror/addon/hint/css-hint":21,"../../node_modules/codemirror/addon/hint/html-hint":22,"../../node_modules/codemirror/addon/hint/javascript-hint":23,"../../node_modules/codemirror/addon/hint/show-hint":24,"../../node_modules/codemirror/addon/lint/css-lint":26,"../../node_modules/codemirror/addon/lint/javascript-lint":27,"../../node_modules/codemirror/addon/lint/lint":28,"../../node_modules/codemirror/mode/css/css":31,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":32,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":33,"../../node_modules/codemirror/mode/javascript/javascript":34,"codemirror":30,"events":41,"util":49,"util-extend":132}],110:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -31947,7 +32116,7 @@ module.exports = sortlist;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":110}],110:[function(require,module,exports){
+},{"./lib/stylie.modals":111}],111:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -32115,13 +32284,13 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":111,"events":41,"util":49,"util-extend":131}],111:[function(require,module,exports){
+},{"classie":112,"events":41,"util":49,"util-extend":132}],112:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"./lib/classie":113,"dup":10}],112:[function(require,module,exports){
+},{"./lib/classie":114,"dup":10}],113:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],113:[function(require,module,exports){
+},{"dup":11}],114:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"./class_list_ployfill":112,"dup":12}],114:[function(require,module,exports){
+},{"./class_list_ployfill":113,"dup":12}],115:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32133,7 +32302,7 @@ arguments[4][12][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":115}],115:[function(require,module,exports){
+},{"./lib/stylie.notifications":116}],116:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -32330,13 +32499,13 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":116,"detectcss":119,"events":41,"util":49,"util-extend":131}],116:[function(require,module,exports){
+},{"classie":117,"detectcss":120,"events":41,"util":49,"util-extend":132}],117:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"./lib/classie":118,"dup":10}],117:[function(require,module,exports){
+},{"./lib/classie":119,"dup":10}],118:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],118:[function(require,module,exports){
+},{"dup":11}],119:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"./class_list_ployfill":117,"dup":12}],119:[function(require,module,exports){
+},{"./class_list_ployfill":118,"dup":12}],120:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -32346,7 +32515,7 @@ arguments[4][12][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":120}],120:[function(require,module,exports){
+},{"./lib/detectCSS":121}],121:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -32385,7 +32554,7 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],121:[function(require,module,exports){
+},{}],122:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -32397,7 +32566,7 @@ exports.prefixed = function(style){
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":122}],122:[function(require,module,exports){
+},{"./lib/stylie.tabs":123}],123:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -32497,13 +32666,13 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":123,"events":41,"util":49,"util-extend":131}],123:[function(require,module,exports){
+},{"classie":124,"events":41,"util":49,"util-extend":132}],124:[function(require,module,exports){
 arguments[4][10][0].apply(exports,arguments)
-},{"./lib/classie":125,"dup":10}],124:[function(require,module,exports){
+},{"./lib/classie":126,"dup":10}],125:[function(require,module,exports){
 arguments[4][11][0].apply(exports,arguments)
-},{"dup":11}],125:[function(require,module,exports){
+},{"dup":11}],126:[function(require,module,exports){
 arguments[4][12][0].apply(exports,arguments)
-},{"./class_list_ployfill":124,"dup":12}],126:[function(require,module,exports){
+},{"./class_list_ployfill":125,"dup":12}],127:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32515,7 +32684,7 @@ arguments[4][12][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":127}],127:[function(require,module,exports){
+},{"./lib/stylie":128}],128:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -32615,7 +32784,7 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":41,"util":49,"util-extend":131}],128:[function(require,module,exports){
+},{"events":41,"util":49,"util-extend":132}],129:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -33774,9 +33943,9 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":129,"reduce":130}],129:[function(require,module,exports){
+},{"emitter":130,"reduce":131}],130:[function(require,module,exports){
 arguments[4][64][0].apply(exports,arguments)
-},{"dup":64}],130:[function(require,module,exports){
+},{"dup":64}],131:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -33801,7 +33970,7 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}],131:[function(require,module,exports){
+},{}],132:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a

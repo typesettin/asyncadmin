@@ -139,9 +139,9 @@ var default_custom_tfoot = function (options) {
 		currentlimit = options.currentlimit || 15,
 		currentpage = options.currentpage || 1,
 		genericdocsperpage = [{
-			'value':currentlimit,
-			'label':currentlimit
-		},{
+			'value': currentlimit,
+			'label': currentlimit
+		}, {
 			'value': '15',
 			'label': '15'
 		}, {

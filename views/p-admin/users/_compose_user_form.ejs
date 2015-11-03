@@ -56,6 +56,7 @@
 				</aside>
 			</details>
 			<!-- END: Account Information -->
+		<% include ../../shared/genericdoc_compose_content_attributes %>
 			<!-- START: Account Information -->
 			<details open="open" class="ts-text-sm">
 				<summary>
@@ -73,146 +74,146 @@
 		</div>
 
 		<div class=" ts-col-span4 ts-screensm-col-span12 ts-screenxs-col-span12">
-			
-
 			<details open="open" class="ts-text-sm">
-				<summary>
-					<div class="ts-pull-right">
-			      <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">
-			      	<% if(genericdoc.username){%>Update<%}else{%>Create<%}%>
-				     </button>
-						<%if(genericdoc){%>
-							<a data-href="/<%- locals.adminPath %>/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-deleted-redirect-href="/<%- locals.adminPath %>/users" >Delete</a>
-						<%}%>
-					</div>
-						Account Info
-				</summary>
-				<aside>
-				<!-- Start: Account Information -->
-				<div class="ts-row ts-form-row">
-					<label class="ts-label">Email</label>
-					<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" class="ts-input"/>
-				</div>
-				<div class="ts-row ts-form-row">
-					<label class="ts-label">Username</label>
-					<input type="text" name="username"  autocomplete="off" placeholder="username"  value="<%- genericdoc.username %>" class="ts-input" />
-				</div>
-				<div class="ts-row ts-form-row">
-					<label class="ts-label">Password</label>
-					<input type="password" name="password" value="" placeholder="password" autocomplete="off"  class="ts-input"/>
-				</div>
-				<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
-					<label class="ts-label">Confirm password</label>
-					<input type="password" title="confirm your password" value="" name="passwordconfirm" placeholder="confirm password" autocomplete="off" class="ts-input" />
-				</div>
-				<!-- END: Account Information -->
-			</aside>
-		</details>
-		<details open="open" class="ts-text-sm">
-				<summary>
-				Account Details
-				</summary>
-				<aside>
-				  <% if(user.privileges['760'] || user.accounttype==='admin'){%>
-						<div class="ts-row ts-form-row">
-							<div class="ts-col-span12" >
-								<label class="ts-label">User Roles</label>
-								<input type="text" 
-									id="padmin-userroles" 
-									data-ajax-prop="userroles" 
-									data-ajax-source="/<%- locals.adminPath %>/userrole/new" 
-									data-ajax-setdata-variable="genericdoc_userroles" 
-        					data-ajax-formie="edit-user-form" 
-									class="ts-col-span12 ts-datalist-tagged" 
-									placeholder="User Roles" 
-									name="userroles-ts-datalist-tagged" 
-      					  />
-							</div>
-							<% 
-							if(genericdoc && genericdoc.userroles){%>
-							<script type="text/javascript">
-							  <%- locals.viewhelper.passObjToClient(genericdoc.userroles,"genericdoc_userroles") %>
-							</script>
+					<summary>
+						<div class="ts-pull-right">
+				      <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">
+				      	<% if(genericdoc.username){%>Update<%}else{%>Create<%}%>
+					     </button>
+							<%if(genericdoc){%>
+								<a data-href="/<%- locals.adminPath %>/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-deleted-redirect-href="/<%- locals.adminPath %>/users" >Delete</a>
 							<%}%>
-							<div class="ts-col-span12">
-								<label class="ts-label">Account Type</label>
-								<% var docaccounttype = [{
-									"value":"basic",
-									"label":"basic"
-									},{
-									"value":"admin",
-									"label":"admin"
-									},{
-									"value":"invalid",
-									"label":"invalid"
-									}]; %>
-								<select name="accounttype" class="ts-input">
-									<% docaccounttype.forEach(function(accounttype){
-										%>
-											<option <% if(genericdoc && typeof genericdoc.accounttype==='string' && genericdoc.accounttype === accounttype.value ){%> selected="selected"
-											<%}%> value="<%- accounttype.value %>"><%- accounttype.label %></option>
-										<%
-										}); %>
-								</select>
-							</div>
-							<div class="ts-col-span12">
-								<label class="ts-label">Activated</label>
-								<% var docactivated = [{
-									"value":true,
-									"label":"true"
-									},{
-									"value":false,
-									"label":"false"
-									}]; %>
-								<select name="activated" class="ts-input">
-									<% docactivated.forEach(function(activated){
-										%>
-											<option <% if(genericdoc && genericdoc.activated === activated.value ){%> selected="selected"
-											<%}%> value="<%- activated.value %>"><%- activated.label %></option>
-										<%
-										}); %>
-								</select>
-							</div>
 						</div>
-					<%}
-					else{ %>
-						<div class="ts-row ts-form-row">
-							<div class="ts-col-span12" >
-								<label class="ts-label">Account Type</label>
-								<input type="text" disabled="disabled" value="<%- genericdoc.accounttype %>" class="ts-input"/>
-							</div>
-						</div>
-						<div class="ts-row ts-form-row">
-							<div class="ts-col-span12" >
-								<label class="ts-label">Activated</label>
-								<input type="text" disabled="disabled" value="<%- genericdoc.activated %>" class="ts-input"/>
-							</div>
-						</div>
-						<div class="ts-row ts-form-row">
-							<div class="ts-col-span12" >
-								<label class="ts-label">User Roles</label>
-								<%
-								var userroletextvalue ="";
-								if(genericdoc.userroles && genericdoc.userroles.length >0){
-									genericdoc.userroles.forEach(function(userrole){ 
-										userroletextvalue+="#"+userrole.title+" ";
-									});
-								}%>
-
-								<input type="text" disabled="disabled" value="<%- userroletextvalue %>" class="ts-input"/>
-							</div>
-						</div>
-					<%} %>
-
-				  <% if(typeof genericdoctypename === "string" && genericdoc){%>
-						<div class="ts-row  ts-text-center ts-text-sm ts-padding-lg">
-				      <% if(genericdoc){%> 
-								
-				      <%}%>
-						</div>
-				  <%}%>
+							Account Info
+					</summary>
+					<aside>
+					<!-- Start: Account Information -->
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Email</label>
+						<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" class="ts-input"/>
+					</div>
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Username</label>
+						<input type="text" name="username"  autocomplete="off" placeholder="username"  value="<%- genericdoc.username %>" class="ts-input" />
+					</div>
+					<div class="ts-row ts-form-row">
+						<label class="ts-label">Password</label>
+						<input type="password" name="password" value="" placeholder="password" autocomplete="off"  class="ts-input"/>
+					</div>
+					<div class="ts-row ts-form-row" style="margin-bottom:1.5em">
+						<label class="ts-label">Confirm password</label>
+						<input type="password" title="confirm your password" value="" name="passwordconfirm" placeholder="confirm password" autocomplete="off" class="ts-input" />
+					</div>
+					<!-- END: Account Information -->
 				</aside>
 			</details>
+			<details open="open" class="ts-text-sm">
+					<summary>
+					Account Details
+					</summary>
+					<aside>
+					  <% if(user.privileges['760'] || user.accounttype==='admin'){%>
+							<div class="ts-row ts-form-row">
+								<div class="ts-col-span12" >
+									<label class="ts-label">User Roles</label>
+									<input type="text" 
+										id="padmin-userroles" 
+										data-ajax-prop="userroles" 
+										data-ajax-source="/<%- locals.adminPath %>/userrole/new" 
+										data-ajax-setdata-variable="genericdoc_userroles" 
+	        					data-ajax-formie="edit-user-form" 
+										class="ts-col-span12 ts-datalist-tagged" 
+										placeholder="User Roles" 
+										name="userroles-ts-datalist-tagged" 
+	      					  />
+								</div>
+								<% 
+								if(genericdoc && genericdoc.userroles){%>
+								<script type="text/javascript">
+								  <%- locals.viewhelper.passObjToClient(genericdoc.userroles,"genericdoc_userroles") %>
+								</script>
+								<%}%>
+								<div class="ts-col-span12">
+									<label class="ts-label">Account Type</label>
+									<% var docaccounttype = [{
+										"value":"basic",
+										"label":"basic"
+										},{
+										"value":"admin",
+										"label":"admin"
+										},{
+										"value":"invalid",
+										"label":"invalid"
+										}]; %>
+									<select name="accounttype" class="ts-input">
+										<% docaccounttype.forEach(function(accounttype){
+											%>
+												<option <% if(genericdoc && typeof genericdoc.accounttype==='string' && genericdoc.accounttype === accounttype.value ){%> selected="selected"
+												<%}%> value="<%- accounttype.value %>"><%- accounttype.label %></option>
+											<%
+											}); %>
+									</select>
+								</div>
+								<div class="ts-col-span12">
+									<label class="ts-label">Activated</label>
+									<% var docactivated = [{
+										"value":true,
+										"label":"true"
+										},{
+										"value":false,
+										"label":"false"
+										}]; %>
+									<select name="activated" class="ts-input">
+										<% docactivated.forEach(function(activated){
+											%>
+												<option <% if(genericdoc && genericdoc.activated === activated.value ){%> selected="selected"
+												<%}%> value="<%- activated.value %>"><%- activated.label %></option>
+											<%
+											}); %>
+									</select>
+								</div>
+							</div>
+						<%}
+						else{ %>
+							<div class="ts-row ts-form-row">
+								<div class="ts-col-span12" >
+									<label class="ts-label">Account Type</label>
+									<input type="text" disabled="disabled" value="<%- genericdoc.accounttype %>" class="ts-input"/>
+								</div>
+							</div>
+							<div class="ts-row ts-form-row">
+								<div class="ts-col-span12" >
+									<label class="ts-label">Activated</label>
+									<input type="text" disabled="disabled" value="<%- genericdoc.activated %>" class="ts-input"/>
+								</div>
+							</div>
+							<div class="ts-row ts-form-row">
+								<div class="ts-col-span12" >
+									<label class="ts-label">User Roles</label>
+									<%
+									var userroletextvalue ="";
+									if(genericdoc.userroles && genericdoc.userroles.length >0){
+										genericdoc.userroles.forEach(function(userrole){ 
+											userroletextvalue+="#"+userrole.title+" ";
+										});
+									}%>
+
+									<input type="text" disabled="disabled" value="<%- userroletextvalue %>" class="ts-input"/>
+								</div>
+							</div>
+						<%} %>
+
+					  <% if(typeof genericdoctypename === "string" && genericdoc){%>
+							<div class="ts-row  ts-text-center ts-text-sm ts-padding-lg">
+					      <% if(genericdoc){%> 
+									
+					      <%}%>
+							</div>
+					  <%}%>
+					</aside>
+			</details>
+			<% include ../../shared/genericdoc_compose_taxonomy %>
+
 		</div>
 	</div>
 </div>
