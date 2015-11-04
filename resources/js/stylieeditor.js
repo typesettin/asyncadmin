@@ -9,6 +9,7 @@
 var extend = require('util-extend'),
 	CodeMirror = require('codemirror'),
 	events = require('events'),
+	// classie = require('classie'),
 	util = require('util');
 
 require('../../node_modules/codemirror/addon/edit/matchbrackets');
@@ -60,15 +61,83 @@ var StylieTextEditor = function (options) {
 
 util.inherits(StylieTextEditor, events.EventEmitter);
 
+var createButton = function (options) {
+	var buttonElement = document.createElement('button');
+	buttonElement.setAttribute('class', 'ts-button ts-text-xs ' + options.classes);
+	buttonElement.innerHTML = options.innerHTML;
+	for (var key in options) {
+		if (key !== 'classes' || key !== 'innerHTML') {
+			buttonElement.setAttribute(key, options[key]);
+		}
+	}
+
+	return buttonElement;
+};
+
 StylieTextEditor.prototype.init = function () {
 	try {
-		var previewEditibleDiv = document.createElement('div');
+		var previewEditibleDiv = document.createElement('div'),
+			previewEditibleMenu = document.createElement('div'),
+			previewEditibleContainer = document.createElement('div'),
+			boldButton = createButton({
+				innerHTML: '<b>B</b>',
+				'data-attribute-action': 'bold'
+			}),
+			italicButton = createButton({
+				innerHTML: '<em>I</em>',
+				'data-attribute-action': 'italic'
+			}),
+			underlineButton = createButton({
+				innerHTML: '<u>U</u>',
+				'data-attribute-action': 'underline'
+			}),
+			unorderedLIButton = createButton({
+				innerHTML: 'bullet',
+				'data-attribute-action': 'unorderedLI'
+			}),
+			orderedLIButton = createButton({
+				innerHTML: 'list',
+				'data-attribute-action': 'orderedLI'
+			}),
+			textalignButton = createButton({
+				innerHTML: 'text align',
+				'data-attribute-action': 'textalign'
+			}),
+			linkButton = createButton({
+				innerHTML: 'link',
+				'data-attribute-action': 'link'
+			}),
+			imageButton = createButton({
+				innerHTML: 'img',
+				'data-attribute-action': 'image'
+			}),
+			codeButton = createButton({
+				innerHTML: '&lt;/&gt;',
+				'data-attribute-action': 'code'
+			}),
+			fullscreenButton = createButton({
+				innerHTML: '+',
+				'data-attribute-action': 'fullscreen'
+			});
+		previewEditibleMenu.appendChild(boldButton);
+		previewEditibleMenu.appendChild(italicButton);
+		previewEditibleMenu.appendChild(underlineButton);
+		previewEditibleMenu.appendChild(unorderedLIButton);
+		previewEditibleMenu.appendChild(orderedLIButton);
+		previewEditibleMenu.appendChild(textalignButton);
+		previewEditibleMenu.appendChild(linkButton);
+		previewEditibleMenu.appendChild(imageButton);
+		previewEditibleMenu.appendChild(codeButton);
+		previewEditibleMenu.appendChild(fullscreenButton);
+		previewEditibleMenu.setAttribute('class', 'ts-input ts-padding-sm');
+		previewEditibleDiv.setAttribute('class', 'ts-input ts-texteditor');
 		previewEditibleDiv.setAttribute('contenteditable', 'true');
 		previewEditibleDiv.setAttribute('tabindex', '1');
+		previewEditibleContainer.appendChild(previewEditibleMenu);
+		previewEditibleContainer.appendChild(previewEditibleDiv);
 		this.options.element = this.options.element || document.querySelector(this.options.elementSelector);
-		previewEditibleDiv.innerHTML = this.options.element.innerHTML;
+		previewEditibleDiv.innerHTML = this.options.element.innerText;
 		this.options.previewElement = previewEditibleDiv;
-		this.options.element.parentNode.insertBefore(previewEditibleDiv, this.options.element);
 		//now add code mirror
 		this.options.codemirror = CodeMirror.fromTextArea(
 			this.options.element, {
@@ -90,6 +159,8 @@ StylieTextEditor.prototype.init = function () {
 				foldGutter: true
 			}
 		);
+		this.options.element.parentNode.appendChild(previewEditibleContainer);
+		// this.options.element.parentNode.insertBefore(previewEditibleDiv, this.options.element);
 		this.options.codemirror.on('blur', function (instance) {
 			// console.log('editor lost focuss', instance, change);
 			this.options.previewElement.innerHTML = instance.getValue();
@@ -100,6 +171,12 @@ StylieTextEditor.prototype.init = function () {
 		//set initial code mirror
 		this.options.codemirror.getDoc().setValue(this.options.previewElement.innerHTML);
 		this.options.codemirror.refresh();
+		// setTimeout(this.options.codemirror.refresh, 1000);
+
+		setTimeout(function () {
+			this.options.codemirror.refresh();
+		}.bind(this), 500);
+
 		return this;
 	}
 	catch (e) {
@@ -107,23 +184,9 @@ StylieTextEditor.prototype.init = function () {
 	}
 };
 
-// StylieTextEditor.prototype.getTreeFolder = function (treeitem) {
-// 	var returnHTML = '<li>';
-// 	returnHTML += '<label for="' + treeitem['tree-item-id'] + '"  ' + this.getTreeItemAttributes(treeitem['tree-item-attributes']) + ' >' + treeitem['tree-item-label'] + '</label>';
-// 	returnHTML += '<input type="checkbox" id="' + treeitem['tree-item-id'] + '" ' + this.getTreeItemAttributes(treeitem['tree-item-input-attributes']) + ' />';
-// 	returnHTML += '<ol>';
-// 	treeitem['tree-item-folder-contents'].forEach(function (nestedTreeItem) {
-// 		if (nestedTreeItem['tree-item'] === 'file') {
-// 			returnHTML += this.getTreeFile(nestedTreeItem);
-// 		}
-// 		if (nestedTreeItem['tree-item'] === 'folder') {
-// 			returnHTML += this.getTreeFolder(nestedTreeItem);
-// 		}
-// 	}.bind(this));
-// 	returnHTML += '</ol>';
-// 	returnHTML += '</li>';
-// 	return returnHTML;
-// };
+StylieTextEditor.prototype.getValue = function () {
+	return this.options.previewElement.innerText || this.options.codemirror.getValue();
+};
 
 // StylieTextEditor.prototype.getTreeFile = function (treeitem) {
 // 	var returnHTML = '<li class="ts-file ">';

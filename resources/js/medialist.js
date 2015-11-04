@@ -183,7 +183,7 @@ tsmedialist.prototype.__init = function () {
 		binderType: 'template',
 		binderTemplate: get_checkbox_template(),
 		binderCallback: function (cbdata) {
-			console.log('cbdata', cbdata);
+			// console.log('cbdata', cbdata);
 			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
 				successfn = window[successsubmitFunctionString];
 			// is object a function?

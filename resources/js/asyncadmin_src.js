@@ -290,8 +290,7 @@ var defaultLoadAjaxPageFormie = function (formElement) {
 };
 
 var defaultAjaxFormie = function (formElement) {
-	var $ = window.$,
-		_csrfToken = formElement.querySelector('input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
+	var _csrfToken = formElement.querySelector('input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
 
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
@@ -315,7 +314,8 @@ var defaultAjaxFormie = function (formElement) {
 			}
 			window.showPreloader();
 			for (var s = 0; s < summernoteTextAreas.length; s++) {
-				summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
+				summernoteTextAreas[s].innerHTML = summernoteContentEditors[summernoteTextAreas[s].getAttribute('id')].options.codemirror.getValue();
+				// summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
 			}
 			for (var r = 0; r < codemirrorTextAreas.length; r++) {
 				codemirrorTextAreas[r].innerHTML = codeMirrors[codemirrorTextAreas[r].id].getValue();
