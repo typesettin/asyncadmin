@@ -146,7 +146,14 @@
     	min-height: 15em;
     }
     .ts-form-row{
-
+    	.ts-input{
+    		&.ts-padding-sm{
+    			padding: @sizesm;
+    		}
+    		&.ts-padding-xs{
+    			padding: @sizexs;
+    		}
+    	}
 	    .ts-input.ts-texteditor{
 	    	font-size:80%;
 	    	h1,h2,h3,h4,h5,h6{
@@ -157,6 +164,30 @@
 	     	}
 	    }
     }
+	}
+	.ts-editor-container{
+		height: auto;
+		width: auto;
+		-webkit-transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
+		transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
+		&.ts-editor-fullscreen{
+			position: fixed;
+			height: 100%;
+			width: 100%;
+			top: 0;
+			left: 0;
+			background: white;
+			display: block;
+			z-index: 10000;
+			overflow: auto;
+			.ts-editor-menu{
+				position: fixed;
+				width: 100%;
+			}
+			.ts-texteditor{
+				margin-top: @sizexl;
+			}
+		}
 	}
 	#ts-admin-console-content{
 		pre{
