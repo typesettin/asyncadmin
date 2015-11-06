@@ -32012,8 +32012,70 @@ var createButton = function (options) {
 };
 
 StylieTextEditor.prototype.addMenuButtons = function () {
-
+	this.options.buttons.boldButton = createButton({
+		innerHTML: '<b>B</b>',
+		'data-attribute-action': 'bold'
+	});
+	this.options.buttons.italicButton = createButton({
+		innerHTML: '<em>I</em>',
+		'data-attribute-action': 'italic'
+	});
+	this.options.buttons.underlineButton = createButton({
+		innerHTML: '<u>U</u>',
+		'data-attribute-action': 'underline'
+	});
+	this.options.buttons.unorderedLIButton = createButton({
+		innerHTML: 'bullet',
+		'data-attribute-action': 'unorderedLI'
+	});
+	this.options.buttons.orderedLIButton = createButton({
+		innerHTML: 'list',
+		'data-attribute-action': 'orderedLI'
+	});
+	this.options.buttons.textalignButton = createButton({
+		innerHTML: 'text align',
+		'data-attribute-action': 'textalign'
+	});
+	this.options.buttons.linkButton = createButton({
+		innerHTML: 'link',
+		'data-attribute-action': 'link'
+	});
+	this.options.buttons.imageButton = createButton({
+		innerHTML: 'img',
+		'data-attribute-action': 'image'
+	});
+	this.options.buttons.codeButton = createButton({
+		innerHTML: '&lt;/&gt;',
+		title: 'Source code editor',
+		'data-attribute-action': 'code'
+	});
+	this.options.buttons.fullscreenButton = createButton({
+		innerHTML: '+',
+		title: 'Maximize and fullscreen editor',
+		'data-attribute-action': 'fullscreen'
+	});
 };
+
+var button_gobold = function () {
+	document.execCommand('bold', false, '');
+};
+var button_gounderline = function () {
+	document.execCommand('underline', false, '');
+};
+var button_goitalic = function () {
+	document.execCommand('italic', false, '');
+};
+var button_golink = function () {
+	document.execCommand('createLink', true, '');
+};
+var button_golist = function () {
+	document.execCommand('insertOrderedList', true, '');
+};
+var button_gobullet = function () {
+	document.execCommand('insertUnorderedList', true, '');
+};
+
+
 
 var button_gofullscreen = function () {
 	// console.log('button_gofullscreen this', this);
@@ -32029,6 +32091,14 @@ var button_togglecodeeditor = function () {
 };
 
 StylieTextEditor.prototype.initButtonEvents = function () {
+	this.options.buttons.boldButton.addEventListener('click', button_gobold, false);
+	this.options.buttons.underlineButton.addEventListener('click', button_gounderline, false);
+	this.options.buttons.italicButton.addEventListener('click', button_goitalic, false);
+	this.options.buttons.linkButton.addEventListener('click', button_golink, false);
+	this.options.buttons.unorderedLIButton.addEventListener('click', button_gobullet, false);
+	this.options.buttons.orderedLIButton.addEventListener('click', button_golist, false);
+
+
 	this.options.buttons.fullscreenButton.addEventListener('click', button_gofullscreen.bind(this), false);
 	this.options.buttons.codeButton.addEventListener('click', button_togglecodeeditor.bind(this), false);
 };
@@ -32039,48 +32109,7 @@ StylieTextEditor.prototype.init = function () {
 			previewEditibleMenu = document.createElement('div'),
 			previewEditibleContainer = document.createElement('div');
 		this.options.buttons = {};
-		this.options.buttons.boldButton = createButton({
-			innerHTML: '<b>B</b>',
-			'data-attribute-action': 'bold'
-		});
-		this.options.buttons.italicButton = createButton({
-			innerHTML: '<em>I</em>',
-			'data-attribute-action': 'italic'
-		});
-		this.options.buttons.underlineButton = createButton({
-			innerHTML: '<u>U</u>',
-			'data-attribute-action': 'underline'
-		});
-		this.options.buttons.unorderedLIButton = createButton({
-			innerHTML: 'bullet',
-			'data-attribute-action': 'unorderedLI'
-		});
-		this.options.buttons.orderedLIButton = createButton({
-			innerHTML: 'list',
-			'data-attribute-action': 'orderedLI'
-		});
-		this.options.buttons.textalignButton = createButton({
-			innerHTML: 'text align',
-			'data-attribute-action': 'textalign'
-		});
-		this.options.buttons.linkButton = createButton({
-			innerHTML: 'link',
-			'data-attribute-action': 'link'
-		});
-		this.options.buttons.imageButton = createButton({
-			innerHTML: 'img',
-			'data-attribute-action': 'image'
-		});
-		this.options.buttons.codeButton = createButton({
-			innerHTML: '&lt;/&gt;',
-			title: 'Source code editor',
-			'data-attribute-action': 'code'
-		});
-		this.options.buttons.fullscreenButton = createButton({
-			innerHTML: '+',
-			title: 'Maximize and fullscreen editor',
-			'data-attribute-action': 'fullscreen'
-		});
+		this.addMenuButtons();
 		previewEditibleMenu.appendChild(this.options.buttons.boldButton);
 		previewEditibleMenu.appendChild(this.options.buttons.italicButton);
 		previewEditibleMenu.appendChild(this.options.buttons.underlineButton);
@@ -32140,7 +32169,12 @@ StylieTextEditor.prototype.init = function () {
 		if (this.options.updateOnChange) {
 			this.options.codemirror.on('change', function (instance) {
 				// console.log('editor lost focuss', instance, change);
-				this.options.previewElement.innerHTML = instance.getValue();
+				console.log('document.activeElement === this.options.previewElement', document.activeElement === this.options.previewElement);
+				setTimeout(function () {
+					if (document.activeElement !== this.options.previewElement) {
+						this.options.previewElement.innerHTML = instance.getValue();
+					}
+				}.bind(this), 5000);
 			}.bind(this));
 			this.options.previewElement.addEventListener('change', function () {
 				this.options.codemirror.getDoc().setValue(this.options.previewElement.innerHTML);
