@@ -8,6 +8,8 @@
 
 var extend = require('util-extend'),
 	CodeMirror = require('codemirror'),
+	StylieModals = require('stylie.modals'),
+	editorModals,
 	events = require('events'),
 	classie = require('classie'),
 	util = require('util');
@@ -34,6 +36,79 @@ require('../../node_modules/codemirror/mode/htmlembedded/htmlembedded');
 require('../../node_modules/codemirror/mode/htmlmixed/htmlmixed');
 require('../../node_modules/codemirror/mode/javascript/javascript');
 
+var saveSelection = function () {
+	if (window.getSelection) {
+		var sel = window.getSelection();
+		if (sel.getRangeAt && sel.rangeCount) {
+			return sel.getRangeAt(0);
+		}
+	}
+	else if (document.selection && document.selection.createRange) {
+		return document.selection.createRange();
+	}
+	return null;
+};
+
+var restoreSelection = function (range) {
+	if (range) {
+		if (window.getSelection) {
+			var sel = window.getSelection();
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}
+		else if (document.selection && range.select) {
+			range.select();
+		}
+	}
+};
+
+var getInsertTextModal = function (orignialid, mtype) {
+	var returnDiv = document.createElement('div'),
+		modaltype = (mtype === 'image') ? 'image' : 'text',
+		// execcmd = (mtype === 'image') ? 'insertImage' : 'createLink',
+		samplelink = (mtype === 'image') ? 'https://developers.google.com/+/images/branding/g+138.png' : 'http://example.com',
+		linktype = (mtype === 'image') ? 'image' : 'link';
+	returnDiv.setAttribute('id', orignialid + '-insert' + modaltype + '-modal');
+	returnDiv.setAttribute('data-name', orignialid + '-insert' + modaltype + '-modal');
+	returnDiv.setAttribute('class', 'ts-modal ts-modal-effect-1 insert' + modaltype + '-modal');
+	var divInnerHTML = '<section class="ts-modal-content ts-bg-text-primary-color  ts-no-heading-margin ts-padding-lg ts-shadow ">';
+	divInnerHTML += '<div class="ts-form">';
+	divInnerHTML += '<div class="ts-row">';
+	divInnerHTML += '<div class="ts-col-span12">';
+	divInnerHTML += '<h6>Insert a link</h6>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '</div>';
+	// divInnerHTML += '<div class="ts-row">';
+	// divInnerHTML += '<div class="ts-col-span4">';
+	// divInnerHTML += '<label class="ts-label">text</label>';
+	// divInnerHTML += '</div>';
+	// divInnerHTML += '<div class="ts-col-span8">';
+	// divInnerHTML += '<input type="text" name="link_url" placeholder="some web link" value="some web link"/>';
+	// divInnerHTML += '</div>';
+	// divInnerHTML += '</div>';
+	divInnerHTML += '<div class="ts-row">';
+	divInnerHTML += '<div class="ts-col-span4">';
+	divInnerHTML += '<label class="ts-label">url</label>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '<div class="ts-col-span8">';
+	divInnerHTML += '<input type="text" class="ts-input ts-' + linktype + '_url" name="' + linktype + '_url" placeholder="' + samplelink + '" value="' + samplelink + '"/>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '<div class="ts-row ts-text-center">';
+	divInnerHTML += '<div class="ts-col-span6">';
+	// divInnerHTML += '<button type="button" class="ts-button ts-modal-close ts-button-primary-color" onclick="document.execCommand(\'insertImage\', false, \'http://lorempixel.com/40/20/sports/\');">insert link</button>';
+	divInnerHTML += '<button type="button" class="ts-button ts-modal-close ts-button-primary-color add-' + linktype + '-button" >insert ' + linktype + '</button>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '<div class="ts-col-span6">';
+	divInnerHTML += '<a class="ts-button ts-modal-close">close</a>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '</div>';
+	divInnerHTML += '</section>';
+	returnDiv.innerHTML = divInnerHTML;
+
+	return returnDiv;
+};
 
 /**
  * A module that represents a StylieTextEditor object, a componentTab is a page composition tool.
@@ -139,7 +214,26 @@ var button_golist = function () {
 var button_gobullet = function () {
 	document.execCommand('insertUnorderedList', true, '');
 };
+var button_goimg = function () {
+	// document.execCommand('insertImage', false, 'http://lorempixel.com/40/20/sports/');
+	this.saveSelection();
+	window.editorModals.show(this.options.elementContainer.getAttribute('data-original-id') + '-insertimage-modal');
+};
+var button_gotextlink = function () {
+	// console.log(this.options.elementContainer.getAttribute('data-original-id'));
+	this.saveSelection();
+	window.editorModals.show(this.options.elementContainer.getAttribute('data-original-id') + '-inserttext-modal');
+};
 
+var add_link_to_editor = function () {
+	this.restoreSelection();
+	document.execCommand('createLink', false, this.options.forms.add_link_form.querySelector('.ts-link_url').value);
+};
+
+var add_image_to_editor = function () {
+	this.restoreSelection();
+	document.execCommand('insertImage', false, this.options.forms.add_image_form.querySelector('.ts-image_url').value);
+};
 
 
 var button_gofullscreen = function () {
@@ -162,16 +256,25 @@ StylieTextEditor.prototype.initButtonEvents = function () {
 	this.options.buttons.linkButton.addEventListener('click', button_golink, false);
 	this.options.buttons.unorderedLIButton.addEventListener('click', button_gobullet, false);
 	this.options.buttons.orderedLIButton.addEventListener('click', button_golist, false);
+	this.options.buttons.imageButton.addEventListener('click', button_goimg.bind(this), false);
+	this.options.buttons.linkButton.addEventListener('click', button_gotextlink.bind(this), false);
 
 
 	this.options.buttons.fullscreenButton.addEventListener('click', button_gofullscreen.bind(this), false);
 	this.options.buttons.codeButton.addEventListener('click', button_togglecodeeditor.bind(this), false);
+
+	this.options.buttons.addlinkbutton.addEventListener('click', add_link_to_editor.bind(this), false);
+	this.options.buttons.addimagebutton.addEventListener('click', add_image_to_editor.bind(this), false);
+
+
 };
 
 StylieTextEditor.prototype.init = function () {
 	try {
 		var previewEditibleDiv = document.createElement('div'),
 			previewEditibleMenu = document.createElement('div'),
+			insertImageURLModal = getInsertTextModal(this.options.element.getAttribute('id'), 'image'),
+			insertTextLinkModal = getInsertTextModal(this.options.element.getAttribute('id'), 'text'),
 			previewEditibleContainer = document.createElement('div');
 		this.options.buttons = {};
 		this.addMenuButtons();
@@ -191,12 +294,21 @@ StylieTextEditor.prototype.init = function () {
 		previewEditibleDiv.setAttribute('contenteditable', 'true');
 		previewEditibleDiv.setAttribute('tabindex', '1');
 		previewEditibleContainer.setAttribute('id', this.options.element.getAttribute('id') + '_container');
+		previewEditibleContainer.setAttribute('data-original-id', this.options.element.getAttribute('id'));
 		previewEditibleContainer.setAttribute('class', 'ts-editor-container');
 		previewEditibleContainer.appendChild(previewEditibleMenu);
 		previewEditibleContainer.appendChild(previewEditibleDiv);
+		document.querySelector('.ts-modal-hidden-container').appendChild(insertTextLinkModal);
+		document.querySelector('.ts-modal-hidden-container').appendChild(insertImageURLModal);
 		this.options.element = this.options.element || document.querySelector(this.options.elementSelector);
 		previewEditibleDiv.innerHTML = this.options.element.innerText;
 		this.options.previewElement = previewEditibleDiv;
+		this.options.forms = {
+			add_link_form: document.querySelector('.inserttext-modal .ts-form'),
+			add_image_form: document.querySelector('.insertimage-modal .ts-form')
+		};
+		this.options.buttons.addlinkbutton = document.querySelector('.inserttext-modal').querySelector('.add-link-button');
+		this.options.buttons.addimagebutton = document.querySelector('.insertimage-modal').querySelector('.add-image-button');
 		//now add code mirror
 
 		this.options.elementContainer = previewEditibleContainer;
@@ -253,6 +365,8 @@ StylieTextEditor.prototype.init = function () {
 
 
 		this.initButtonEvents();
+		editorModals = new StylieModals({});
+		window.editorModals = editorModals;
 		return this;
 	}
 	catch (e) {
@@ -262,6 +376,15 @@ StylieTextEditor.prototype.init = function () {
 
 StylieTextEditor.prototype.getValue = function () {
 	return this.options.previewElement.innerText || this.options.codemirror.getValue();
+};
+
+StylieTextEditor.prototype.saveSelection = function () {
+	this.options.selection = (saveSelection()) ? saveSelection() : null;
+};
+
+StylieTextEditor.prototype.restoreSelection = function () {
+	this.options.preview_selection = this.options.selection;
+	restoreSelection(this.options.selection);
 };
 
 module.exports = StylieTextEditor;

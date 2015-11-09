@@ -36,6 +36,17 @@
 }
 
 .ts{
+	.ts-texteditor{
+		// font-family: Arial,"Times New Roman"
+		h1,h2,h3,h4,h5,h6{
+			font-family: Arial,"Times New Roman"
+		}
+		.ts{
+			h1,h2,h3,h4,h5,h6{
+				font-family: Arial,"Times New Roman"
+			}
+		}
+	}
 	.ts-tabs-content{
 		&.ts-tab-border{
 			aside{
@@ -170,6 +181,7 @@
 		width: auto;
 		-webkit-transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
 		transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
+
 		&.ts-editor-fullscreen{
 			position: fixed;
 			height: 100%;

@@ -85,6 +85,7 @@ require('../../node_modules/codemirror/mode/htmlembedded/htmlembedded');
 require('../../node_modules/codemirror/mode/htmlmixed/htmlmixed');
 require('../../node_modules/codemirror/mode/javascript/javascript');
 
+window.StylieModals = StylieModals;
 // window.ajaxFormies = ajaxFormies;
 window.Formie = Formie;
 window.Bindie = Bindie;
