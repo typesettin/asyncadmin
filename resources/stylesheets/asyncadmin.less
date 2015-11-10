@@ -1,3 +1,4 @@
+@import (inline) "../../public/img/icons/adminui/flaticon.css"; 
 @import (inline) "../../public/stylesheets/animate.min.css"; 
 @import "../../../../public/stylesheets/default/periodic.less";
 @import "../../../../node_modules/stylie.modals/resources/stylesheets/stylie.modals.less";
@@ -167,6 +168,7 @@
     	}
 	    .ts-input.ts-texteditor{
 	    	font-size:80%;
+     		background: #fff;
 	    	h1,h2,h3,h4,h5,h6{
 	    		margin-top:@sizexs;
 	     	}
@@ -175,6 +177,16 @@
 	     	}
 	    }
     }
+	}
+	.ts-form{
+		.ts-form-row{
+	    .ts-input.ts-texteditor{
+     		background: #fff;
+	     	&:hover{
+	     		background: #fff;
+	     	}
+	    }
+		}
 	}
 	.ts-editor-container{
 		height: auto;
@@ -273,6 +285,11 @@
 			&.bottom-border{
 				border-bottom:1px solid black;
 			}
+		}
+		&[class^="flaticon-"]:before, &[class*=" flaticon-"]:before,
+		&[class^="flaticon-"]:after, &[class*=" flaticon-"]:after {   
+			font-size:16px;
+			margin-left: 0px;
 		}
 	}
 }

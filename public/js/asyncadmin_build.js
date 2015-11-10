@@ -32079,7 +32079,7 @@ var createButton = function (options) {
 	buttonElement.setAttribute('type', 'button');
 	buttonElement.innerHTML = options.innerHTML;
 	for (var key in options) {
-		if (key !== 'classes' || key !== 'innerHTML' || key !== 'innerhtml') {
+		if (key !== 'classes' && key !== 'innerHTML' && key !== 'innerhtml') {
 			buttonElement.setAttribute(key, options[key]);
 		}
 	}
@@ -32089,46 +32089,107 @@ var createButton = function (options) {
 
 StylieTextEditor.prototype.addMenuButtons = function () {
 	this.options.buttons.boldButton = createButton({
-		innerHTML: '<b>B</b>',
+		classes: ' flaticon-bold17 ',
+		title: 'Bold text',
+		innerHTML: ' ',
 		'data-attribute-action': 'bold'
 	});
 	this.options.buttons.italicButton = createButton({
-		innerHTML: '<em>I</em>',
+		classes: ' flaticon-italic9 ',
+		title: 'Italic text',
+		innerHTML: ' ',
 		'data-attribute-action': 'italic'
 	});
 	this.options.buttons.underlineButton = createButton({
-		innerHTML: '<u>U</u>',
+		classes: ' flaticon-underlined5 ',
+		title: 'Underline text',
+		innerHTML: ' ',
 		'data-attribute-action': 'underline'
 	});
 	this.options.buttons.unorderedLIButton = createButton({
-		innerHTML: 'bullet',
+		classes: ' flaticon-list82 ',
+		innerHTML: ' ',
+		title: ' Insert unordered list ',
 		'data-attribute-action': 'unorderedLI'
 	});
 	this.options.buttons.orderedLIButton = createButton({
-		innerHTML: 'list',
+		classes: ' flaticon-numbered8 ',
+		title: ' Insert ordered list ',
+		innerHTML: ' ',
 		'data-attribute-action': 'orderedLI'
 	});
-	this.options.buttons.textalignButton = createButton({
-		innerHTML: 'text align',
-		'data-attribute-action': 'textalign'
-	});
+	this.options.buttons.lefttextalignButton = createButton({
+		classes: ' flaticon-text141 ',
+		innerHTML: ' ',
+		title: ' left align text ',
+		'data-attribute-action': 'left-textalign'
+	}); //flaticon-text141
+	this.options.buttons.centertextalignButton = createButton({
+		classes: ' flaticon-text136 ',
+		innerHTML: ' ',
+		title: ' center align text ',
+		'data-attribute-action': 'center-textalign'
+	}); //flaticon-text136
+	this.options.buttons.righttextalignButton = createButton({
+		classes: ' flaticon-text134 ',
+		innerHTML: ' ',
+		title: ' right align text ',
+		'data-attribute-action': 'right-textalign'
+	}); //flaticon-text134
+	this.options.buttons.justifytextalignButton = createButton({
+		classes: ' flaticon-text146 ',
+		innerHTML: ' ',
+		title: ' justify align text ',
+		'data-attribute-action': 'justify-textalign'
+	}); //flaticon-text146
+	//flaticon-characters - font
+	this.options.buttons.textcolorButton = createButton({
+		classes: ' flaticon-text137 ',
+		innerHTML: ' ',
+		title: ' change text color ',
+		'data-attribute-action': 'text-color'
+	}); //flaticon-text137 - text color
+	this.options.buttons.texthighlightButton = createButton({
+		classes: ' flaticon-paintbrush13 ',
+		innerHTML: ' ',
+		title: ' change text highlight ',
+		'data-attribute-action': 'text-highlight'
+	}); //flaticon-paintbrush13 - text background color(highlight)
 	this.options.buttons.linkButton = createButton({
-		innerHTML: 'link',
+		classes: ' flaticon-link56 ',
+		title: ' Insert a link ',
+		innerHTML: ' ',
 		'data-attribute-action': 'link'
 	});
 	this.options.buttons.imageButton = createButton({
-		innerHTML: 'img',
+		classes: ' flaticon-images25 ',
+		title: ' Insert image ',
+		innerHTML: ' ',
 		'data-attribute-action': 'image'
 	});
 	this.options.buttons.codeButton = createButton({
-		innerHTML: '&lt;/&gt;',
+		innerHTML: ' ',
+		classes: ' flaticon-code39 ',
 		title: 'Source code editor',
 		'data-attribute-action': 'code'
 	});
 	this.options.buttons.fullscreenButton = createButton({
-		innerHTML: '+',
 		title: 'Maximize and fullscreen editor',
+		classes: ' flaticon-logout18 ',
+		innerHTML: ' ',
 		'data-attribute-action': 'fullscreen'
+	});
+	this.options.buttons.outdentButton = createButton({
+		title: 'Outdent button',
+		classes: ' flaticon-paragraph19 ',
+		innerHTML: ' ',
+		'data-attribute-action': 'outdent'
+	});
+	this.options.buttons.indentButton = createButton({
+		title: 'Indent button',
+		classes: ' flaticon-right195 ',
+		innerHTML: ' ',
+		'data-attribute-action': 'indent'
 	});
 };
 
@@ -32160,29 +32221,45 @@ var button_gotextlink = function () {
 	this.saveSelection();
 	window.editorModals.show(this.options.elementContainer.getAttribute('data-original-id') + '-inserttext-modal');
 };
-
 var add_link_to_editor = function () {
 	this.restoreSelection();
 	document.execCommand('createLink', false, this.options.forms.add_link_form.querySelector('.ts-link_url').value);
 };
-
 var add_image_to_editor = function () {
 	this.restoreSelection();
 	document.execCommand('insertImage', false, this.options.forms.add_image_form.querySelector('.ts-image_url').value);
 };
-
-
 var button_gofullscreen = function () {
 	// console.log('button_gofullscreen this', this);
 	// if()
 	classie.toggle(this.options.elementContainer, 'ts-editor-fullscreen');
 	classie.toggle(this.options.buttons.fullscreenButton, 'ts-button-primary-text-color');
 };
-
 var button_togglecodeeditor = function () {
 	classie.toggle(this.options.codemirror.getWrapperElement(), 'ts-hidden');
 	classie.toggle(this.options.buttons.codeButton, 'ts-button-primary-text-color');
 	this.options.codemirror.refresh();
+};
+var button_gotext_left = function () {
+	document.execCommand('justifyLeft', true, '');
+};
+var button_gotext_center = function () {
+	document.execCommand('justifyCenter', true, '');
+};
+var button_gotext_right = function () {
+	document.execCommand('justifyRight', true, '');
+};
+var button_gotext_justifyfull = function () {
+	document.execCommand('justifyFull', true, '');
+};
+// var button_gotext_left = function () {
+// 	document.execCommand('justifyLeft', true, '');
+// };
+var button_go_outdent = function () {
+	document.execCommand('outdent', true, '');
+};
+var button_go_indent = function () {
+	document.execCommand('indent', true, '');
 };
 
 StylieTextEditor.prototype.initButtonEvents = function () {
@@ -32195,14 +32272,19 @@ StylieTextEditor.prototype.initButtonEvents = function () {
 	this.options.buttons.imageButton.addEventListener('click', button_goimg.bind(this), false);
 	this.options.buttons.linkButton.addEventListener('click', button_gotextlink.bind(this), false);
 
+	this.options.buttons.lefttextalignButton.addEventListener('click', button_gotext_left, false);
+	this.options.buttons.centertextalignButton.addEventListener('click', button_gotext_center, false);
+	this.options.buttons.righttextalignButton.addEventListener('click', button_gotext_right, false);
+	this.options.buttons.justifytextalignButton.addEventListener('click', button_gotext_justifyfull, false);
+
+	this.options.buttons.outdentButton.addEventListener('click', button_go_outdent, false);
+	this.options.buttons.indentButton.addEventListener('click', button_go_indent, false);
 
 	this.options.buttons.fullscreenButton.addEventListener('click', button_gofullscreen.bind(this), false);
 	this.options.buttons.codeButton.addEventListener('click', button_togglecodeeditor.bind(this), false);
 
 	this.options.buttons.addlinkbutton.addEventListener('click', add_link_to_editor.bind(this), false);
 	this.options.buttons.addimagebutton.addEventListener('click', add_image_to_editor.bind(this), false);
-
-
 };
 
 StylieTextEditor.prototype.init = function () {
@@ -32219,7 +32301,14 @@ StylieTextEditor.prototype.init = function () {
 		previewEditibleMenu.appendChild(this.options.buttons.underlineButton);
 		previewEditibleMenu.appendChild(this.options.buttons.unorderedLIButton);
 		previewEditibleMenu.appendChild(this.options.buttons.orderedLIButton);
-		previewEditibleMenu.appendChild(this.options.buttons.textalignButton);
+		previewEditibleMenu.appendChild(this.options.buttons.lefttextalignButton);
+		previewEditibleMenu.appendChild(this.options.buttons.centertextalignButton);
+		previewEditibleMenu.appendChild(this.options.buttons.righttextalignButton);
+		previewEditibleMenu.appendChild(this.options.buttons.justifytextalignButton);
+		// previewEditibleMenu.appendChild(this.options.buttons.textcolorButton);
+		// previewEditibleMenu.appendChild(this.options.buttons.texthighlightButton);
+		previewEditibleMenu.appendChild(this.options.buttons.outdentButton);
+		previewEditibleMenu.appendChild(this.options.buttons.indentButton);
 		previewEditibleMenu.appendChild(this.options.buttons.linkButton);
 		previewEditibleMenu.appendChild(this.options.buttons.imageButton);
 		previewEditibleMenu.appendChild(this.options.buttons.codeButton);
@@ -32282,7 +32371,7 @@ StylieTextEditor.prototype.init = function () {
 		if (this.options.updateOnChange) {
 			this.options.codemirror.on('change', function (instance) {
 				// console.log('editor lost focuss', instance, change);
-				console.log('document.activeElement === this.options.previewElement', document.activeElement === this.options.previewElement);
+				// console.log('document.activeElement === this.options.previewElement', document.activeElement === this.options.previewElement);
 				setTimeout(function () {
 					if (document.activeElement !== this.options.previewElement) {
 						this.options.previewElement.innerHTML = instance.getValue();
