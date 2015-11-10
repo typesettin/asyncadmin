@@ -38,7 +38,7 @@
 
 .ts{
 	.ts-texteditor{
-		// font-family: Arial,"Times New Roman"
+		font-family: Arial,"Times New Roman";
 		h1,h2,h3,h4,h5,h6{
 			font-family: Arial,"Times New Roman"
 		}
@@ -197,6 +197,13 @@
 		-webkit-transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
 		transition: opacity 0.3s, width 0.1s 0.2s, height 0.1s 0.2s;
 
+		.ts-editor-menu{
+			.ts-button{
+				margin-right: @sizesm;
+				margin-left: @sizesm;
+			}
+		}
+
 		&.ts-editor-fullscreen{
 			position: fixed;
 			height: 100%;
@@ -210,6 +217,7 @@
 			.ts-editor-menu{
 				position: fixed;
 				width: 100%;
+
 			}
 			.ts-texteditor{
 				margin-top: @sizexl;
@@ -291,7 +299,7 @@
 		}
 		&[class^="flaticon-"]:before, &[class*=" flaticon-"]:before,
 		&[class^="flaticon-"]:after, &[class*=" flaticon-"]:after {   
-			font-size:16px;
+			font-size:14px;
 			margin-left: 0px;
 		}
 	}
