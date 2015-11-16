@@ -1,7 +1,7 @@
 {
   "name": "periodicjs.ext.asyncadmin",
   "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
-  "version": "6.0.10",
+  "version": "6.0.11",
   "main": "index.js",
   "engines": {
     "node": ">=0.12.x"
@@ -78,9 +78,9 @@
   ],
   "directories": {},
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@5.9.97",
-  "_shasum": "abf9128f8f88769d35140b1eadd36fc8cdb1452c",
-  "_from": "periodicjs.ext.asyncadmin@5.9.97",
+  "_id": "periodicjs.ext.asyncadmin@6.0.10",
+  "_shasum": "ebdf5cee2fc5eeb668d8fe2fa492be8a82b874c2",
+  "_from": "periodicjs.ext.asyncadmin@6.0.10",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.6",
   "_npmUser": {
@@ -88,8 +88,9 @@
     "email": "yaw.etse@gmail.com"
   },
   "dist": {
-    "shasum": "abf9128f8f88769d35140b1eadd36fc8cdb1452c",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.97.tgz"
+    "shasum": "ebdf5cee2fc5eeb668d8fe2fa492be8a82b874c2",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.0.10.tgz"
   },
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-5.9.97.tgz"
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.0.10.tgz",
+  "readme": "ERROR: No README data found!"
 }

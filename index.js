@@ -42,14 +42,27 @@ module.exports = function (periodic) {
 				periodic.app.locals.themeasyncadmin = themeinfo['periodicjs.ext.asyncadmin'];
 			}
 		}
-		extJson = fs.readJsonSync(path.join(__dirname, '/package.json'));
+	}
+	catch (e) {
+		console.log(new errorie({
+			name: 'Async Admin',
+			message: 'Config error - ' + e.message
+		}));
+	}
+
+	try {
+		console.log('__dirname',__dirname);
+		extJson = fs.readJsonSync(path.join(__dirname, 'package.json'), {
+				throws: false
+			});
+		console.log('extJson',extJson);
 		periodic.app.locals.asyncadminextJson = extJson;
 	}
 	catch (e) {
-		throw new errorie({
-			name: 'Async Admin',
+		console.log(new errorie({
+			name: 'Async Admin extJson',
 			message: 'Config error - ' + e.message
-		});
+		}));
 	}
 
 	periodic.app.locals.default_responsive_collapse = data_tables.default_responsive_collapse;
