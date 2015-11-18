@@ -160,6 +160,7 @@ module.exports = function (periodic) {
 		// adminController.checkUserValidation,
 		userController.loadUser,
 		adminController.fixCodeMirrorSubmit,
+		adminController.removePasswordFromAdvancedSubmit,
 		userController.update);
 
 

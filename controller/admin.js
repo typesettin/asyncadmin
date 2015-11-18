@@ -63,7 +63,13 @@ var fixCodeMirrorSubmit = function (req, res, next) {
 		}
 		delete req.body._id;
 		delete req.body.__v;
+		delete req.body.format;
 	}
+	next();
+};
+
+var removePasswordFromAdvancedSubmit = function (req, res, next) {
+	req.skippassword = true;
 	next();
 };
 
@@ -314,6 +320,7 @@ var controller = function (resources) {
 	return {
 		admin_index: admin_index,
 		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
+		removePasswordFromAdvancedSubmit: removePasswordFromAdvancedSubmit,
 		settings_index: settings_index,
 		settings_faq: settings_faq,
 		getMarkdownReleases: getMarkdownReleases,
