@@ -1,16 +1,46 @@
 <% include ../../shared/header %>
 <% genericdoctypename = "user" %>
 <div class="ts-container">
-	<section class="ts-text-container ts-genericdoc">
-		<% include ../../shared/_html_inject_precontent %>
-		<script type="text/javascript">
-		<%- locals.viewhelper.passObjToClient(userprofile.userroles,"userprofileuseroles") %>
-		</script>
-		<form class="ts-form async-admin-ajax-forms" id="edit-user-form" name="edit-user-form" method="post" action="/<%- locals.adminPath %>/user/edit"  onsubmit="return false;" enctype='multipart/form-data' 
-data-successsubmitfunction="refresh_content_attributes_media">
-			<% include _compose_user_form %>
-		</form>
-		<% include ../../shared/_html_inject_postcontent %>
-	</section>
+  <div class="ts-text-container ts-genericdoc">
+
+    <div class="ts-row">
+      <div class="ts-col-span12">
+        <div id="refresh-tabs" class="ts-tabs">
+          <nav>
+            <ul class="ts-col-span12 ts-text-center">
+              <li class="ts-col-span3 ts-no-margin">Basic</li>
+              <li class="ts-col-span3 ts-no-margin">Advanced</li>
+            </ul>
+          </nav>
+          <div class="ts-tabs-content">
+            <section class="ts-no-padding">
+              <% genericdoc = user %>
+              <% genericdocid = user._id %>
+              <% genericdoctype = "User" %>
+              <% genericdoctypename = "user" %>
+              <% genericdoctypelink = "user" %>
+              <% genericdoctypeplurallink = "users" %>
+              <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/user/edit" enctype="multipart/form-data" 
+          data-successsubmitfunction="refresh_content_attributes_media">
+								<% include _compose_user_form %>
+              </form>
+            </section>
+            <section class="ts-no-padding">
+              <% include ../../shared/genericdoc_show_doc %>
+            </section>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+
+
+
+
+
+	</div>
 </div>
 <% include ../../shared/footer %>

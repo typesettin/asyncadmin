@@ -190,6 +190,16 @@ var initCodemirrors = function () {
 				readOnly: (codeMirrorJSEditorsElements[cm].getAttribute('readonly')) ? 'nocursor' : false
 			}
 		);
+
+
+	}
+
+	if (window.StylieTab && window.StylieTab['refresh-tabs']) {
+		window.StylieTab['refresh-tabs'].on('tabsShowIndex', function ( /*idex*/ ) {
+			if (window.codeMirrors && window.codeMirrors['genericdoc-codemirror']) {
+				window.codeMirrors['genericdoc-codemirror'].refresh();
+			}
+		});
 	}
 	// window.CodeMirror = CodeMirror;
 	window.codeMirrors = codeMirrors;
@@ -354,8 +364,8 @@ var defaultAjaxFormie = function (formElement) {
 			}
 		},
 		errorcallback: function (error, response) {
-			// console.log('error', error);
-			// console.log('response.response', response.response);
+			console.log('error', error);
+			console.log('response.response', response.response);
 
 			try {
 				var errormessage, jsonmessage;
@@ -363,17 +373,19 @@ var defaultAjaxFormie = function (formElement) {
 					errormessage = response.body.error.message;
 				}
 				else if (response.body && response.body.result && response.body.result === 'error') {
+					console.log('response.body', response.body);
 					errormessage = response.body.data.error.message || response.body.data.error;
 				}
 				else {
 					jsonmessage = JSON.parse(response.response);
-					errormessage = jsonmessage;
+					errormessage = (jsonmessage && jsonmessage.data) ? jsonmessage.data.error : JSON.stringify(jsonmessage);
 				}
 				window.showErrorNotificaton({
 					message: errormessage
 				});
 			}
 			catch (e) {
+				console.log('e', e);
 				if (error.message) {
 					window.showErrorNotificaton({
 						message: error.message

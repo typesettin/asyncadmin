@@ -17,7 +17,7 @@
 					var jsontablehtml,
 					labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
 					jsontablehtml = '<td width="15%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.entitytype) + '" class="async-admin-ajax-link">' + obj.entitytype + '</a></td>'; 
-					jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.createdat).fromNow() + '</td>';
+					jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.updatedat).fromNow() + '</td>';
 					jsontablehtml += '<td width="60%"><a href="/p-admin/content/' + obj.entitytype + '/' + obj._id + '/" class="async-admin-ajax-link">' + labeltouse + '</a></td>';
 					return jsontablehtml;
 				}

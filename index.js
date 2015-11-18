@@ -51,11 +51,11 @@ module.exports = function (periodic) {
 	}
 
 	try {
-		console.log('__dirname',__dirname);
+		// console.log('__dirname',__dirname);
 		extJson = fs.readJsonSync(path.join(__dirname, 'package.json'), {
-				throws: false
-			});
-		console.log('extJson',extJson);
+			throws: false
+		});
+		// console.log('extJson',extJson);
 		periodic.app.locals.asyncadminextJson = extJson;
 	}
 	catch (e) {
@@ -144,10 +144,24 @@ module.exports = function (periodic) {
 	userAdminRouter.post('/edit',
 		assetController.multiupload,
 		assetController.create_assets_from_files,
+		// periodic.core.controller.save_revision,
 		adminController.checkUserValidation,
+		// userController.loadUser,
 		userController.update);
 	userAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, userController.create);
 	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
+	adminRouter.post('/users/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
+
+
+	adminRouter.post('/content/user/:id/edit',
+		assetController.multiupload,
+		assetController.create_assets_from_files,
+		periodic.core.controller.save_revision,
+		// adminController.checkUserValidation,
+		userController.loadUser,
+		adminController.fixCodeMirrorSubmit,
+		userController.update);
+
 
 	//user roles
 	adminRouter.get('/userroles',

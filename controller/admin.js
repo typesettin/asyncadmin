@@ -21,6 +21,8 @@ var async = require('async'),
 	adminExtSettings,
 	loginSettings;
 
+
+
 var admin_index = function (req, res) {
 	// console.log('req._parsedUrl.pathname === \'/\'',)
 	// console.log('adminExtSettings',adminExtSettings);
@@ -48,13 +50,20 @@ var admin_index = function (req, res) {
 };
 
 var fixCodeMirrorSubmit = function (req, res, next) {
-	req.controllerData = req.controllerData || {};
-	req.controllerData.encryptFields = true;
-	var jsonbody = JSON.parse(req.body.genericdocjson);
-	delete req.body.genericdocjson;
-	req.body = merge(req.body, jsonbody);
-	delete req.body._id;
-	delete req.body.__v;
+	// console.log('fixCodeMirrorSubmit req.body',req.body)
+	if (req.body.genericdocjson) {
+
+		req.controllerData = req.controllerData || {};
+		req.controllerData.encryptFields = true;
+		var jsonbody = JSON.parse(req.body.genericdocjson);
+		delete req.body.genericdocjson;
+		req.body = merge(req.body, jsonbody);
+		if (!req.body.docid) {
+			req.body.docid = req.body._id;
+		}
+		delete req.body._id;
+		delete req.body.__v;
+	}
 	next();
 };
 
@@ -116,14 +125,14 @@ var getHomepageStats = function (req, res, next) {
 			async.each(Object.keys(mongoose.models),
 				function (DBModel, asyncEachCB) {
 					mongoose.model(DBModel).find({}).limit(5).sort({
-						createdat: 'desc'
+						updatedat: 'desc'
 					}).exec(function (err, data_feed_results) {
 						if (err) {
 							asyncEachCB(err);
 						}
 						else {
 							data_feed_results.forEach(function (data_result) {
-								if (data_result.createdat) {
+								if (data_result.updatedat) {
 									databaseFeedData.push(data_result);
 								}
 							});
@@ -133,7 +142,7 @@ var getHomepageStats = function (req, res, next) {
 					});
 				},
 				function (err) {
-					databaseFeedData = databaseFeedData.sort(CoreUtilities.sortObject('desc', 'createdat'));
+					databaseFeedData = databaseFeedData.sort(CoreUtilities.sortObject('desc', 'updatedat'));
 					cb(err, databaseFeedData);
 				});
 		},
