@@ -287,6 +287,13 @@ var settings_faq = function (req, res) {
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
+var skip_population = function(req,res,next){
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.controllerData.skip_population=true;
+	console.log('skipping population')
+	next();
+};
+
 /**
  * admin controller
  * @module authController
@@ -318,11 +325,13 @@ var controller = function (resources) {
 	loginSettings = resources.app.controller.extension.login.loginExtSettings;
 
 	return {
+		depopulate: CoreController.depopulate,
 		admin_index: admin_index,
 		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
 		removePasswordFromAdvancedSubmit: removePasswordFromAdvancedSubmit,
 		settings_index: settings_index,
 		settings_faq: settings_faq,
+		skip_population: skip_population,
 		getMarkdownReleases: getMarkdownReleases,
 		getHomepageStats: getHomepageStats,
 		adminExtSettings: adminExtSettings,

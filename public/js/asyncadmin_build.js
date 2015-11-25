@@ -30428,14 +30428,34 @@ var defaultTab = function (tabElement) {
 
 var initTabs = function () {
 	var stylieTab;
-	var stylietabs = document.querySelectorAll('.ts-tabs');
+	var stylietabs = document.querySelectorAll('.ts-tabs'),
+		tabMap;
 	//console.log('stylietabs', stylietabs);
 	try {
+		var handleSettingsTabChange = function (currentTab) {
+			// console.log('currentTab', currentTab);
+			window.location.hash = tabMap[currentTab];
+		};
+
 		if (stylietabs && stylietabs.length > 0) {
 			for (var x = 0; x < stylietabs.length; x++) {
 				stylieTab = stylietabs[x];
 				//stylieTabies[stylieTab.getAttribute('name')] = 
 				StylieTab[stylieTab.id] = defaultTab(stylieTab);
+			}
+		}
+		if (StylieTab['refresh-tabs']) {
+			tabMap = {
+				'0': 'basic',
+				'1': 'advanced'
+			};
+			StylieTab['refresh-tabs'].on('tabsShowIndex', handleSettingsTabChange);
+			if (window.location.hash) {
+				for (var y in tabMap) {
+					if (window.location.hash.replace('#', '') === tabMap[y]) {
+						StylieTab['refresh-tabs'].showTab(y);
+					}
+				}
 			}
 		}
 		window.StylieTab = StylieTab;

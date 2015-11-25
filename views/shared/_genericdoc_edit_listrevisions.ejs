@@ -1,0 +1,39 @@
+<details class="ts-text-sm" 
+		<%if(genericdoc && genericdoc.changes && genericdoc.changes.length>1){%>open<%}%> >
+	<summary>Track Changes</summary>
+	<aside>
+		<%if(genericdoc && genericdoc.changes && genericdoc.changes.length>0){
+			genericdoc.changes.reverse();
+			%>
+			
+			<div id="content_revision_track_changes" class="ts-row">
+				<%
+				genericdoc.changes.forEach(function(changeset,index){
+					if(index<5){
+						var changedprops=[],
+							changesetdata = changeset.changeset;
+						for(var prop in changesetdata){
+							changedprops.push(prop);
+						}
+						%>
+					<div class="changeset ts-row">
+						<div class="ts-col-span12">
+							<small class="ts-text-sm">
+								<a href="/<%- locals.adminPath %>/user/<%- changeset.editor_username %>/edit"><%- changeset.editor_username %></a> changed:  
+								<%- JSON.stringify(changedprops, null, 1) %>
+						 	</small>
+						 	<br>
+							<small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeset.createdat).fromNow()   %></small>
+						</div>
+					</div>
+					<hr>
+					<%}
+
+				}); %>
+				<div class="ts-row ts-text-center"><small><a href="/<%- locals.adminPath %>/content/<%- genericdoctypename %>/<%- genericdoc._id %>/revisions">Revert changes</a></small></div>
+
+			</div>
+			<%}
+			else{%> <h3>No Changes</h3> <%}%>
+	</aside>
+</details>

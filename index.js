@@ -5,6 +5,7 @@ var path = require('path'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
+	diff = require('diff'),
 	prettysize = require('prettysize'),
 	stylietreeview = require('stylie.treeview'),
 	data_tables = require('./controller/data_tables'),
@@ -71,6 +72,8 @@ module.exports = function (periodic) {
 	periodic.app.locals.default_custom_tfoot = data_tables.default_custom_tfoot;
 	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
 	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.diff = diff;
+	periodic.app.locals.extend = extend;
 	periodic.app.locals.prettysize = prettysize;
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
@@ -107,6 +110,9 @@ module.exports = function (periodic) {
 		userAdminController = periodic.app.controller.extension.asyncadmin.user,
 		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles,
 		mailController = periodic.app.controller.extension.mailer.mailer;
+
+	periodic.app.locals.depopulate = adminController.depopulate;
+
 
 	/**
 	 * access control routes

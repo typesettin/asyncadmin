@@ -1,0 +1,41 @@
+<% 
+  var get_original_object = function(){
+    var ori={};
+    ori = genericdoc.toJSON();
+    ori.changes = undefined;
+    return ori;
+  };
+  var current_document = get_original_object();
+%>
+<div class="ts-page-content-container">  
+  <input type="hidden" name="_csrf" value=<%- locals.token %> >
+
+  <% genericdoc.changes.forEach(function(changeObj,i){%>
+  <details class="ts-genericdoc" <%if(i===0){%> open="open" <%}%>  onclick="setTimeout(function(){codeMirrors['genericdoc-codemirror-original-<%- i %>'].refresh();codeMirrors['genericdoc-codemirror-revision-<%- i %>'].refresh();},200)" >
+    <summary class="ts-row ts-form-row"><%- (genericdoc.changes.length - i) %>. 
+      <a href="/<%- locals.adminPath %>/user/<%- changeObj.editor_username %>/edit"><%- changeObj.editor_username %></a> 
+      changed: <%- JSON.stringify(Object.keys(changeObj.changeset), null, 1) %>
+      <small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeObj.createdat).fromNow()   %></small>
+    </summary>
+    <aside class="ts-text-sm">
+      <div class="ts-row">
+        <div class="ts-col-span6 ts-padding-md ts-no-heading-margin">
+          <div class="">
+            <h6>Original</h6>
+            <textarea  id="genericdoc-codemirror-original-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;" readonly="readonly"><%- JSON.stringify(current_document,null,4) %>
+            </textarea>
+          </div>
+        </div>
+        <div class="ts-col-span6 ts-padding-md ts-no-heading-margin">
+          <h6>Revision</h6>
+          <div style="overflow-y:scroll; height:100%;">
+              <textarea  id="genericdoc-codemirror-revision-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;" readonly="readonly"><%- JSON.stringify(locals.extend(current_document,changeObj.changeset),null,4) %>
+              </textarea>
+          </div>
+        </div>
+      </div>  
+    </aside>
+  </details>
+  <% }); %>
+</div>
+
