@@ -3,6 +3,8 @@
 var async = require('async'),
 	path = require('path'),
 	marked = require('marked'),
+	pluralize = require('pluralize'),
+	capitalize = require('capitalize'),
 	fs = require('fs-extra'),
 	merge = require('utils-merge'),
 	CoreExtension,
@@ -12,6 +14,7 @@ var async = require('async'),
 	appenvironment,
 	mongoose,
 	logger,
+	adminPath,
 	// configError,
 	Contenttype,
 	Collection,
@@ -290,8 +293,96 @@ var settings_faq = function (req, res) {
 var skip_population = function(req,res,next){
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	req.controllerData.skip_population=true;
-	console.log('skipping population')
 	next();
+};
+
+var revision_delete = function(req,res,next){
+	var entitytype = req.params.entitytype || req.query.entitytype || req.controllerData.entitytype || req.body.entitytype;
+	var revisionindex = req.params.revisionindex;
+	var updatedoc={docid:req.params.id};
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.controllerData.encryptFields = true;
+
+	if(typeof req.controllerData[entitytype].toJSON ==='function'){
+		updatedoc = merge(updatedoc,req.controllerData[entitytype].toJSON());
+	}
+	else if(typeof req.controllerData[entitytype].toObject ==='function'){
+		updatedoc = merge(updatedoc,req.controllerData[entitytype].toObject());
+	}	
+	else{
+		updatedoc = merge(updatedoc,req.controllerData[entitytype]);
+	}
+	updatedoc.docid = req.params.id;
+
+	delete updatedoc._id;
+	delete updatedoc.__v;
+	updatedoc.changes.splice(revisionindex,1);
+	req.saverevision = false;
+	req.body = updatedoc;
+	next();
+};
+
+var revision_revert = function(req,res,next){
+	var entitytype = req.params.entitytype || req.query.entitytype || req.controllerData.entitytype || req.body.entitytype;
+	var revisionindex = req.params.revisionindex;
+	var updatedoc={docid:req.params.id};
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.controllerData.encryptFields = true;
+
+	if(typeof req.controllerData[entitytype].toJSON ==='function'){
+		updatedoc = merge(updatedoc,req.controllerData[entitytype].toJSON());
+	}
+	else if(typeof req.controllerData[entitytype].toObject ==='function'){
+		updatedoc = merge(updatedoc,req.controllerData[entitytype].toObject());
+	}	
+	else{
+		updatedoc = merge(updatedoc,req.controllerData[entitytype]);
+	}
+	updatedoc.docid = req.params.id;
+
+	delete updatedoc._id;
+	delete updatedoc.__v;
+	updatedoc = merge(updatedoc, updatedoc.changes[revisionindex].changeset);
+	// req.saverevision = false;
+	req.body = updatedoc;
+	console.log('req.body ',req.body );
+	console.log('revisionindex ',revisionindex );
+	next();
+};
+
+var get_entity_modifications = function (entityname) {
+	var entity = entityname.toLowerCase(),
+		plural_entity = pluralize.plural(entity);
+	return {
+		name: entity, //item
+		plural_name: pluralize.plural(entity), //items
+		capitalized_name: capitalize(entity), //Item
+		capitalized_plural_name: capitalize(plural_entity) //Items
+	};
+};
+
+var get_revision_page = function(options){
+	var entity = get_entity_modifications(options.entity);
+
+	return function (req, res) {
+		var viewtemplate = {
+				viewname: 'p-admin/' + entity.plural_name + '/revisions',
+				themefileext: appSettings.templatefileextension
+			},
+
+			viewdata = merge(req.controllerData, {
+				pagedata: {
+					title: entity.capitalized_name + ' Revisions',
+					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + req.controllerData[entity.name].title+' &raquo; Revisions',
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				user: req.user
+			});
+		if(options.extname){
+			viewtemplate.extname = options.extname;
+		}
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	};
 };
 
 /**
@@ -323,9 +414,18 @@ var controller = function (resources) {
 	appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
 	loginSettings = resources.app.controller.extension.login.loginExtSettings;
+	adminPath = resources.app.locals.adminPath;
 
 	return {
+		get_entity_modifications: get_entity_modifications,
+		get_revision_page: get_revision_page,
+		user_revisions: get_revision_page({
+			entity: 'user',
+			extname : 'periodicjs.ext.asyncadmin'
+		}),
 		depopulate: CoreController.depopulate,
+		revision_delete: revision_delete,
+		revision_revert: revision_revert,
 		admin_index: admin_index,
 		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
 		removePasswordFromAdvancedSubmit: removePasswordFromAdvancedSubmit,

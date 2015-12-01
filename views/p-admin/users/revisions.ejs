@@ -1,0 +1,12 @@
+<% include ../../shared/header %>
+<div class="ts-container">
+  <% genericdoc = user %>
+  <% genericdocid = user._id %>
+  <% genericdoctype = "User" %>
+  <% genericdoctypename = "user" %>
+  <% genericdoctypelink = "user" %>
+  <% genericdoctypeplurallink = "users" %>
+
+  <% include ../../shared/genericdoc_show_revisions %>
+</div>
+<% include ../../shared/footer %>

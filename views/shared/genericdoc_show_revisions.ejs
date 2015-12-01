@@ -6,13 +6,19 @@
     return ori;
   };
   var current_document = get_original_object();
+  var title_to_use = genericdoc.title || genericdoc.name || genericdoc._id;
 %>
 <div class="ts-page-content-container">  
   <input type="hidden" name="_csrf" value=<%- locals.token %> >
-
+  <h3><a href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/edit"><span class="ts-text-accent-color"><%- title_to_use %></span></a> &raquo; Revisions</h3>
   <% genericdoc.changes.forEach(function(changeObj,i){%>
   <details class="ts-genericdoc" <%if(i===0){%> open="open" <%}%>  onclick="setTimeout(function(){codeMirrors['genericdoc-codemirror-original-<%- i %>'].refresh();codeMirrors['genericdoc-codemirror-revision-<%- i %>'].refresh();},200)" >
-    <summary class="ts-row ts-form-row"><%- (genericdoc.changes.length - i) %>. 
+    <summary class="ts-row ts-text-sm ts-form-row">
+    <div class="ts-float-right">
+      <a alt="revert revision" title="revert revision"  class="ts-button ts-text-xs  flaticon-return9  ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/revert?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>"></a> 
+      <a alt="delete revision" title="delete revision" class="ts-button ts-text-xs  flaticon-recycle69 ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/delete?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revisions" ></a>
+    </div>
+    <%- (genericdoc.changes.length - i) %>. 
       <a href="/<%- locals.adminPath %>/user/<%- changeObj.editor_username %>/edit"><%- changeObj.editor_username %></a> 
       changed: <%- JSON.stringify(Object.keys(changeObj.changeset), null, 1) %>
       <small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeObj.createdat).fromNow()   %></small>
@@ -21,15 +27,17 @@
       <div class="ts-row">
         <div class="ts-col-span6 ts-padding-md ts-no-heading-margin">
           <div class="">
+            <%   var current_document = get_original_object(); %>
             <h6>Original</h6>
             <textarea  id="genericdoc-codemirror-original-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;" readonly="readonly"><%- JSON.stringify(current_document,null,4) %>
             </textarea>
           </div>
         </div>
         <div class="ts-col-span6 ts-padding-md ts-no-heading-margin">
+          <% var rev_document = locals.extend(current_document,changeObj.changeset); %>
           <h6>Revision</h6>
           <div style="overflow-y:scroll; height:100%;">
-              <textarea  id="genericdoc-codemirror-revision-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;" readonly="readonly"><%- JSON.stringify(locals.extend(current_document,changeObj.changeset),null,4) %>
+              <textarea  id="genericdoc-codemirror-revision-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:60em;" readonly="readonly"><%- JSON.stringify(rev_document,null,4) %>
               </textarea>
           </div>
         </div>

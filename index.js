@@ -111,7 +111,7 @@ module.exports = function (periodic) {
 		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles,
 		mailController = periodic.app.controller.extension.mailer.mailer;
 
-	periodic.app.locals.depopulate = adminController.depopulate;
+	// periodic.app.locals.depopulate = adminController.depopulate;
 
 
 	/**
@@ -147,6 +147,8 @@ module.exports = function (periodic) {
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
 	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
+	adminRouter.get('/content/user/:id/edit', userController.loadUser, userAdminController.users_edit);
+	adminRouter.get('/content/user/:id', userController.loadUser, userAdminController.users_edit);
 	userAdminRouter.post('/edit',
 		assetController.multiupload,
 		assetController.create_assets_from_files,
@@ -168,6 +170,13 @@ module.exports = function (periodic) {
 		adminController.fixCodeMirrorSubmit,
 		adminController.removePasswordFromAdvancedSubmit,
 		userController.update);
+
+
+	adminRouter.get('/content/user/:id/revisions',adminController.skip_population, userController.loadUser, adminController.user_revisions);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/delete',adminController.skip_population, userController.loadUser, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit,  userController.update);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/revert',adminController.skip_population, userController.loadUser, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit,  userController.update);
+
+
 
 
 	//user roles
