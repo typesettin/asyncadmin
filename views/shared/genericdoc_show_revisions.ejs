@@ -1,7 +1,16 @@
 <% 
+var genericdocchanges = genericdoc.changes;
   var get_original_object = function(){
     var ori={};
-    ori = genericdoc.toJSON();
+    if(typeof genericdoc.toJSON ==='function'){
+      ori = genericdoc.toJSON();
+    }
+    else if(typeof genericdoc.toObject ==='function'){
+      ori = genericdoc.toObject();
+    } 
+    else{
+      ori = genericdoc;
+    }
     ori.changes = undefined;
     return ori;
   };
@@ -11,14 +20,16 @@
 <div class="ts-page-content-container">  
   <input type="hidden" name="_csrf" value=<%- locals.token %> >
   <h3><a href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/edit"><span class="ts-text-accent-color"><%- title_to_use %></span></a> &raquo; Revisions</h3>
-  <% genericdoc.changes.forEach(function(changeObj,i){%>
+  <% 
+
+  genericdocchanges.forEach(function(changeObj,i){%>
   <details class="ts-genericdoc" <%if(i===0){%> open="open" <%}%>  onclick="setTimeout(function(){codeMirrors['genericdoc-codemirror-original-<%- i %>'].refresh();codeMirrors['genericdoc-codemirror-revision-<%- i %>'].refresh();},200)" >
     <summary class="ts-row ts-text-sm ts-form-row">
     <div class="ts-float-right">
       <a alt="revert revision" title="revert revision"  class="ts-button ts-text-xs  flaticon-return9  ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/revert?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>"></a> 
       <a alt="delete revision" title="delete revision" class="ts-button ts-text-xs  flaticon-recycle69 ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/delete?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revisions" ></a>
     </div>
-    <%- (genericdoc.changes.length - i) %>. 
+    <%- (genericdocchanges.length - i) %>. 
       <a href="/<%- locals.adminPath %>/user/<%- changeObj.editor_username %>/edit"><%- changeObj.editor_username %></a> 
       changed: <%- JSON.stringify(Object.keys(changeObj.changeset), null, 1) %>
       <small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeObj.createdat).fromNow()   %></small>
