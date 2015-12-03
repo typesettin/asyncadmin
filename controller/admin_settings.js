@@ -852,7 +852,7 @@ var checkOutdatedModulesAndPeriodic = function(){
 			alerthtml +='<ul>';
 
 			sendSettingEmail({
-					req: {},
+					// req: {},
 					user: {username:'application-cron',email:appSettings.adminnotificationemail},
 					emaildata: {
 						user: {username:'application-cron',email:appSettings.adminnotificationemail},
