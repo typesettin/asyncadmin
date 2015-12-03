@@ -1,7 +1,7 @@
 {
   "name": "periodicjs.ext.asyncadmin",
   "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
-  "version": "6.0.31",
+  "version": "6.0.4",
   "main": "index.js",
   "engines": {
     "node": ">=0.12.x"
@@ -79,9 +79,9 @@
   ],
   "directories": {},
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@6.0.21",
-  "_shasum": "080835de0de56c19289929ea28b27dc86b94a984",
-  "_from": "periodicjs.ext.asyncadmin@6.0.21",
+  "_id": "periodicjs.ext.asyncadmin@6.0.31",
+  "_shasum": "b0baa543d0dca9bd98b9c95ee4cc2abb5f627e4e",
+  "_from": "periodicjs.ext.asyncadmin@6.0.31",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.6",
   "_npmUser": {

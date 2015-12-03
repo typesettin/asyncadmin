@@ -15,7 +15,7 @@ var genericdocchanges = genericdoc.changes;
     return ori;
   };
   var current_document = get_original_object();
-  var title_to_use = genericdoc.title || genericdoc.name || genericdoc._id;
+  var title_to_use = pagedata.pagetitle || genericdoc.title || genericdoc.name || genericdoc._id;
 %>
 <div class="ts-page-content-container">  
   <input type="hidden" name="_csrf" value=<%- locals.token %> >
@@ -23,19 +23,28 @@ var genericdocchanges = genericdoc.changes;
   <% 
 
   genericdocchanges.forEach(function(changeObj,i){%>
-  <details class="ts-genericdoc" <%if(i===0){%> open="open" <%}%>  onclick="setTimeout(function(){codeMirrors['genericdoc-codemirror-original-<%- i %>'].refresh();codeMirrors['genericdoc-codemirror-revision-<%- i %>'].refresh();},200)" >
+  <details class="ts-genericdoc" <%if(i===0){%> open="open" <%}%>  onclick="setTimeout(function(){codeMirrors['genericdoc-codemirror-original-<%- i %>'].refresh(); codeMirrors['genericdoc-codemirror-revision-<%- i %>'].refresh(); codeMirrors['genericdoc-codemirror-changeset-<%- i %>'].refresh(); },200)" >
+    
+  <% if(changeObj.changeset){%>
     <summary class="ts-row ts-text-sm ts-form-row">
-    <div class="ts-float-right">
-      <a alt="revert revision" title="revert revision"  class="ts-button ts-text-xs  flaticon-return9  ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/revert?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>"></a> 
-      <a alt="delete revision" title="delete revision" class="ts-button ts-text-xs  flaticon-recycle69 ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/delete?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revisions" ></a>
-    </div>
-    <%- (genericdocchanges.length - i) %>. 
+      <div class="ts-float-right">
+        <a alt="revert revision" title="revert revision"  class="ts-button ts-text-xs  flaticon-return9  ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/revert?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>"></a> 
+        <a alt="delete revision" title="delete revision" class="ts-button ts-text-xs  flaticon-recycle69 ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/delete?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revisions" ></a>
+      </div>
+      <%- (genericdocchanges.length - i) %>. 
       <a href="/<%- locals.adminPath %>/user/<%- changeObj.editor_username %>/edit"><%- changeObj.editor_username %></a> 
       changed: <%- JSON.stringify(Object.keys(changeObj.changeset), null, 1) %>
       <small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeObj.createdat).fromNow()   %></small>
     </summary>
     <aside class="ts-text-sm">
       <div class="ts-row">
+        <div class="ts-col-span12 ts-padding-md ts-no-heading-margin">
+          <h6>Changeset</h6>
+          <div style="overflow-y:scroll; height:100%;">
+              <textarea  id="genericdoc-codemirror-changeset-<%- i %>" name="genericdocjson"  class="textarea-tall noFormSubmit codemirroreditor jsonEditor ts-col-span12" style="height:20em;" readonly="readonly"><%- JSON.stringify(changeObj.changeset,null,4) %>
+              </textarea>
+          </div>
+        </div>
         <div class="ts-col-span6 ts-padding-md ts-no-heading-margin">
           <div class="">
             <%   var current_document = get_original_object(); %>
@@ -54,6 +63,23 @@ var genericdocchanges = genericdoc.changes;
         </div>
       </div>  
     </aside>
+  <%}
+  else{%>
+    <summary class="ts-row ts-text-sm ts-form-row">
+      <div class="ts-float-right">
+        <a alt="revert revision" title="revert revision"  class="ts-button ts-text-xs  flaticon-return9  ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/revert?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>"></a> 
+        <a alt="delete revision" title="delete revision" class="ts-button ts-text-xs  flaticon-recycle69 ts-dialog-delete" data-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revision/<%- i %>/delete?entitytype=<%- genericdoctypelink %>" data-deleted-redirect-href="/<%- locals.adminPath %>/content/<%- genericdoctypelink %>/<%- genericdoc._id %>/revisions" ></a>
+      </div>
+      <%- (genericdocchanges.length - i) %>. 
+      <a href="/<%- locals.adminPath %>/user/<%- changeObj.editor_username %>/edit"><%- changeObj.editor_username %></a> 
+      changed: [INVALID CHANGESET]
+      <small class="ts-text-xs ts-text-secondary-text-color"><%-  new locals.viewhelper.moment(changeObj.createdat).fromNow()   %></small>
+    </summary>
+    <aside class="ts-text-sm">
+     <textarea  id="genericdoc-codemirror-revision-<%- i %>" name="genericdocjson"  class="textarea-tall ts-col-span12 ts-text-xs" style="height:15em; width:100%" readonly="readonly"><%- JSON.stringify(changeObj,null,4) %></textarea>
+    </aside>
+  <%}%>
+
   </details>
   <% }); %>
 </div>

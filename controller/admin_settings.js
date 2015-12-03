@@ -4,8 +4,12 @@ var path = require('path'),
 	// request = require('superagent'),
 	async = require('async'),
 	fs = require('fs-extra'),
+	npm = require('npm'),
+	semver = require('semver'),
 	str2json = require('string-to-json'),
 	merge = require('utils-merge'),
+	CronJob = require('cron').CronJob,
+	admin_ext_settings,
 	CoreUtilities,
 	CoreController,
 	CoreExtension,
@@ -17,7 +21,9 @@ var path = require('path'),
 	appenvironment,
 	logger,
 	restartfile = path.join(process.cwd(), '/content/config/restart.json'),
-	changedemailtemplate;
+	changedemailtemplate,
+	io = global.io;
+
 
 /**
  * send setting update email
@@ -741,6 +747,154 @@ var update_config_json_files = function (req, res) {
 		});
 };
 
+var send_setting_server_callback = function (options) {
+	try {
+		if (io.engine) {
+			io.sockets.emit('server_callback', {
+				functionName: options.functionName,
+				functionData: options.functionData
+			});
+		}
+	}
+	catch (e) {
+		logger.error('asyncadmin - send_server_callback e', e);
+	}
+};
+
+var checkOutdatedModulesAndPeriodic = function(){
+	var list_of_extensions;
+	var list_of_extensions_recent_data;
+	var list_of_extensions_current_data={};
+	var list_of_extensions_outdated_data={};
+	var asyncadmin_outdated_log_file_path = path.resolve(process.cwd(),'content/config/extensions/periodicjs.ext.asyncadmin/outdated_log.json'),
+		npmconfig ={
+			'strict-ssl': false,
+			'save-optional': true,
+			'silent': true,
+			'json': true,
+			'production': true
+		};
+		
+
+	async.series({
+		get_list_of_extensions:function(asyncCB){
+			list_of_extensions = appSettings.extconf.extensions.map(function(ext){return ext.name;});
+			list_of_extensions.push('periodicjs');
+			appSettings.extconf.extensions.forEach(function(ext){
+				var returnobj = {};
+				list_of_extensions_current_data[ext.name] = {name:ext.name,installed_version:ext.version};
+
+				return returnobj;
+			});
+			fs.readJSON(path.resolve(process.cwd(),'package.json'),function(err,jsondata){
+				list_of_extensions_current_data.periodicjs = {name:jsondata.name,installed_version:jsondata.version};
+				asyncCB(err,list_of_extensions_current_data);
+			});	
+		},
+		ensure_outdated_log:function(asyncCB){
+			fs.ensureFile(asyncadmin_outdated_log_file_path, asyncCB);
+		},
+		get_latest_version_numbers:function(asyncCB){
+			npm.load(
+				npmconfig,
+				function (err) {
+					if (err) {
+						asyncCB(err);
+					}
+					else{
+
+						async.each(list_of_extensions, 
+							function(item,mapCB){
+								npm.commands.view(
+									[item,'name','version'],
+									function(err,data){
+										if(err){
+											mapCB(err);
+										}
+										else{
+											// var returnobj={};
+											var returnobjkey = Object.keys(data)[0];
+											list_of_extensions_current_data[data[returnobjkey].name].latest_version=data[returnobjkey].version;
+											mapCB(null);
+										}
+									}
+								);
+							}, 
+							function(err, results){
+						  // results is now an array of stats for each file
+						  list_of_extensions_recent_data = results;
+						  asyncCB(err,results);
+						});
+
+					}
+			});
+		},
+		calculate_outdated_versions:function(asyncCB){
+			for(var key in list_of_extensions_current_data){
+				if(semver.lt(list_of_extensions_current_data[key].installed_version, list_of_extensions_current_data[key].latest_version)){
+					list_of_extensions_outdated_data[key] = list_of_extensions_current_data[key];
+				}
+			}
+			asyncCB(null,list_of_extensions_outdated_data);
+		}
+	},function(err,result){
+		if(err){
+			logger.error(err);
+		}
+		else if(result.calculate_outdated_versions && Object.keys(result.calculate_outdated_versions).length >0){
+			logger.warn('asyncadmin - WARNING: Your Instance is out of date',result.calculate_outdated_versions);
+			var alerthtml ='<ul>';
+
+			for(var key in result.calculate_outdated_versions){
+				var ext = result.calculate_outdated_versions[key];
+				alerthtml+='<li>'+ext.name+': current('+ext.latest_version+'), installed('+ext.installed_version+')</li>';
+			}
+			alerthtml +='<ul>';
+
+			sendSettingEmail({
+					req: {},
+					user: {username:'application-cron',email:appSettings.adminnotificationemail},
+					emaildata: {
+						user: {username:'application-cron',email:appSettings.adminnotificationemail},
+						hostname: appSettings.homepage,
+						appname: appSettings.name,
+						appenvironment: appenvironment,
+						appport: appSettings.application.port,
+						settingmessage: '<p>Your ' + appSettings.name + ' application dependencies are outdated - ' + new Date() + '</p><div>' + alerthtml + '</div>',
+					},
+					subject: appSettings.name + '[env:' + appenvironment + '] ' + appSettings.name + ' Dependency warning notification',
+					emailtemplate: changedemailtemplate,
+				}, function(){});
+
+
+			send_setting_server_callback({
+				functionName: 'showServerModal',
+				functionData: '<div class="ts-text-xl"><span class="ts-text-error-color">Node dependencies outdated warning</span></div><div>' + alerthtml + '</div>'
+			});
+
+		fs.writeJson(asyncadmin_outdated_log_file_path, result);
+		}
+		// console.log('checkOutdatedModulesAndPeriodic err,result',err,result);
+	});
+};
+
+
+var useCronTasks = function () {
+	try {
+		var crontime_to_use = admin_ext_settings.settings.check_dependency_cron || '00 00 06 * * 1-5',
+			check_outdated_dependencies = new CronJob({
+				cronTime: crontime_to_use,
+				onTick: checkOutdatedModulesAndPeriodic,
+				onComplete: function () {} //,
+					// start: true
+			});
+		check_outdated_dependencies.start();
+	}
+	catch (e) {
+		logger.error('setupLoanCronTasks e', e);
+	}
+};
+
 /**
  * settings controller
  * @module settingsController
@@ -770,7 +924,7 @@ var controller = function (resources) {
 	CoreMailer = resources.core.mailer;
 	AppDBSetting = mongoose.model('Setting');
 	appenvironment = appSettings.application.environment;
-
+	admin_ext_settings = resources.app.controller.extension.asyncadmin.adminExtSettings;
 	CoreController.getPluginViewDefaultTemplate({
 			viewname: 'p-admin/email/settings/notification',
 			themefileext: appSettings.templatefileextension
@@ -782,6 +936,8 @@ var controller = function (resources) {
 			changedemailtemplate = templatepath;
 		}
 	);
+	checkOutdatedModulesAndPeriodic();
+	useCronTasks();
 
 	return {
 		load_extension_settings: load_extension_settings,

@@ -1,9 +1,4 @@
 {
   "development":{
-    "settings":{
-			"socketIoPort": "8785",
-      "adminPath": "p-admin",
-     	"adminIndexRedirectPath": "dashboard"
-   }
   }
 }

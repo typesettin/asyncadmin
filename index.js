@@ -82,7 +82,7 @@ module.exports = function (periodic) {
 	periodic.app.locals.stylietreeview = stylietreeview;
 
 	periodic.app.controller.extension.asyncadmin = {
-		adminExtSettings: adminExtSettings
+		adminExtSettings: adminExtSettings,
 	};
 	periodic.app.controller.extension.asyncadmin = {
 		admin: require('./controller/admin')(periodic),

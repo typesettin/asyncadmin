@@ -365,6 +365,7 @@ var get_revision_page = function(options){
 	var entity = get_entity_modifications(options.entity);
 
 	return function (req, res) {
+		var pagetitle = (req.controllerData && req.controllerData.revision_page_attribute_title)? req.controllerData.revision_page_attribute_title : req.controllerData[entity.name].title || req.controllerData[entity.name].name || req.controllerData[entity.name]._id;
 		var viewtemplate = {
 				viewname: 'p-admin/' + entity.plural_name + '/revisions',
 				themefileext: appSettings.templatefileextension
@@ -373,7 +374,8 @@ var get_revision_page = function(options){
 			viewdata = merge(req.controllerData, {
 				pagedata: {
 					title: entity.capitalized_name + ' Revisions',
-					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + req.controllerData[entity.name].title+' &raquo; Revisions',
+					pagetitle:pagetitle,
+					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + pagetitle+' &raquo; Revisions',
 					extensions: CoreUtilities.getAdminMenu()
 				},
 				user: req.user
