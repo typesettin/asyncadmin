@@ -172,9 +172,9 @@ module.exports = function (periodic) {
 		userController.update);
 
 
-	adminRouter.get('/content/user/:id/revisions',adminController.skip_population, userController.loadUser, adminController.user_revisions);
-	adminRouter.post('/content/user/:id/revision/:revisionindex/delete',adminController.skip_population, userController.loadUser, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit,  userController.update);
-	adminRouter.post('/content/user/:id/revision/:revisionindex/revert',adminController.skip_population, userController.loadUser, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit,  userController.update);
+	adminRouter.get('/content/user/:id/revisions', adminController.skip_population, userController.loadUser, adminController.user_revisions);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/delete', adminController.skip_population, userController.loadUser, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit, userController.update);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/revert', adminController.skip_population, userController.loadUser, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit, userController.update);
 
 
 

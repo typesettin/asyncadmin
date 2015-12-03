@@ -3,7 +3,7 @@ module.exports = {
 	settings: {
 		adminPath: 'p-admin',
 		socketIoPort: '8785',
-    adminIndexRedirectPath: 'dashboard',
+		adminIndexRedirectPath: 'dashboard',
 		show_periodic_credit: true,
 		check_dependency_cron: '00 00 06 * * 1-5' //'*/15 * * * * 1-5'//
 	}

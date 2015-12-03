@@ -8,6 +8,18 @@
 @import (inline) "../../node_modules/codemirror/addon/fold/foldgutter.css";
 @import (inline) "../../node_modules/codemirror/addon/lint/lint.css";
 @import (inline) "../../node_modules/codemirror/addon/hint/show-hint.css";
+ body, 
+  .ts .ts-serif-clean,
+  .ts h1, .ts h2, .ts h3, .ts h4, .ts h5, .ts h6,
+  .ts summary,
+  .ts details {
+font-family: Arial, Helvetica, sans-serif!important;
+	font-family: @sanserif!important;
+
+   }
+ #ts-asyncadmin-content-container {
+    font-size: 18px;
+  }
 .ts .ts-nav-image {
     height: 2.75rem;
     padding: 0.75rem;
@@ -62,6 +74,31 @@
 		max-width:90%;
 	}
 	body{
+		// font-size:11px;
+
+
+// .ts-sans-serif{
+// 	font-family: @sanserif;
+// } 
+		nav#ts-search-content{
+			position: fixed;
+			top: 0;
+			height: 55%;
+			z-index: 200;
+			width: 100%;
+			margin-top: @sizelg+@sizemd;
+			padding: @sizelg;
+			padding-bottom: @sizexx;
+			background: @textPrimaryColor;
+			min-width: (@sizexx *3);
+			overflow: auto;
+			overflow-x: hidden;
+			// .ts-shadow;
+			border: 1px solid @primaryTextColor;
+			&.initialState{
+				display: none;
+			}
+		}
 		nav#ts-nav-menu{
 			position: fixed;
 			top: 0;
@@ -81,7 +118,7 @@
 				display: none;
 			}
 		}
-		.ts-nav-overlay{
+		.ts-nav-overlay,.ts-search-overlay{
 			position: fixed;
 			top:0;
 			height:100%;
@@ -96,6 +133,10 @@
 	 			opacity: 0;
 	 			display: none;
 	 		}
+	 	}
+	 	.ts-search-overlay{
+	 		height: 60%;
+			border-bottom: 1px solid @primaryTextColor;
 	 	}
 	 	.ts-medialist-cb{
 	 		section{
@@ -287,6 +328,13 @@
 	}
 	#ts-asyncadmin-content-wrapper{
 		margin-bottom: @sizexx;
+	}
+	.ts-button-icon{
+		&[class^="flaticon-"]:before, &[class*=" flaticon-"]:before,
+		&[class^="flaticon-"]:after, &[class*=" flaticon-"]:after {   
+			font-size:14px;
+			margin-left: 0px;
+		}
 	}
 	.ts-button{
 		&.ts-button-transparent{

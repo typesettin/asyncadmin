@@ -290,53 +290,57 @@ var settings_faq = function (req, res) {
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
-var skip_population = function(req,res,next){
+var skip_population = function (req, res, next) {
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
-	req.controllerData.skip_population=true;
+	req.controllerData.skip_population = true;
 	next();
 };
 
-var revision_delete = function(req,res,next){
+var revision_delete = function (req, res, next) {
 	var entitytype = req.params.entitytype || req.query.entitytype || req.controllerData.entitytype || req.body.entitytype;
 	var revisionindex = req.params.revisionindex;
-	var updatedoc={docid:req.params.id};
+	var updatedoc = {
+		docid: req.params.id
+	};
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	req.controllerData.encryptFields = true;
 
-	if(typeof req.controllerData[entitytype].toJSON ==='function'){
-		updatedoc = merge(updatedoc,req.controllerData[entitytype].toJSON());
+	if (typeof req.controllerData[entitytype].toJSON === 'function') {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype].toJSON());
 	}
-	else if(typeof req.controllerData[entitytype].toObject ==='function'){
-		updatedoc = merge(updatedoc,req.controllerData[entitytype].toObject());
-	}	
-	else{
-		updatedoc = merge(updatedoc,req.controllerData[entitytype]);
+	else if (typeof req.controllerData[entitytype].toObject === 'function') {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype].toObject());
+	}
+	else {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype]);
 	}
 	updatedoc.docid = req.params.id;
 
 	delete updatedoc._id;
 	delete updatedoc.__v;
-	updatedoc.changes.splice(revisionindex,1);
+	updatedoc.changes.splice(revisionindex, 1);
 	req.saverevision = false;
 	req.body = updatedoc;
 	next();
 };
 
-var revision_revert = function(req,res,next){
+var revision_revert = function (req, res, next) {
 	var entitytype = req.params.entitytype || req.query.entitytype || req.controllerData.entitytype || req.body.entitytype;
 	var revisionindex = req.params.revisionindex;
-	var updatedoc={docid:req.params.id};
+	var updatedoc = {
+		docid: req.params.id
+	};
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	req.controllerData.encryptFields = true;
 
-	if(typeof req.controllerData[entitytype].toJSON ==='function'){
-		updatedoc = merge(updatedoc,req.controllerData[entitytype].toJSON());
+	if (typeof req.controllerData[entitytype].toJSON === 'function') {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype].toJSON());
 	}
-	else if(typeof req.controllerData[entitytype].toObject ==='function'){
-		updatedoc = merge(updatedoc,req.controllerData[entitytype].toObject());
-	}	
-	else{
-		updatedoc = merge(updatedoc,req.controllerData[entitytype]);
+	else if (typeof req.controllerData[entitytype].toObject === 'function') {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype].toObject());
+	}
+	else {
+		updatedoc = merge(updatedoc, req.controllerData[entitytype]);
 	}
 	updatedoc.docid = req.params.id;
 
@@ -345,8 +349,8 @@ var revision_revert = function(req,res,next){
 	updatedoc = merge(updatedoc, updatedoc.changes[revisionindex].changeset);
 	// req.saverevision = false;
 	req.body = updatedoc;
-	console.log('req.body ',req.body );
-	console.log('revisionindex ',revisionindex );
+	console.log('req.body ', req.body);
+	console.log('revisionindex ', revisionindex);
 	next();
 };
 
@@ -361,11 +365,11 @@ var get_entity_modifications = function (entityname) {
 	};
 };
 
-var get_revision_page = function(options){
+var get_revision_page = function (options) {
 	var entity = get_entity_modifications(options.entity);
 
 	return function (req, res) {
-		var pagetitle = (req.controllerData && req.controllerData.revision_page_attribute_title)? req.controllerData.revision_page_attribute_title : req.controllerData[entity.name].title || req.controllerData[entity.name].name || req.controllerData[entity.name]._id;
+		var pagetitle = (req.controllerData && req.controllerData.revision_page_attribute_title) ? req.controllerData.revision_page_attribute_title : req.controllerData[entity.name].title || req.controllerData[entity.name].name || req.controllerData[entity.name]._id;
 		var viewtemplate = {
 				viewname: 'p-admin/' + entity.plural_name + '/revisions',
 				themefileext: appSettings.templatefileextension
@@ -374,13 +378,13 @@ var get_revision_page = function(options){
 			viewdata = merge(req.controllerData, {
 				pagedata: {
 					title: entity.capitalized_name + ' Revisions',
-					pagetitle:pagetitle,
-					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + pagetitle+' &raquo; Revisions',
+					pagetitle: pagetitle,
+					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + pagetitle + ' &raquo; Revisions',
 					extensions: CoreUtilities.getAdminMenu()
 				},
 				user: req.user
 			});
-		if(options.extname){
+		if (options.extname) {
 			viewtemplate.extname = options.extname;
 		}
 		CoreController.renderView(req, res, viewtemplate, viewdata);
@@ -423,7 +427,7 @@ var controller = function (resources) {
 		get_revision_page: get_revision_page,
 		user_revisions: get_revision_page({
 			entity: 'user',
-			extname : 'periodicjs.ext.asyncadmin'
+			extname: 'periodicjs.ext.asyncadmin'
 		}),
 		depopulate: CoreController.depopulate,
 		revision_delete: revision_delete,

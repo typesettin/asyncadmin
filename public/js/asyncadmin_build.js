@@ -7022,7 +7022,9 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
       continue;
     }
     if (pass == 1 && found < start.ch) return;
-    if (/comment/.test(cm.getTokenTypeAt(CodeMirror.Pos(line, found + 1)))) {
+    if (/comment/.test(cm.getTokenTypeAt(CodeMirror.Pos(line, found + 1))) &&
+        (lineText.slice(found - endToken.length, found) == endToken ||
+         !/comment/.test(cm.getTokenTypeAt(CodeMirror.Pos(line, found))))) {
       startCh = found + startToken.length;
       break;
     }
@@ -8253,6 +8255,13 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
       setTimeout(function(){cm.focus();}, 20);
     });
 
+    if (completion.options.completeOnSingleClick)
+      CodeMirror.on(hints, "mousemove", function(e) {
+        var elt = getHintElement(hints, e.target || e.srcElement);
+        if (elt && elt.hintId != null)
+          widget.changeActive(elt.hintId);
+      });
+
     CodeMirror.signal(data, "select", completions[0], hints.firstChild);
     return true;
   }
@@ -8388,7 +8397,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
     alignWithWord: true,
     closeCharacters: /[\s()\[\]{};:>,]/,
     closeOnUnfocus: true,
-    completeOnSingleClick: false,
+    completeOnSingleClick: true,
     container: null,
     customKeys: null,
     extraKeys: null
@@ -9455,7 +9464,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       if (horiz.clientWidth) scroll(horiz.scrollLeft, "horizontal");
     });
 
-    this.checkedOverlay = false;
+    this.checkedZeroWidth = false;
     // Need to set a minimum width to see the scrollbar on IE7 (but must not set it on IE8).
     if (ie && ie_version < 8) this.horiz.style.minHeight = this.vert.style.minWidth = "18px";
   }
@@ -9490,29 +9499,43 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         this.horiz.firstChild.style.width = "0";
       }
 
-      if (!this.checkedOverlay && measure.clientHeight > 0) {
-        if (sWidth == 0) this.overlayHack();
-        this.checkedOverlay = true;
+      if (!this.checkedZeroWidth && measure.clientHeight > 0) {
+        if (sWidth == 0) this.zeroWidthHack();
+        this.checkedZeroWidth = true;
       }
 
       return {right: needsV ? sWidth : 0, bottom: needsH ? sWidth : 0};
     },
     setScrollLeft: function(pos) {
       if (this.horiz.scrollLeft != pos) this.horiz.scrollLeft = pos;
+      if (this.disableHoriz) this.enableZeroWidthBar(this.horiz, this.disableHoriz);
     },
     setScrollTop: function(pos) {
       if (this.vert.scrollTop != pos) this.vert.scrollTop = pos;
+      if (this.disableVert) this.enableZeroWidthBar(this.vert, this.disableVert);
     },
-    overlayHack: function() {
+    zeroWidthHack: function() {
       var w = mac && !mac_geMountainLion ? "12px" : "18px";
-      this.horiz.style.minHeight = this.vert.style.minWidth = w;
-      var self = this;
-      var barMouseDown = function(e) {
-        if (e_target(e) != self.vert && e_target(e) != self.horiz)
-          operation(self.cm, onMouseDown)(e);
-      };
-      on(this.vert, "mousedown", barMouseDown);
-      on(this.horiz, "mousedown", barMouseDown);
+      this.horiz.style.height = this.vert.style.width = w;
+      this.horiz.style.pointerEvents = this.vert.style.pointerEvents = "none";
+      this.disableHoriz = new Delayed;
+      this.disableVert = new Delayed;
+    },
+    enableZeroWidthBar: function(bar, delay) {
+      bar.style.pointerEvents = "auto";
+      function maybeDisable() {
+        // To find out whether the scrollbar is still visible, we
+        // check whether the element under the pixel in the bottom
+        // left corner of the scrollbar box is the scrollbar box
+        // itself (when the bar is still visible) or its filler child
+        // (when the bar is hidden). If it is still visible, we keep
+        // it enabled, if it's hidden, we disable pointer events.
+        var box = bar.getBoundingClientRect();
+        var elt = document.elementFromPoint(box.left + 1, box.bottom - 1);
+        if (elt != bar) bar.style.pointerEvents = "none";
+        else delay.set(1000, maybeDisable);
+      }
+      delay.set(1000, maybeDisable);
     },
     clear: function() {
       var parent = this.horiz.parentNode;
@@ -12138,7 +12161,8 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
     if (cm.state.focused && op.updateInput)
       cm.display.input.reset(op.typing);
-    if (op.focus && op.focus == activeElt()) ensureFocus(op.cm);
+    if (op.focus && op.focus == activeElt() && (!document.hasFocus || document.hasFocus()))
+      ensureFocus(op.cm);
   }
 
   function endOperation_finish(op) {
@@ -12823,7 +12847,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   // Determines whether an event happened in the gutter, and fires the
   // handlers for the corresponding event.
-  function gutterEvent(cm, e, type, prevent, signalfn) {
+  function gutterEvent(cm, e, type, prevent) {
     try { var mX = e.clientX, mY = e.clientY; }
     catch(e) { return false; }
     if (mX >= Math.floor(cm.display.gutters.getBoundingClientRect().right)) return false;
@@ -12840,14 +12864,14 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       if (g && g.getBoundingClientRect().right >= mX) {
         var line = lineAtHeight(cm.doc, mY);
         var gutter = cm.options.gutters[i];
-        signalfn(cm, type, cm, line, gutter, e);
+        signal(cm, type, cm, line, gutter, e);
         return e_defaultPrevented(e);
       }
     }
   }
 
   function clickInGutter(cm, e) {
-    return gutterEvent(cm, e, "gutterClick", true, signalLater);
+    return gutterEvent(cm, e, "gutterClick", true);
   }
 
   // Kludge to work around strange IE behavior where it'll sometimes
@@ -13286,7 +13310,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   function contextMenuInGutter(cm, e) {
     if (!hasHandler(cm, "gutterContextMenu")) return false;
-    return gutterEvent(cm, e, "gutterContextMenu", false, signal);
+    return gutterEvent(cm, e, "gutterContextMenu", false);
   }
 
   // UPDATING
@@ -16119,7 +16143,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
               spanEndStyle = "";
             }
             if (m.className) spanStyle += " " + m.className;
-            if (m.css) css = m.css;
+            if (m.css) css = (css ? css + ";" : "") + m.css;
             if (m.startStyle && sp.from == pos) spanStartStyle += " " + m.startStyle;
             if (m.endStyle && sp.to == nextChange) spanEndStyle += " " + m.endStyle;
             if (m.title && !title) title = m.title;
@@ -16388,6 +16412,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
     this.id = ++nextDocId;
     this.modeOption = mode;
     this.lineSep = lineSep;
+    this.extend = false;
 
     if (typeof text == "string") text = this.splitLines(text);
     updateDoc(this, {from: start, to: start, text: text});
@@ -17895,7 +17920,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   // THE END
 
-  CodeMirror.version = "5.8.0";
+  CodeMirror.version = "5.9.0";
 
   return CodeMirror;
 });
@@ -18131,7 +18156,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     if (type == "}" || type == "{") return popAndPass(type, stream, state);
     if (type == "(") return pushContext(state, stream, "parens");
 
-    if (type == "hash" && !/^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/.test(stream.current())) {
+    if (type == "hash" && !/^#([0-9a-fA-f]{3,4}|[0-9a-fA-f]{6}|[0-9a-fA-f]{8})$/.test(stream.current())) {
       override += " error";
     } else if (type == "word") {
       wordAsValue(stream);
@@ -18944,12 +18969,12 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       "if": kw("if"), "while": A, "with": A, "else": B, "do": B, "try": B, "finally": B,
       "return": C, "break": C, "continue": C, "new": kw("new"), "delete": C, "throw": C, "debugger": C,
       "var": kw("var"), "const": kw("var"), "let": kw("var"),
-      "async": kw("async"), "function": kw("function"), "catch": kw("catch"),
+      "function": kw("function"), "catch": kw("catch"),
       "for": kw("for"), "switch": kw("switch"), "case": kw("case"), "default": kw("default"),
       "in": operator, "typeof": operator, "instanceof": operator,
       "true": atom, "false": atom, "null": atom, "undefined": atom, "NaN": atom, "Infinity": atom,
       "this": kw("this"), "class": kw("class"), "super": kw("atom"),
-      "await": C, "yield": C, "export": kw("export"), "import": kw("import"), "extends": C
+      "yield": C, "export": kw("export"), "import": kw("import"), "extends": C
     };
 
     // Extend the 'normal' keywords with the TypeScript language extensions
@@ -19033,8 +19058,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       } else if (stream.eat("/")) {
         stream.skipToEnd();
         return ret("comment", "comment");
-      } else if (state.lastType == "operator" || state.lastType == "keyword c" ||
-                 state.lastType == "sof" || /^[\[{}\(,;:]$/.test(state.lastType)) {
+      } else if (/^(?:operator|sof|keyword c|case|new|[\[{}\(,;:])$/.test(state.lastType)) {
         readRegexp(stream);
         stream.match(/^\b(([gimyu])(?![gimyu]*\2))+\b/);
         return ret("regexp", "string-2");
@@ -19285,7 +19309,6 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
 
     var maybeop = noComma ? maybeoperatorNoComma : maybeoperatorComma;
     if (atomicTypes.hasOwnProperty(type)) return cont(maybeop);
-    if (type == "async") return cont(expression);
     if (type == "function") return cont(functiondef, maybeop);
     if (type == "keyword c") return cont(noComma ? maybeexpressionNoComma : maybeexpression);
     if (type == "(") return cont(pushlex(")"), maybeexpression, comprehension, expect(")"), poplex, maybeop);
@@ -19364,9 +19387,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     if (type == "variable") {cx.marked = "property"; return cont();}
   }
   function objprop(type, value) {
-    if (type == "async") {
-      return cont(objprop);
-    } else if (type == "variable" || cx.style == "keyword") {
+    if (type == "variable" || cx.style == "keyword") {
       cx.marked = "property";
       if (value == "get" || value == "set") return cont(getterSetter);
       return cont(afterprop);
@@ -19377,6 +19398,8 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       return cont(afterprop);
     } else if (type == "[") {
       return cont(expression, expect("]"), afterprop);
+    } else if (type == "spread") {
+      return cont(expression);
     }
   }
   function getterSetter(type) {
@@ -30010,6 +30033,9 @@ var ajaxlinks,
 	mobile_nav_menu,
 	mobile_nav_menu_overlay,
 	menuTriggerElement,
+	search_menu_overlay,
+	search_menu_content,
+	search_menu_input,
 	nav_header,
 	consolePlatter,
 	preloaderElement,
@@ -30240,6 +30266,7 @@ var logToAdminConsole = function (data) {
 };
 
 var handleUncaughtError = function (e, errorMessageTitle) {
+	console.error(e);
 	endPreloader();
 	logToAdminConsole({
 		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
@@ -30262,7 +30289,15 @@ var defaultLoadAjaxPageFormie = function (formElement) {
 
 var defaultAjaxFormie = function (formElement) {
 	var _csrfToken = formElement.querySelector('input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
-
+	var shownotification = true;
+	var showpreloader = true;
+	// console.log('formElement', formElement);
+	if (formElement.getAttribute('data-donotnotify') && formElement.getAttribute('data-donotnotify') === 'do-not-notify') {
+		shownotification = false;
+	}
+	if (formElement.getAttribute('data-donotpreload') && formElement.getAttribute('data-donotpreload') === 'do-not-preload') {
+		showpreloader = false;
+	}
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
 		// headers: {'customheader':'customvalue'},
@@ -30283,7 +30318,9 @@ var defaultAjaxFormie = function (formElement) {
 			if (typeof beforefn === 'function') {
 				beforefn(beforeEvent, formElement);
 			}
-			window.showPreloader();
+			if (showpreloader) {
+				window.showPreloader();
+			}
 			for (var s = 0; s < summernoteTextAreas.length; s++) {
 				summernoteTextAreas[s].innerHTML = summernoteContentEditors[summernoteTextAreas[s].getAttribute('id')].options.codemirror.getValue();
 				// summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
@@ -30293,17 +30330,21 @@ var defaultAjaxFormie = function (formElement) {
 			}
 		},
 		successcallback: function (response) {
-			window.endPreloader();
-			if (response.body && response.body.result && response.body.result === 'error') {
+			if (showpreloader) {
+				window.endPreloader();
+			}
+			if (shownotification && response.body && response.body.result && response.body.result === 'error') {
 				window.showStylieNotification({
 					message: response.body.data.error.message || response.body.data.error,
 					type: 'error'
 				});
 			}
 			else {
-				window.showStylieNotification({
-					message: 'Saved'
-				});
+				if (shownotification) {
+					window.showStylieNotification({
+						message: 'Saved'
+					});
+				}
 				logToAdminConsole({
 					msg: 'ajax response',
 					meta: response
@@ -30340,9 +30381,12 @@ var defaultAjaxFormie = function (formElement) {
 					jsonmessage = JSON.parse(response.response);
 					errormessage = (jsonmessage && jsonmessage.data) ? jsonmessage.data.error : JSON.stringify(jsonmessage);
 				}
-				window.showErrorNotificaton({
-					message: errormessage
-				});
+				if (shownotification) {
+					window.showErrorNotificaton({
+						message: errormessage
+					});
+
+				}
 			}
 			catch (e) {
 				console.log('e', e);
@@ -30357,7 +30401,9 @@ var defaultAjaxFormie = function (formElement) {
 					});
 				}
 			}
-			window.endPreloader();
+			if (showpreloader) {
+				window.endPreloader();
+			}
 			logToAdminConsole({
 				msg: error,
 				meta: response
@@ -30393,7 +30439,7 @@ var initAjaxFormies = function () {
 		content_attribute_content_html = document.querySelector('#doc-ct-attr');
 	}
 	AdminFormies = {};
-	//console.log('ajaxforms', ajaxforms);
+	// console.log('ajaxforms', ajaxforms);
 	try {
 		if (ajaxforms && ajaxforms.length > 0) {
 			for (var x = 0; x < ajaxforms.length; x++) {
@@ -30467,28 +30513,50 @@ var initTabs = function () {
 		});
 	}
 };
-
 var isMobileNavOpen = function () {
-	return classie.has(mobile_nav_menu, 'slideOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+	return classie.has(mobile_nav_menu, 'fadeOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+};
+var isSearchNavOpen = function () {
+	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
 };
 
 var closeMobileNav = function () {
 	classie.add(mobile_nav_menu_overlay, 'hide');
-	classie.add(mobile_nav_menu, 'slideOutLeft');
-	classie.remove(mobile_nav_menu, 'slideInLeft');
+	classie.add(mobile_nav_menu, 'fadeOutLeft');
+	classie.remove(mobile_nav_menu, 'fadeInLeft');
+};
+
+var closeSearchNav = function () {
+	classie.add(search_menu_overlay, 'hide');
+	classie.add(search_menu_content, 'fadeOutUp');
+	classie.remove(search_menu_content, 'fadeInUp');
 };
 
 var controlMobileNav = function () {
+	closeSearchNav();
 	if (isMobileNavOpen()) {
 		classie.remove(mobile_nav_menu, 'initialState');
-		classie.add(mobile_nav_menu, 'slideInLeft');
-		classie.remove(mobile_nav_menu, 'slideOutLeft');
+		classie.add(mobile_nav_menu, 'fadeInLeft');
+		classie.remove(mobile_nav_menu, 'fadeOutLeft');
 		classie.remove(mobile_nav_menu_overlay, 'hide');
 	}
 	else {
 		closeMobileNav();
 	}
 };
+
+var controlSearchNav = function () {
+	if (isSearchNavOpen()) {
+		classie.remove(search_menu_content, 'initialState');
+		classie.add(search_menu_content, 'fadeInUp');
+		classie.remove(search_menu_content, 'fadeOutUp');
+		classie.remove(search_menu_overlay, 'hide');
+	}
+	else {
+		closeSearchNav();
+	}
+};
+
 
 var confirmDeleteDialog = function (e) {
 	var eTarget = e.target,
@@ -30572,6 +30640,7 @@ window.initAjaxSubmitButtonListeners = initAjaxSubmitButtonListeners;
 
 var loadAjaxPage = function (options) {
 	// window.console.clear();
+	closeSearchNav();
 	closeMobileNav();
 	try {
 		var htmlDivElement = document.createElement('div'),
@@ -30810,12 +30879,17 @@ var asyncAdminContentElementClick = function (e) {
 	// }
 };
 
+var initAdminSearch = function () {
+
+};
+
 var showAdminConsoleElementClick = function () {
 	window.consolePlatter.showPlatterPane();
 };
 
 var navOverlayClickHandler = function () {
 	closeMobileNav();
+	closeSearchNav();
 };
 
 var initAjaxLinkEventListeners = function () {
@@ -30823,6 +30897,7 @@ var initAjaxLinkEventListeners = function () {
 };
 
 var initEventListeners = function () {
+	search_menu_input.addEventListener('focus', controlSearchNav, false);
 	menuTriggerElement.addEventListener('click', controlMobileNav, false);
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
@@ -31100,6 +31175,10 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
+	search_menu_overlay = document.querySelector('.ts-search-overlay');
+	search_menu_input = document.querySelector('#searchall-input');
+	search_menu_content = document.querySelector('#ts-search-content');
+
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');
 	ejs.delimiter = '?';
@@ -31132,6 +31211,7 @@ window.addEventListener('load', function () {
 	initDatalists();
 	initMedialists();
 	initFilterlists();
+	initAdminSearch();
 
 	window.servermodalElement = servermodalElement;
 	window.asyncHTMLWrapper = asyncHTMLWrapper;

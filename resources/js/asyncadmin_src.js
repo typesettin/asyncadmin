@@ -50,6 +50,9 @@ var ajaxlinks,
 	mobile_nav_menu,
 	mobile_nav_menu_overlay,
 	menuTriggerElement,
+	search_menu_overlay,
+	search_menu_content,
+	search_menu_input,
 	nav_header,
 	consolePlatter,
 	preloaderElement,
@@ -280,6 +283,7 @@ var logToAdminConsole = function (data) {
 };
 
 var handleUncaughtError = function (e, errorMessageTitle) {
+	console.error(e);
 	endPreloader();
 	logToAdminConsole({
 		msg: (errorMessageTitle) ? errorMessageTitle : 'uncaught error',
@@ -302,7 +306,15 @@ var defaultLoadAjaxPageFormie = function (formElement) {
 
 var defaultAjaxFormie = function (formElement) {
 	var _csrfToken = formElement.querySelector('input[name="_csrf"]') || document.querySelector('input[name="_csrf"]');
-
+	var shownotification = true;
+	var showpreloader = true;
+	// console.log('formElement', formElement);
+	if (formElement.getAttribute('data-donotnotify') && formElement.getAttribute('data-donotnotify') === 'do-not-notify') {
+		shownotification = false;
+	}
+	if (formElement.getAttribute('data-donotpreload') && formElement.getAttribute('data-donotpreload') === 'do-not-preload') {
+		showpreloader = false;
+	}
 	return new Formie({
 		ajaxformselector: '#' + formElement.getAttribute('id'),
 		// headers: {'customheader':'customvalue'},
@@ -323,7 +335,9 @@ var defaultAjaxFormie = function (formElement) {
 			if (typeof beforefn === 'function') {
 				beforefn(beforeEvent, formElement);
 			}
-			window.showPreloader();
+			if (showpreloader) {
+				window.showPreloader();
+			}
 			for (var s = 0; s < summernoteTextAreas.length; s++) {
 				summernoteTextAreas[s].innerHTML = summernoteContentEditors[summernoteTextAreas[s].getAttribute('id')].options.codemirror.getValue();
 				// summernoteTextAreas[s].innerHTML = $('#' + summernoteTextAreas[s].getAttribute('id')).code();
@@ -333,17 +347,21 @@ var defaultAjaxFormie = function (formElement) {
 			}
 		},
 		successcallback: function (response) {
-			window.endPreloader();
-			if (response.body && response.body.result && response.body.result === 'error') {
+			if (showpreloader) {
+				window.endPreloader();
+			}
+			if (shownotification && response.body && response.body.result && response.body.result === 'error') {
 				window.showStylieNotification({
 					message: response.body.data.error.message || response.body.data.error,
 					type: 'error'
 				});
 			}
 			else {
-				window.showStylieNotification({
-					message: 'Saved'
-				});
+				if (shownotification) {
+					window.showStylieNotification({
+						message: 'Saved'
+					});
+				}
 				logToAdminConsole({
 					msg: 'ajax response',
 					meta: response
@@ -380,9 +398,12 @@ var defaultAjaxFormie = function (formElement) {
 					jsonmessage = JSON.parse(response.response);
 					errormessage = (jsonmessage && jsonmessage.data) ? jsonmessage.data.error : JSON.stringify(jsonmessage);
 				}
-				window.showErrorNotificaton({
-					message: errormessage
-				});
+				if (shownotification) {
+					window.showErrorNotificaton({
+						message: errormessage
+					});
+
+				}
 			}
 			catch (e) {
 				console.log('e', e);
@@ -397,7 +418,9 @@ var defaultAjaxFormie = function (formElement) {
 					});
 				}
 			}
-			window.endPreloader();
+			if (showpreloader) {
+				window.endPreloader();
+			}
 			logToAdminConsole({
 				msg: error,
 				meta: response
@@ -433,7 +456,7 @@ var initAjaxFormies = function () {
 		content_attribute_content_html = document.querySelector('#doc-ct-attr');
 	}
 	AdminFormies = {};
-	//console.log('ajaxforms', ajaxforms);
+	// console.log('ajaxforms', ajaxforms);
 	try {
 		if (ajaxforms && ajaxforms.length > 0) {
 			for (var x = 0; x < ajaxforms.length; x++) {
@@ -507,28 +530,50 @@ var initTabs = function () {
 		});
 	}
 };
-
 var isMobileNavOpen = function () {
-	return classie.has(mobile_nav_menu, 'slideOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+	return classie.has(mobile_nav_menu, 'fadeOutLeft') || classie.has(mobile_nav_menu, 'initialState');
+};
+var isSearchNavOpen = function () {
+	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
 };
 
 var closeMobileNav = function () {
 	classie.add(mobile_nav_menu_overlay, 'hide');
-	classie.add(mobile_nav_menu, 'slideOutLeft');
-	classie.remove(mobile_nav_menu, 'slideInLeft');
+	classie.add(mobile_nav_menu, 'fadeOutLeft');
+	classie.remove(mobile_nav_menu, 'fadeInLeft');
+};
+
+var closeSearchNav = function () {
+	classie.add(search_menu_overlay, 'hide');
+	classie.add(search_menu_content, 'fadeOutUp');
+	classie.remove(search_menu_content, 'fadeInUp');
 };
 
 var controlMobileNav = function () {
+	closeSearchNav();
 	if (isMobileNavOpen()) {
 		classie.remove(mobile_nav_menu, 'initialState');
-		classie.add(mobile_nav_menu, 'slideInLeft');
-		classie.remove(mobile_nav_menu, 'slideOutLeft');
+		classie.add(mobile_nav_menu, 'fadeInLeft');
+		classie.remove(mobile_nav_menu, 'fadeOutLeft');
 		classie.remove(mobile_nav_menu_overlay, 'hide');
 	}
 	else {
 		closeMobileNav();
 	}
 };
+
+var controlSearchNav = function () {
+	if (isSearchNavOpen()) {
+		classie.remove(search_menu_content, 'initialState');
+		classie.add(search_menu_content, 'fadeInUp');
+		classie.remove(search_menu_content, 'fadeOutUp');
+		classie.remove(search_menu_overlay, 'hide');
+	}
+	else {
+		closeSearchNav();
+	}
+};
+
 
 var confirmDeleteDialog = function (e) {
 	var eTarget = e.target,
@@ -612,6 +657,7 @@ window.initAjaxSubmitButtonListeners = initAjaxSubmitButtonListeners;
 
 var loadAjaxPage = function (options) {
 	// window.console.clear();
+	closeSearchNav();
 	closeMobileNav();
 	try {
 		var htmlDivElement = document.createElement('div'),
@@ -850,12 +896,17 @@ var asyncAdminContentElementClick = function (e) {
 	// }
 };
 
+var initAdminSearch = function () {
+
+};
+
 var showAdminConsoleElementClick = function () {
 	window.consolePlatter.showPlatterPane();
 };
 
 var navOverlayClickHandler = function () {
 	closeMobileNav();
+	closeSearchNav();
 };
 
 var initAjaxLinkEventListeners = function () {
@@ -863,6 +914,7 @@ var initAjaxLinkEventListeners = function () {
 };
 
 var initEventListeners = function () {
+	search_menu_input.addEventListener('focus', controlSearchNav, false);
 	menuTriggerElement.addEventListener('click', controlMobileNav, false);
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
@@ -1140,6 +1192,10 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
+	search_menu_overlay = document.querySelector('.ts-search-overlay');
+	search_menu_input = document.querySelector('#searchall-input');
+	search_menu_content = document.querySelector('#ts-search-content');
+
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');
 	ejs.delimiter = '?';
@@ -1172,6 +1228,7 @@ window.addEventListener('load', function () {
 	initDatalists();
 	initMedialists();
 	initFilterlists();
+	initAdminSearch();
 
 	window.servermodalElement = servermodalElement;
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
