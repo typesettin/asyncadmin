@@ -1,0 +1,59 @@
+<% include ../../shared/header %>
+	<section class="ts-container">
+		<% include ../../shared/_html_inject_precontent %>
+			<div class="ts-row ts-no-heading-margin">
+				<div class="ts-col-span12 ts-padding-md ts-container-margin-lg">
+					<h3>Search Results for "<%- request.query.search %>"</h3>
+					<% search_entities.forEach(function(entity){
+						var pluralentity = locals.viewhelper.pluralize(entity);
+						// console.log(search_results[entity])
+						if(search_results[entity] && search_results[entity][pluralentity] && search_results[entity][pluralentity].length){%>
+								<div class="ts-container-margin-lg">
+									<h6><%- locals.viewhelper.capitalize(locals.viewhelper.pluralize( entity)) %></h6>
+									<%- locals.get_data_table_html({
+										data: search_results[entity][pluralentity],
+										data_attributes:[
+											{label:'ID'},
+											{label:'Title'},
+											{label:'Create Date'},
+											// {label:'Title'},
+										],
+										responsive_table :false,
+										thead:locals.default_thead(),
+										tbody:{
+											tag: 'tr',
+											style: 'vertical-align:top;',
+											html: function (obj) {
+												//
+												var jsontablehtml,
+												labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
+												if(obj.identification && obj.identification.guid){
+													labeltouse = obj.identification.guid;
+												}
+												var linktouse = '/p-admin/content/' + entity + '/' + obj._id + '/';
+												if(search_results[entity][pluralentity+'customlink']){
+													linktouse = search_results[entity][pluralentity+'customlink'].replace(/%obj._id%/gi,obj._id);
+												}
+												jsontablehtml = '<td width="15%"><a href="'+linktouse+'" class="async-admin-ajax-link">' + obj._id + '</a></td>'; 
+												jsontablehtml += '<td width="60%"><a href="' + linktouse+ '" class="async-admin-ajax-link">' + labeltouse + '</a></td>';
+												jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.updatedat).fromNow() + '</td>';
+												return jsontablehtml;
+											}
+										},
+										// custom_tfoot: locals.default_custom_tfoot({
+										// 	total: search_results[entity][pluralentity].length,
+										// 	count: search_results[entity][pluralentity+'count'], 
+										// 	pages: search_results[entity][entity+'pages'],
+										// 	currentlimit: search_results[entity][entity+'limit'],
+										// 	currentpage: search_results[entity][entity+'page_current'],
+										// 	colspan: 9
+										// })
+									}); %>
+								</div>
+							<% } 
+						});%>
+				</div>
+			</div>
+		<% include ../../shared/_html_inject_postcontent %>
+	</section>
+<% include ../../shared/footer %>

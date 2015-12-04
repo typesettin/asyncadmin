@@ -6,7 +6,6 @@ var async = require('async'),
 	pluralize = require('pluralize'),
 	capitalize = require('capitalize'),
 	fs = require('fs-extra'),
-	request = require('superagent'),
 	merge = require('utils-merge'),
 	CoreExtension,
 	CoreUtilities,
@@ -16,7 +15,7 @@ var async = require('async'),
 	mongoose,
 	logger,
 	adminPath,
-	// configError,
+	controllerOptions,
 	Contenttype,
 	Collection,
 	Compilation,
@@ -221,6 +220,75 @@ var getHomepageStats = function (req, res, next) {
 	});
 };
 
+var themesearch = function (options, callback) {
+	var req = options.req;
+	var searchterm = req.query.search;
+	var themedir = path.resolve(process.cwd(), 'content/themes/'),
+		returnFiles = [];
+	fs.readdir(themedir, function (err, files) {
+		if (err) {
+			callback(err, null);
+		}
+		else {
+			if (files) {
+				for (var x = 0; x < files.length; x++) {
+					if (files[x].match('periodicjs.theme') && files[x].match(searchterm)) {
+						returnFiles.push({
+							_id: files[x],
+							name: files[x],
+							active: (files[x] === appSettings.theme) ? true : false,
+							createdat: new Date()
+						});
+					}
+				}
+			}
+			callback(null, {
+				themelimit: req.query.limit,
+				themeoffset: req.query.offset || 0,
+				themepage_current: 1,
+				themepage_next: 1,
+				themepage_prev: 1,
+				themepages: 1,
+				themes: returnFiles,
+				themescount: returnFiles.length
+			});
+		}
+	});
+};
+var extensionsearch = function (options, callback) {
+	var req = options.req;
+	var searchterm = req.query.search;
+	var returnExtensions = [];
+
+	CoreExtension.getExtensions({
+			periodicsettings: appSettings
+		},
+		function (err, extensions) {
+			if (err) {
+				callback(err, null);
+			}
+			else {
+				for (var x = 0; x < extensions.length; x++) {
+					if (extensions[x].name.match('periodicjs.theme') && extensions[x].name.match(searchterm)) {
+						extensions[x]._id = extensions[x].name;
+						extensions[x].createdat = extensions[x].date;
+						returnExtensions.push(extensions[x]);
+					}
+				}
+				callback(null, {
+					extensionlimit: req.query.limit,
+					extensionoffset: req.query.offset || 0,
+					extensionpage_current: 1,
+					extensionpage_next: 1,
+					extensionpage_prev: 1,
+					extensionpages: 1,
+					extensions: returnExtensions,
+					extensionscount: returnExtensions.length
+				});
+			}
+		});
+};
+
 var checkDeleteUser = function (req, res, next) {
 	if ((req.user.activated || req.user.accounttype || req.user.userroles) && !User.hasPrivilege(req.user, 760)) {
 		var err = new Error('EXT-UAC760: You don\'t have access to modify user access');
@@ -392,40 +460,76 @@ var get_revision_page = function (options) {
 	};
 };
 
-var admin_search = function (req, res) {
+var admin_search = function (resources) {
+	var periodic = resources;
+	return function (req, res) {
+		var search_entities = Object.keys(periodic.app.controller.extension.asyncadmin.search);
+		// console.log('search_entities', search_entities);
+		req.query.search = req.query['searchall-input'];
+		req.query.limit = (req.query.limit && req.query.limit < 200) ? req.query.limit : 25;
+		var search_response_results = {};
 
-	request.get(req.get('host') + '/p-search/content-search/users')
-		.set('Accept', 'application/json')
-		.query({
-			format: 'json',
-			search: req.query['searchall-input']
-		})
-		.end(function (err, search_response) {
-			if (err) {
-				CoreController.handleDocumentQueryErrorResponse({
-					err: err,
-					res: res,
-					req: req
+		async.each(search_entities,
+			function(key,asyncForEachOfCallback){
+				// value({
+				periodic.app.controller.extension.asyncadmin.search[key]({
+					req: req,
+					res: res
+				}, function (err, search_response) {
+					if(err){
+						return asyncForEachOfCallback(err);
+					}
+					else{
+						search_response_results[key] = search_response;
+						asyncForEachOfCallback();
+					}
 				});
-			}
-			else {
-				var viewtemplate = {
-						viewname: 'p-admin/home/index',
-						themefileext: appSettings.templatefileextension,
-						extname: 'periodicjs.ext.asyncadmin'
-					},
-					viewdata = {
-						pagedata: {
-							title: 'Admin',
-							toplink: '&raquo; Search Results',
-							extensions: CoreUtilities.getAdminMenu()
+			},
+			function(err){
+				if (err) {
+					CoreController.handleDocumentQueryErrorResponse({
+						err: err,
+						res: res,
+						req: req
+					});
+				}
+				else{
+					// console.log('search_response_results',search_response_results);
+					var viewtemplate = {
+							viewname: 'p-admin/home/search',
+							themefileext: appSettings.templatefileextension,
+							extname: 'periodicjs.ext.asyncadmin'
 						},
-						search_results: search_response.body
-					};
-				CoreController.renderView(req, res, viewtemplate, viewdata);
-			}
-		});
+						viewdata = {
+							pagedata: {
+								title: 'Admin',
+								toplink: 'Search Results &raquo; "'+req.query['searchall-input']+'" ',
+								extensions: CoreUtilities.getAdminMenu()
+							},
+							search_results: search_response_results,
+							search_entities: search_entities,
+							user: req.user
+						};
+					CoreController.renderView(req, res, viewtemplate, viewdata);
+				}
+			});
+	};
 };
+
+var get_entity_search = function(options){
+	var entityname = options.entity;
+
+	return function(options,callback){
+		CoreController.controller_model_search_query({
+			req: options.req,
+			res: options.res,
+			orQuery: [],
+			controllerOptions: controllerOptions[entityname],
+			asyncCallback: callback
+		});
+	};
+};
+
 /**
  * admin controller
  * @module authController
@@ -456,6 +560,7 @@ var controller = function (resources) {
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
 	loginSettings = resources.app.controller.extension.login.loginExtSettings;
 	adminPath = resources.app.locals.adminPath;
+	controllerOptions = resources.app.controller.native.ControllerSettings;
 
 	return {
 		get_entity_modifications: get_entity_modifications,
@@ -478,7 +583,11 @@ var controller = function (resources) {
 		adminExtSettings: adminExtSettings,
 		checkDeleteUser: checkDeleteUser,
 		checkUserValidation: checkUserValidation,
-		admin_search: admin_search
+		themesearch: themesearch,
+		extensionsearch: extensionsearch,
+		get_entity_search: get_entity_search,
+		user_search: get_entity_search({entity: 'user'}),
+		admin_search: admin_search(resources)
 	};
 };
 

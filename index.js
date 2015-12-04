@@ -91,11 +91,15 @@ module.exports = function (periodic) {
 		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
 		socket_callback: require('./controller/server_callback')(periodic),
-		data_tables: data_tables
+		data_tables: data_tables,
+		search: {}
 	};
+	periodic.app.controller.extension.asyncadmin.search.user = periodic.app.controller.extension.asyncadmin.admin.user_search;
+	periodic.app.controller.extension.asyncadmin.search.theme = periodic.app.controller.extension.asyncadmin.admin.themesearch;
+	periodic.app.controller.extension.asyncadmin.search.extension = periodic.app.controller.extension.asyncadmin.admin.extensionsearch;
+
 
 	var adminRouter = periodic.express.Router(),
-		adminSearchRouter = periodic.express.Router(),
 		userAdminRouter = periodic.express.Router(),
 		settingsAdminRouter = periodic.express.Router(),
 		extensionAdminRouter = periodic.express.Router(),
@@ -118,7 +122,6 @@ module.exports = function (periodic) {
 	/**
 	 * access control routes
 	 */
-	adminSearchRouter.get('*', global.CoreCache.disableCache);
 	adminRouter.get('*', global.CoreCache.disableCache);
 	adminRouter.post('*', global.CoreCache.disableCache);
 	adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
@@ -144,7 +147,6 @@ module.exports = function (periodic) {
 	 * admin/user routes
 	 */
 	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
-	adminSearchRouter.get('/content-search/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
@@ -260,6 +262,5 @@ module.exports = function (periodic) {
 	adminRouter.use('/settings', settingsAdminRouter);
 
 	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
-	periodic.app.use('/p-search', adminSearchRouter);
 	return periodic;
 };

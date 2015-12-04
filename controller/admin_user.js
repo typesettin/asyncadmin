@@ -11,6 +11,7 @@ var merge = require('utils-merge'),
 	Compilation,
 	Item,
 	User,
+	controllerOptions,
 	adminPath,
 	adminExtSettings;
 
@@ -156,6 +157,7 @@ var users_edit = function (req, res) {
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
+// 
 /**
  * admin controller
  * @module authController
@@ -180,6 +182,7 @@ var controller = function (resources) {
 	Contenttype = mongoose.model('Contenttype');
 	Item = mongoose.model('Item');
 	User = mongoose.model('User');
+	controllerOptions = resources.app.controller.native.ControllerSettings;
 	// AppDBSetting = mongoose.model('Setting');
 	// var appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
@@ -189,7 +192,8 @@ var controller = function (resources) {
 		users_index: users_index,
 		users_edit: users_edit,
 		users_show: users_show,
-		users_new: users_new
+		users_new: users_new,
+		// usersearch: usersearch
 	};
 };
 

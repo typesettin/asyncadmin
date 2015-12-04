@@ -895,10 +895,10 @@ var asyncAdminContentElementClick = function (e) {
 };
 
 var initAdminSearch = function () {
-	search_menu_input.addEventListener('focus', controlSearchNav, false);
-	search_menu_input.addEventListener('blur', function () {
-		setTimeout(closeSearchNav, 200);
-	}, false);
+	// search_menu_input.addEventListener('focus', controlSearchNav, false);
+	// search_menu_input.addEventListener('blur', function () {
+	// 	setTimeout(closeSearchNav, 200);
+	// }, false);
 
 };
 
