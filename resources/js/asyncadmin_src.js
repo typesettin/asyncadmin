@@ -50,7 +50,6 @@ var ajaxlinks,
 	mobile_nav_menu,
 	mobile_nav_menu_overlay,
 	menuTriggerElement,
-	search_menu_overlay,
 	search_menu_content,
 	search_menu_input,
 	nav_header,
@@ -530,9 +529,11 @@ var initTabs = function () {
 		});
 	}
 };
+
 var isMobileNavOpen = function () {
 	return classie.has(mobile_nav_menu, 'fadeOutLeft') || classie.has(mobile_nav_menu, 'initialState');
 };
+
 var isSearchNavOpen = function () {
 	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
 };
@@ -544,9 +545,8 @@ var closeMobileNav = function () {
 };
 
 var closeSearchNav = function () {
-	classie.add(search_menu_overlay, 'hide');
 	classie.add(search_menu_content, 'fadeOutUp');
-	classie.remove(search_menu_content, 'fadeInUp');
+	classie.remove(search_menu_content, 'fadeInDown');
 };
 
 var controlMobileNav = function () {
@@ -563,17 +563,15 @@ var controlMobileNav = function () {
 };
 
 var controlSearchNav = function () {
-	if (isSearchNavOpen()) {
-		classie.remove(search_menu_content, 'initialState');
-		classie.add(search_menu_content, 'fadeInUp');
-		classie.remove(search_menu_content, 'fadeOutUp');
-		classie.remove(search_menu_overlay, 'hide');
-	}
-	else {
-		closeSearchNav();
-	}
+	// if (isSearchNavOpen()) {
+	classie.remove(search_menu_content, 'initialState');
+	classie.add(search_menu_content, 'fadeInDown');
+	classie.remove(search_menu_content, 'fadeOutUp');
+	// }
+	// else {
+	// 	closeSearchNav();
+	// }
 };
-
 
 var confirmDeleteDialog = function (e) {
 	var eTarget = e.target,
@@ -897,6 +895,10 @@ var asyncAdminContentElementClick = function (e) {
 };
 
 var initAdminSearch = function () {
+	search_menu_input.addEventListener('focus', controlSearchNav, false);
+	search_menu_input.addEventListener('blur', function () {
+		setTimeout(closeSearchNav, 200);
+	}, false);
 
 };
 
@@ -914,7 +916,6 @@ var initAjaxLinkEventListeners = function () {
 };
 
 var initEventListeners = function () {
-	search_menu_input.addEventListener('focus', controlSearchNav, false);
 	menuTriggerElement.addEventListener('click', controlMobileNav, false);
 	asyncAdminContentElement.addEventListener('click', asyncAdminContentElementClick, false);
 	adminButtonElement.addEventListener('click', showAdminConsoleElementClick, false);
@@ -1192,7 +1193,6 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
-	search_menu_overlay = document.querySelector('.ts-search-overlay');
 	search_menu_input = document.querySelector('#searchall-input');
 	search_menu_content = document.querySelector('#ts-search-content');
 

@@ -6,6 +6,7 @@ var async = require('async'),
 	pluralize = require('pluralize'),
 	capitalize = require('capitalize'),
 	fs = require('fs-extra'),
+	request = require('superagent'),
 	merge = require('utils-merge'),
 	CoreExtension,
 	CoreUtilities,
@@ -391,6 +392,40 @@ var get_revision_page = function (options) {
 	};
 };
 
+var admin_search = function (req, res) {
+
+	request.get(req.get('host') + '/p-search/content-search/users')
+		.set('Accept', 'application/json')
+		.query({
+			format: 'json',
+			search: req.query['searchall-input']
+		})
+		.end(function (err, search_response) {
+			if (err) {
+				CoreController.handleDocumentQueryErrorResponse({
+					err: err,
+					res: res,
+					req: req
+				});
+			}
+			else {
+				var viewtemplate = {
+						viewname: 'p-admin/home/index',
+						themefileext: appSettings.templatefileextension,
+						extname: 'periodicjs.ext.asyncadmin'
+					},
+					viewdata = {
+						pagedata: {
+							title: 'Admin',
+							toplink: '&raquo; Search Results',
+							extensions: CoreUtilities.getAdminMenu()
+						},
+						search_results: search_response.body
+					};
+				CoreController.renderView(req, res, viewtemplate, viewdata);
+			}
+		});
+};
 /**
  * admin controller
  * @module authController
@@ -442,7 +477,8 @@ var controller = function (resources) {
 		getHomepageStats: getHomepageStats,
 		adminExtSettings: adminExtSettings,
 		checkDeleteUser: checkDeleteUser,
-		checkUserValidation: checkUserValidation
+		checkUserValidation: checkUserValidation,
+		admin_search: admin_search
 	};
 };
 

@@ -95,6 +95,7 @@ module.exports = function (periodic) {
 	};
 
 	var adminRouter = periodic.express.Router(),
+		adminSearchRouter = periodic.express.Router(),
 		userAdminRouter = periodic.express.Router(),
 		settingsAdminRouter = periodic.express.Router(),
 		extensionAdminRouter = periodic.express.Router(),
@@ -117,7 +118,7 @@ module.exports = function (periodic) {
 	/**
 	 * access control routes
 	 */
-
+	adminSearchRouter.get('*', global.CoreCache.disableCache);
 	adminRouter.get('*', global.CoreCache.disableCache);
 	adminRouter.post('*', global.CoreCache.disableCache);
 	adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
@@ -143,6 +144,7 @@ module.exports = function (periodic) {
 	 * admin/user routes
 	 */
 	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	adminSearchRouter.get('/content-search/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
@@ -244,6 +246,10 @@ module.exports = function (periodic) {
 	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
 	adminRouter.get('/userprivileges/search', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
 
+
+	//searching
+	periodic.app.get('/' + periodic.app.locals.adminPath + '/content/search', adminController.admin_search);
+
 	//mail settings
 	periodic.app.get('/' + periodic.app.locals.adminPath + '/mailer/test', mailController.testemail);
 	periodic.app.post('/' + periodic.app.locals.adminPath + '/mailer/sendmail', mailController.sendmail);
@@ -252,6 +258,8 @@ module.exports = function (periodic) {
 	adminRouter.use('/theme', themeAdminRouter);
 	adminRouter.use('/user', userAdminRouter);
 	adminRouter.use('/settings', settingsAdminRouter);
+
 	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
+	periodic.app.use('/p-search', adminSearchRouter);
 	return periodic;
 };
