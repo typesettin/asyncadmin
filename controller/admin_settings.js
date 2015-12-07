@@ -761,7 +761,7 @@ var send_setting_server_callback = function (options) {
 	}
 };
 
-var checkOutdatedModulesAndPeriodic = function () {
+var checkOutdatedModulesAndPeriodic = function (options,callback) {
 	var list_of_extensions;
 	var list_of_extensions_recent_data;
 	var list_of_extensions_current_data = {};
@@ -848,8 +848,14 @@ var checkOutdatedModulesAndPeriodic = function () {
 	}, function (err, result) {
 		if (err) {
 			logger.error(err);
+			if(callback){
+				callback(err);
+			}
 		}
 		else if (result.calculate_outdated_versions && Object.keys(result.calculate_outdated_versions).length > 0) {
+			if(callback){
+				callback(null,result);
+			}
 			logger.warn('asyncadmin - WARNING: Your Instance is out of date', result.calculate_outdated_versions);
 			var alerthtml = '<ul>';
 
@@ -892,6 +898,18 @@ var checkOutdatedModulesAndPeriodic = function () {
 	});
 };
 
+var get_outdated_modules = function(req,res,next){
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	checkOutdatedModulesAndPeriodic({},function(err,outdated_modules){
+		if(err){
+			next(err);
+		}
+		else{
+			req.controllerData.outdated_modules = outdated_modules;
+			next();
+		}
+	});
+};
 
 var useCronTasks = function () {
 	try {
@@ -963,7 +981,8 @@ var controller = function (resources) {
 		restart_app: restart_app,
 		update_app: update_app,
 		update_theme_settings: update_theme_settings,
-		update_app_settings: update_app_settings
+		update_app_settings: update_app_settings,
+		get_outdated_modules: get_outdated_modules
 	};
 };
 

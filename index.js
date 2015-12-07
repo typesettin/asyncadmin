@@ -136,8 +136,8 @@ module.exports = function (periodic) {
 	// adminRouter.get('/', adminController.admin_index);
 	adminRouter.get('/', adminController.getHomepageStats, adminController.admin_index);
 	adminRouter.get('/dashboard', adminController.getHomepageStats, adminController.admin_index);
-	// adminRouter.get('/extensions', adminController.loadExtensions, adminController.extensions_index);
-	// adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
+	adminRouter.get('/extensions', adminController.loadExtensions, adminController.extensions_index);
+	adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
 	// adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, uacController.loadUacUsers, adminController.users_index);
 	// adminRouter.get('/check_periodic_version', adminController.check_periodic_version);
 
@@ -147,6 +147,7 @@ module.exports = function (periodic) {
 	 * admin/user routes
 	 */
 	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	adminRouter.get('/content/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);

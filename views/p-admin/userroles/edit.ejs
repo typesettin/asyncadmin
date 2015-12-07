@@ -1,7 +1,12 @@
+<% genericdoc = userrole %>
+<% genericdoctype = "Userrole" %>
+<% genericdoctypelink = "userrole" %>
+<% genericdoctypeplurallink = "userroles" %>
 <% include ../../shared/header %>
 <div class="ts-container">
 	<section class="ts-text-container ts-genericdoc">
 		<% include ../../shared/_html_inject_precontent %>
+    <% include ../../shared/genericdoc_compose_title %>
 		<script type="text/javascript">
 		<%- locals.viewhelper.passObjToClient(userrole.privileges,"userproleuseprivileges") %>
 		</script>

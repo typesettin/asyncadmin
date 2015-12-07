@@ -1,7 +1,14 @@
-<% include ../../shared/header %>
+<% genericdoc = userprofile %>
+<% genericdocid = userprofile._id %>
+<% genericdoctype = "User" %>
 <% genericdoctypename = "user" %>
+<% genericdoctypelink = "user" %>
+<% genericdoctypeplurallink = "users" %>
+<% include ../../shared/header %>
 <div class="ts-container">
   <div class="ts-text-container ts-genericdoc">
+
+    <% include ../../shared/genericdoc_compose_title %>
 
     <div class="ts-row">
       <div class="ts-col-span12">
@@ -14,12 +21,6 @@
           </nav>
           <div class="ts-tabs-content">
             <section class="ts-no-padding">
-              <% genericdoc = user %>
-              <% genericdocid = user._id %>
-              <% genericdoctype = "User" %>
-              <% genericdoctypename = "user" %>
-              <% genericdoctypelink = "user" %>
-              <% genericdoctypeplurallink = "users" %>
               <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/user/edit" enctype="multipart/form-data" 
           data-successsubmitfunction="refresh_content_attributes_media">
 								<% include _compose_user_form %>

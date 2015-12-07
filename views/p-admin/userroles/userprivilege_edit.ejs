@@ -1,3 +1,8 @@
+<% genericdoc = userprivilege %>
+<% genericdoctype = "Userprivileges" %>
+<% genericdoctypelink = "userprivilege" %>
+<% genericdoctypeplurallink = "userprivileges" %>
+
 <% include ../../shared/header %>
 <div class="ts-container">
 	<section class="ts-text-container ts-genericdoc">
@@ -7,8 +12,8 @@
 			<input type="hidden" name="docid" value=<%- userprivilege._id %> >
 			<div class="ts-page-content-container-profile-page">
 				<div class="ts-row">
-					<div class="ts-genericdoc-entry ts-col-nofloat ts-col-span7 ts-screensm-col-span12 ts-screenxs-col-span12">
-						<h4>User Privilege</h4>
+					<div class="ts-genericdoc-entry ts-col-nofloat ts-col-span10 ts-screensm-col-span12 ts-screenxs-col-span12">
+   					<% include ../../shared/genericdoc_compose_title %>
 						<div  id="new-userprivilege-modal-content">
 		          <div class="ts-row ts-form-row">
 		            <div>

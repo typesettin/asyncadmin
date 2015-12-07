@@ -24,8 +24,6 @@ var async = require('async'),
 	adminExtSettings,
 	loginSettings;
 
-
-
 var admin_index = function (req, res) {
 	// console.log('req._parsedUrl.pathname === \'/\'',)
 	// console.log('adminExtSettings',adminExtSettings);
@@ -220,6 +218,47 @@ var getHomepageStats = function (req, res, next) {
 	});
 };
 
+var loadExtensions = function(req,res,next){
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	extensionsearch({
+		req:req,
+		res:res,
+	},function(err,extdata){
+		if(err){
+			next(err);
+		}
+		else{
+			req.controllerData = merge(req.controllerData,extdata);
+			next();
+		}
+	});
+};
+
+var extensions_index = function(req,res){
+	var viewtemplate = {
+		viewname: 'p-admin/extensions/index',
+		themefileext: appSettings.templatefileextension,
+		extname: 'periodicjs.ext.asyncadmin'
+	},
+	viewdata = merge({
+		pagedata: {
+			title: 'Extensions',
+			toplink: '&raquo; Extension index',
+			// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
+			extensions: CoreUtilities.getAdminMenu()
+		},
+		user: req.user
+	},req.controllerData);
+
+	/*
+			themes: req.controllerData.themes,
+			themesettings: req.controllerData.themesettings,
+		appsettings: req.controllerData.appsettings,
+		config: req.controllerData.config,
+	 */
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
 var themesearch = function (options, callback) {
 	var req = options.req;
 	var searchterm = req.query.search;
@@ -236,8 +275,10 @@ var themesearch = function (options, callback) {
 						returnFiles.push({
 							_id: files[x],
 							name: files[x],
+							themename: files[x],
 							active: (files[x] === appSettings.theme) ? true : false,
-							createdat: new Date()
+							createdat: new Date(),
+							updatedat: new Date()
 						});
 					}
 				}
@@ -255,6 +296,48 @@ var themesearch = function (options, callback) {
 		}
 	});
 };
+
+var loadThemes = function(req,res,next){
+	req.controllerData = (req.controllerData) ? req.controllerData : {};
+	themesearch({
+		req:req,
+		res:res,
+	},function(err,themedata){
+		if(err){
+			next(err);
+		}
+		else{
+			req.controllerData = merge(req.controllerData,themedata);
+			next();
+		}
+	});
+};
+
+var themes_index = function(req,res){
+	var viewtemplate = {
+			viewname: 'p-admin/themes/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = merge({
+			pagedata: {
+				title: 'Themes',
+				toplink: '&raquo; Theme index',
+				// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		},req.controllerData);
+
+		/*
+				themes: req.controllerData.themes,
+				themesettings: req.controllerData.themesettings,
+			appsettings: req.controllerData.appsettings,
+			config: req.controllerData.config,
+		 */
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
 var extensionsearch = function (options, callback) {
 	var req = options.req;
 	var searchterm = req.query.search;
@@ -268,10 +351,11 @@ var extensionsearch = function (options, callback) {
 				callback(err, null);
 			}
 			else {
-				for (var x = 0; x < extensions.length; x++) {
-					if (extensions[x].name.match('periodicjs.theme') && extensions[x].name.match(searchterm)) {
+				for (var x = 0; x < extensions.length; x++) {					
+					if (extensions[x].name.match('periodicjs.ext') && extensions[x].name.match(searchterm)) {
 						extensions[x]._id = extensions[x].name;
 						extensions[x].createdat = extensions[x].date;
+						extensions[x].updatedat = extensions[x].date;
 						returnExtensions.push(extensions[x]);
 					}
 				}
@@ -573,6 +657,8 @@ var controller = function (resources) {
 		revision_delete: revision_delete,
 		revision_revert: revision_revert,
 		admin_index: admin_index,
+		loadExtensions:loadExtensions,
+		themes_index: themes_index,
 		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
 		removePasswordFromAdvancedSubmit: removePasswordFromAdvancedSubmit,
 		settings_index: settings_index,
@@ -584,7 +670,9 @@ var controller = function (resources) {
 		checkDeleteUser: checkDeleteUser,
 		checkUserValidation: checkUserValidation,
 		themesearch: themesearch,
+		loadThemes:loadThemes,
 		extensionsearch: extensionsearch,
+		extensions_index: extensions_index,
 		get_entity_search: get_entity_search,
 		user_search: get_entity_search({entity: 'user'}),
 		admin_search: admin_search(resources)
