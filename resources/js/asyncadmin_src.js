@@ -1,9 +1,12 @@
 'use strict';
+var debounce = require('debounce');
 var ajaxlinks,
 	// ajaxforms,
 	// ajaxFormies = {},
 	// summernotes,
 	summernoteContentEditors = {},
+	pluralize = require('pluralize'),
+	capitalize = require('capitalize'),
 	moment = require('moment'),
 	Pushie = require('pushie'),
 	Bindie = require('bindie'),
@@ -30,6 +33,7 @@ var ajaxlinks,
 	StylieFilterlist = require('./filterlist'),
 	StylieSortlist = require('./sortlist'),
 	StylieTextEditor = require('./stylieeditor'),
+	data_tables = require('../../controller/data_tables'),
 	AdminModal,
 	open_modal_buttons,
 	asyncHTMLWrapper,
@@ -45,6 +49,7 @@ var ajaxlinks,
 	request = require('superagent'),
 	isClearingConsole = false,
 	mtpms,
+	search_result_template,
 	adminButtonElement,
 	servermodalElement,
 	mobile_nav_menu,
@@ -92,6 +97,7 @@ window.StylieModals = StylieModals;
 window.Formie = Formie;
 window.Bindie = Bindie;
 window.Stylie = Stylie;
+window.classie = classie;
 
 var openModalButtonListener = function (e) {
 	e.preventDefault();
@@ -534,9 +540,9 @@ var isMobileNavOpen = function () {
 	return classie.has(mobile_nav_menu, 'fadeOutLeft') || classie.has(mobile_nav_menu, 'initialState');
 };
 
-var isSearchNavOpen = function () {
-	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
-};
+// var isSearchNavOpen = function () {
+// 	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
+// };
 
 var closeMobileNav = function () {
 	classie.add(mobile_nav_menu_overlay, 'hide');
@@ -565,12 +571,52 @@ var controlMobileNav = function () {
 var controlSearchNav = function () {
 	// if (isSearchNavOpen()) {
 	classie.remove(search_menu_content, 'initialState');
-	classie.add(search_menu_content, 'fadeInDown');
 	classie.remove(search_menu_content, 'fadeOutUp');
+	classie.add(search_menu_content, 'fadeInDown');
 	// }
 	// else {
 	// 	closeSearchNav();
 	// }
+};
+
+var search_menu_callback = function () {
+	try {
+		console.log('search_menu_callback this', this.value);
+		var searchhtml = '';
+		request
+			.get('/p-admin/content/search')
+			.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
+			.set('Accept', 'application/json')
+			.query({
+				format: 'json',
+				_csrf: document.querySelector('input[name=_csrf]').value,
+				'searchall-input': this.value
+			})
+			.end(function (err, responsedata) {
+				responsedata.body.moment = moment;
+				responsedata.body.capitalize = capitalize;
+				responsedata.body.pluralize = pluralize;
+				responsedata.body.data_tables = data_tables;
+				searchhtml = ejs.render(search_result_template, responsedata.body);
+				search_menu_content.innerHTML = searchhtml;
+				// console.log('searchhtml', searchhtml);
+			});
+	}
+	catch (e) {
+		handleUncaughtError(e, 'ajax page error');
+	}
+	// console.log(data);
+};
+
+var initAdminSearch = function () {
+	search_menu_input = document.querySelector('#searchall-input');
+	search_menu_content = document.querySelector('#ts-search-content');
+	document.querySelector('#searchall-input').addEventListener('keydown', debounce(search_menu_callback, 200), false);
+	// search_menu_input.addEventListener('change', debounce(search_menu_callback, 200), false);
+	document.querySelector('#searchall-input').addEventListener('focus', controlSearchNav, false);
+	document.querySelector('#searchall-input').addEventListener('blur', function () {
+		setTimeout(closeSearchNav, 200);
+	}, false);
 };
 
 var confirmDeleteDialog = function (e) {
@@ -741,6 +787,7 @@ var loadAjaxPage = function (options) {
 						initMedialists();
 						initFilterlists();
 						initAjaxLinkEventListeners();
+						initAdminSearch();
 					}
 					catch (ajaxPageError) {
 						handleUncaughtError(ajaxPageError);
@@ -892,14 +939,6 @@ var asyncAdminContentElementClick = function (e) {
 	// 	});
 	// 	return false;
 	// }
-};
-
-var initAdminSearch = function () {
-	// search_menu_input.addEventListener('focus', controlSearchNav, false);
-	// search_menu_input.addEventListener('blur', function () {
-	// 	setTimeout(closeSearchNav, 200);
-	// }, false);
-
 };
 
 var showAdminConsoleElementClick = function () {
@@ -1193,8 +1232,10 @@ window.addEventListener('load', function () {
 	classie.add(adminButtonElement, 'ts-open-admin-console');
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
+
 	search_menu_input = document.querySelector('#searchall-input');
 	search_menu_content = document.querySelector('#ts-search-content');
+	search_result_template = document.querySelector('#ts-search-result-template').innerHTML;
 
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');

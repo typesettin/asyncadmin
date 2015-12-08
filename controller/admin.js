@@ -218,37 +218,37 @@ var getHomepageStats = function (req, res, next) {
 	});
 };
 
-var loadExtensions = function(req,res,next){
+var loadExtensions = function (req, res, next) {
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	extensionsearch({
-		req:req,
-		res:res,
-	},function(err,extdata){
-		if(err){
+		req: req,
+		res: res,
+	}, function (err, extdata) {
+		if (err) {
 			next(err);
 		}
-		else{
-			req.controllerData = merge(req.controllerData,extdata);
+		else {
+			req.controllerData = merge(req.controllerData, extdata);
 			next();
 		}
 	});
 };
 
-var extensions_index = function(req,res){
+var extensions_index = function (req, res) {
 	var viewtemplate = {
-		viewname: 'p-admin/extensions/index',
-		themefileext: appSettings.templatefileextension,
-		extname: 'periodicjs.ext.asyncadmin'
-	},
-	viewdata = merge({
-		pagedata: {
-			title: 'Extensions',
-			toplink: '&raquo; Extension index',
-			// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
-			extensions: CoreUtilities.getAdminMenu()
+			viewname: 'p-admin/extensions/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
 		},
-		user: req.user
-	},req.controllerData);
+		viewdata = merge({
+			pagedata: {
+				title: 'Extensions',
+				toplink: '&raquo; Extension index',
+				// headerjs: ['/extensions/periodicjs.ext.admin/js/settings.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		}, req.controllerData);
 
 	/*
 			themes: req.controllerData.themes,
@@ -297,23 +297,23 @@ var themesearch = function (options, callback) {
 	});
 };
 
-var loadThemes = function(req,res,next){
+var loadThemes = function (req, res, next) {
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
 	themesearch({
-		req:req,
-		res:res,
-	},function(err,themedata){
-		if(err){
+		req: req,
+		res: res,
+	}, function (err, themedata) {
+		if (err) {
 			next(err);
 		}
-		else{
-			req.controllerData = merge(req.controllerData,themedata);
+		else {
+			req.controllerData = merge(req.controllerData, themedata);
 			next();
 		}
 	});
 };
 
-var themes_index = function(req,res){
+var themes_index = function (req, res) {
 	var viewtemplate = {
 			viewname: 'p-admin/themes/index',
 			themefileext: appSettings.templatefileextension,
@@ -327,14 +327,14 @@ var themes_index = function(req,res){
 				extensions: CoreUtilities.getAdminMenu()
 			},
 			user: req.user
-		},req.controllerData);
+		}, req.controllerData);
 
-		/*
-				themes: req.controllerData.themes,
-				themesettings: req.controllerData.themesettings,
-			appsettings: req.controllerData.appsettings,
-			config: req.controllerData.config,
-		 */
+	/*
+			themes: req.controllerData.themes,
+			themesettings: req.controllerData.themesettings,
+		appsettings: req.controllerData.appsettings,
+		config: req.controllerData.config,
+	 */
 	CoreController.renderView(req, res, viewtemplate, viewdata);
 };
 
@@ -351,7 +351,7 @@ var extensionsearch = function (options, callback) {
 				callback(err, null);
 			}
 			else {
-				for (var x = 0; x < extensions.length; x++) {					
+				for (var x = 0; x < extensions.length; x++) {
 					if (extensions[x].name.match('periodicjs.ext') && extensions[x].name.match(searchterm)) {
 						extensions[x]._id = extensions[x].name;
 						extensions[x].createdat = extensions[x].date;
@@ -502,8 +502,8 @@ var revision_revert = function (req, res, next) {
 	updatedoc = merge(updatedoc, updatedoc.changes[revisionindex].changeset);
 	// req.saverevision = false;
 	req.body = updatedoc;
-	console.log('req.body ', req.body);
-	console.log('revisionindex ', revisionindex);
+	// console.log('req.body ', req.body);
+	// console.log('revisionindex ', revisionindex);
 	next();
 };
 
@@ -549,27 +549,27 @@ var admin_search = function (resources) {
 	return function (req, res) {
 		var search_entities = Object.keys(periodic.app.controller.extension.asyncadmin.search);
 		// console.log('search_entities', search_entities);
-		req.query.search = req.query['searchall-input'];
+		req.query.search = req.query['searchall-input'] || req.query.search;
 		req.query.limit = (req.query.limit && req.query.limit < 200) ? req.query.limit : 25;
 		var search_response_results = {};
 
 		async.each(search_entities,
-			function(key,asyncForEachOfCallback){
+			function (key, asyncForEachOfCallback) {
 				// value({
 				periodic.app.controller.extension.asyncadmin.search[key]({
 					req: req,
 					res: res
 				}, function (err, search_response) {
-					if(err){
+					if (err) {
 						return asyncForEachOfCallback(err);
 					}
-					else{
+					else {
 						search_response_results[key] = search_response;
 						asyncForEachOfCallback();
 					}
 				});
 			},
-			function(err){
+			function (err) {
 				if (err) {
 					CoreController.handleDocumentQueryErrorResponse({
 						err: err,
@@ -577,7 +577,7 @@ var admin_search = function (resources) {
 						req: req
 					});
 				}
-				else{
+				else {
 					// console.log('search_response_results',search_response_results);
 					var viewtemplate = {
 							viewname: 'p-admin/home/search',
@@ -587,7 +587,7 @@ var admin_search = function (resources) {
 						viewdata = {
 							pagedata: {
 								title: 'Admin',
-								toplink: 'Search Results &raquo; "'+req.query['searchall-input']+'" ',
+								toplink: 'Search Results &raquo; "' + req.query['searchall-input'] + '" ',
 								extensions: CoreUtilities.getAdminMenu()
 							},
 							search_results: search_response_results,
@@ -600,10 +600,10 @@ var admin_search = function (resources) {
 	};
 };
 
-var get_entity_search = function(options){
+var get_entity_search = function (options) {
 	var entityname = options.entity;
 
-	return function(options,callback){
+	return function (options, callback) {
 		CoreController.controller_model_search_query({
 			req: options.req,
 			res: options.res,
@@ -657,7 +657,7 @@ var controller = function (resources) {
 		revision_delete: revision_delete,
 		revision_revert: revision_revert,
 		admin_index: admin_index,
-		loadExtensions:loadExtensions,
+		loadExtensions: loadExtensions,
 		themes_index: themes_index,
 		fixCodeMirrorSubmit: fixCodeMirrorSubmit,
 		removePasswordFromAdvancedSubmit: removePasswordFromAdvancedSubmit,
@@ -670,11 +670,13 @@ var controller = function (resources) {
 		checkDeleteUser: checkDeleteUser,
 		checkUserValidation: checkUserValidation,
 		themesearch: themesearch,
-		loadThemes:loadThemes,
+		loadThemes: loadThemes,
 		extensionsearch: extensionsearch,
 		extensions_index: extensions_index,
 		get_entity_search: get_entity_search,
-		user_search: get_entity_search({entity: 'user'}),
+		user_search: get_entity_search({
+			entity: 'user'
+		}),
 		admin_search: admin_search(resources)
 	};
 };

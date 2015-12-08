@@ -761,7 +761,7 @@ var send_setting_server_callback = function (options) {
 	}
 };
 
-var checkOutdatedModulesAndPeriodic = function (options,callback) {
+var checkOutdatedModulesAndPeriodic = function (options, callback) {
 	var list_of_extensions;
 	var list_of_extensions_recent_data;
 	var list_of_extensions_current_data = {};
@@ -848,13 +848,13 @@ var checkOutdatedModulesAndPeriodic = function (options,callback) {
 	}, function (err, result) {
 		if (err) {
 			logger.error(err);
-			if(callback){
+			if (callback) {
 				callback(err);
 			}
 		}
 		else if (result.calculate_outdated_versions && Object.keys(result.calculate_outdated_versions).length > 0) {
-			if(callback){
-				callback(null,result);
+			if (callback) {
+				callback(null, result);
 			}
 			logger.warn('asyncadmin - WARNING: Your Instance is out of date', result.calculate_outdated_versions);
 			var alerthtml = '<ul>';
@@ -898,13 +898,13 @@ var checkOutdatedModulesAndPeriodic = function (options,callback) {
 	});
 };
 
-var get_outdated_modules = function(req,res,next){
+var get_outdated_modules = function (req, res, next) {
 	req.controllerData = (req.controllerData) ? req.controllerData : {};
-	checkOutdatedModulesAndPeriodic({},function(err,outdated_modules){
-		if(err){
+	checkOutdatedModulesAndPeriodic({}, function (err, outdated_modules) {
+		if (err) {
 			next(err);
 		}
-		else{
+		else {
 			req.controllerData.outdated_modules = outdated_modules;
 			next();
 		}

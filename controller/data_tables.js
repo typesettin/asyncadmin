@@ -1,9 +1,17 @@
 'use strict';
 
-var json2html = require('node-json2html'),
+var json2html,
 	moment = require('moment'),
-	querystring = require('querystring'),
+	// querystring = require('querystring'),
 	merge = require('util-extend');
+
+// if (typeof module !== 'undefined' && module.exports) {
+// 	json2html = require('node-json2html');
+// }
+// else {
+json2html = require('./json2html');
+// }
+
 
 var get_attribute_tags = function (attributes) {
 	var returnHtml = ' ';

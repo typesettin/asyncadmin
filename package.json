@@ -25,6 +25,7 @@
     "bindie": "^2.1.0",
     "classie": "^1.0.0",
     "codemirror": "^5.4.0",
+    "debounce": "^1.0.0",
     "diff": "^2.2.1",
     "forbject": "^1.4.0",
     "formie": "^1.0.0",
@@ -79,8 +80,8 @@
   ],
   "directories": {},
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@6.0.5",
-  "_shasum": "f6e0679e129d5f6b7f152e050fd98c4b58328697",
+  "_id": "periodicjs.ext.asyncadmin@6.1.0",
+  "_shasum": "bdf38d1e724d53c0ef2c8f0511445c106b425e6f",
   "_from": "periodicjs.ext.asyncadmin@latest",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.6",
@@ -89,8 +90,8 @@
     "email": "yaw.etse@gmail.com"
   },
   "dist": {
-    "shasum": "f6e0679e129d5f6b7f152e050fd98c4b58328697",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.0.5.tgz"
+    "shasum": "bdf38d1e724d53c0ef2c8f0511445c106b425e6f",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.0.tgz"
   },
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.0.5.tgz"
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.0.tgz"
 }

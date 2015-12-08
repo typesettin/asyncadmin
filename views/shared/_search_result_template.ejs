@@ -1,0 +1,40 @@
+<div class="ts-row  ts-text-sm">
+	<div class="ts-col-span12">Search Results for "<?- request.query.search ?>"</div>
+</div>
+
+ <? search_entities.forEach(function(entity){
+	var pluralentity = pluralize(entity);
+	// console.log(search_results[entity])
+	if(search_results[entity] && search_results[entity][pluralentity] && search_results[entity][pluralentity].length){?>
+			<div class="ts-row ts-text-sm">
+				<div class="ts-col-span12 ts-bg-accent-color ts-text-text-primary-color ts-text-bold ts-padding-md">
+					<!-- <h6><?- capitalize(pluralize( entity)) ?></h6> -->
+					<div class="ts-col-span10"><?- capitalize(pluralize( entity))  ?></div>
+					<div class="ts-col-span2">Create Date</div>
+				</div>
+				<? search_results[entity][pluralentity].forEach(function(obj,i){
+					var labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
+							if(obj.identification && obj.identification.guid){
+								labeltouse = obj.identification.guid;
+							}
+							var linktouse = '/p-admin/content/' + entity + '/' + obj._id + '/';
+							if(search_results[entity][pluralentity+'customlink']){
+								linktouse = search_results[entity][pluralentity+'customlink'].replace(/%obj._id%/gi,obj._id);
+							}
+					?>
+					<div class="ts-col-span10 ts-padding-md">
+						<!-- <section ><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- obj._id?></a></se`ction> -->
+						<section class="ts-col-span8"><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- labeltouse?></a></section>
+					</div>
+					
+					<div class="ts-col-span2  ts-padding-md"><?- new moment(obj.updatedat).fromNow()?></div>
+					<div class="ts-col-span12"> <hr/></div>
+				<?
+
+				}) ?>
+			</div>
+
+	
+		<? } 
+	});?>
+</div>
