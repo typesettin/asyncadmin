@@ -600,6 +600,7 @@ var search_menu_callback = function () {
 				searchhtml = ejs.render(search_result_template, responsedata.body);
 				search_menu_content.innerHTML = searchhtml;
 				// console.log('searchhtml', searchhtml);
+				// 
 			});
 	}
 	catch (e) {
@@ -615,7 +616,7 @@ var initAdminSearch = function () {
 	// search_menu_input.addEventListener('change', debounce(search_menu_callback, 200), false);
 	document.querySelector('#searchall-input').addEventListener('focus', controlSearchNav, false);
 	document.querySelector('#searchall-input').addEventListener('blur', function () {
-		setTimeout(closeSearchNav, 200);
+		setTimeout(closeSearchNav, 400);
 	}, false);
 };
 
@@ -870,6 +871,7 @@ var handle_ajax_button_response = function (e) {
 };
 
 var async_admin_ajax_link_handler = function (e) {
+	console.log('e.target', e.target);
 	var etarget = e.target,
 		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
@@ -1183,7 +1185,6 @@ window.adminRefresh = function () {
 	});
 };
 
-
 window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
 	// window.adminRefresh();
 	var t;
@@ -1209,7 +1210,6 @@ window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
 		alreadyAttachedAppResponse = true;
 	}
 };
-
 
 window.addEventListener('load', function () {
 	window.domLoadEventFired = true;
