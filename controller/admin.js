@@ -547,8 +547,11 @@ var get_revision_page = function (options) {
 var admin_search = function (resources) {
 	var periodic = resources;
 	return function (req, res) {
-		var search_entities = Object.keys(periodic.app.controller.extension.asyncadmin.search);
-		// console.log('search_entities', search_entities);
+		var search_entities = req.body.search_entities || req.query.search_entities || req.controllerData.search_entities || Object.keys(periodic.app.controller.extension.asyncadmin.search);
+		if (!Array.isArray(search_entities)) {
+			search_entities = search_entities.split(',');
+		}
+		console.log('search_entities', search_entities);
 		req.query.search = req.query['searchall-input'] || req.query.search;
 		req.query.limit = (req.query.limit && req.query.limit < 200) ? req.query.limit : 25;
 		var search_response_results = {};
@@ -564,7 +567,16 @@ var admin_search = function (resources) {
 						return asyncForEachOfCallback(err);
 					}
 					else {
-						search_response_results[key] = search_response;
+						search_response_results[key] = {};
+						search_response_results[key][key + 'limit'] = search_response[key + 'limit'];
+						search_response_results[key][key + 'offset'] = search_response[key + 'offset'];
+						search_response_results[key][key + 'page_current'] = search_response[key + 'page_current'];
+						search_response_results[key][key + 'page_next'] = search_response[key + 'page_next'];
+						search_response_results[key][key + 'page_prev'] = search_response[key + 'page_prev'];
+						search_response_results[key][key + 'pages'] = search_response[key + 'pages'];
+						search_response_results[key][pluralize(key)] = search_response[pluralize(key)];
+
+
 						asyncForEachOfCallback();
 					}
 				});

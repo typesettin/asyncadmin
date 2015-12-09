@@ -80,8 +80,8 @@
   ],
   "directories": {},
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@6.1.0",
-  "_shasum": "bdf38d1e724d53c0ef2c8f0511445c106b425e6f",
+  "_id": "periodicjs.ext.asyncadmin@6.1.100",
+  "_shasum": "59ad0df8aa191250c5bcec6007c75bb3655eacde",
   "_from": "periodicjs.ext.asyncadmin@latest",
   "_npmVersion": "2.11.2",
   "_nodeVersion": "0.12.6",
@@ -90,8 +90,9 @@
     "email": "yaw.etse@gmail.com"
   },
   "dist": {
-    "shasum": "bdf38d1e724d53c0ef2c8f0511445c106b425e6f",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.0.tgz"
+    "shasum": "59ad0df8aa191250c5bcec6007c75bb3655eacde",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.100.tgz"
   },
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.0.tgz"
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.1.100.tgz",
+  "readme": "ERROR: No README data found!"
 }

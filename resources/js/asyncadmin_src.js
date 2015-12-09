@@ -31,6 +31,7 @@ var ajaxlinks,
 	StylieDatalist = require('./datalist'),
 	StylieMedialist = require('./medialist'),
 	StylieFilterlist = require('./filterlist'),
+	StylieTagManager = require('./tagman'),
 	StylieSortlist = require('./sortlist'),
 	StylieTextEditor = require('./stylieeditor'),
 	data_tables = require('../../controller/data_tables'),
@@ -64,9 +65,11 @@ var ajaxlinks,
 	datalistelements,
 	medialistelements,
 	filterlistelements,
+	tagmanagerelements,
 	sortlistelements,
 	alreadyAttachedAppResponse = false,
 	AdminFormies = {},
+	AdminTagManagers = {},
 	StylieDataLists = {},
 	StylieTab = {};
 
@@ -232,6 +235,13 @@ var initMedialists = function () {
 };
 
 var initFilterlists = function () {
+	tagmanagerelements = document.querySelectorAll('.asyncadmin-ts-tagmanager');
+	for (var p = 0; p < tagmanagerelements.length; p++) {
+		AdminTagManagers[tagmanagerelements[p].id] = new StylieTagManager({
+			element: tagmanagerelements[p],
+			filterkeys: tagmanagerelements[p].getAttribute('data-filterkeys')
+		});
+	}
 	filterlistelements = document.querySelectorAll('.asyncadmin-ts-filterlist');
 	for (var q = 0; q < filterlistelements.length; q++) {
 		StylieDataLists[filterlistelements[q].id] = new StylieFilterlist({
@@ -246,6 +256,7 @@ var initFilterlists = function () {
 			sortkeys: sortlistelements[r].getAttribute('data-sortkeys')
 		});
 	}
+	window.AdminTagManagers = AdminTagManagers;
 };
 
 var logToAdminConsole = function (data) {
@@ -299,6 +310,8 @@ var handleUncaughtError = function (e, errorMessageTitle) {
 		message: e.message
 	});
 };
+
+window.handleUncaughtError = handleUncaughtError;
 
 var defaultLoadAjaxPageFormie = function (formElement) {
 	var ajaxForbject = new forbject(formElement, {
@@ -581,7 +594,7 @@ var controlSearchNav = function () {
 
 var search_menu_callback = function () {
 	try {
-		console.log('search_menu_callback this', this.value);
+		search_menu_content.innerHTML = 'Searching...';
 		var searchhtml = '';
 		request
 			.get('/p-admin/content/search')
@@ -871,7 +884,7 @@ var handle_ajax_button_response = function (e) {
 };
 
 var async_admin_ajax_link_handler = function (e) {
-	console.log('e.target', e.target);
+	// console.log('e.target', e.target);
 	var etarget = e.target,
 		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 

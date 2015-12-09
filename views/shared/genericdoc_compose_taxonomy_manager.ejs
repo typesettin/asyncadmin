@@ -1,0 +1,72 @@
+<details class="ts-text-sm" open="open" >
+  <summary>Taxonomy</summary>
+  <aside>
+    <div class="ts-document noFormSubmit">
+      <form>
+      <div class="ts-row ts-form-row">
+        <div class="ts-col-span12">
+          <!--
+          
+          data-taxonomy-fields="contenttypes:array:contenttype:doc:creatable,assets:array:asset:media:creatable,primaryasset:single:asset:media:creatable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
+          entity : array or single : doc or media template : createable/new/uploadable or static
+          -->
+          <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
+          data-search-entities="user,contenttype,tag,category,asset" 
+          data-taxonomy-fields="contenttypes:array:contenttype:doc:creatable,assets:array:asset:media:creatable,primaryasset:single:asset:media:creatable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
+          data-tax-man-results="tax-man-results"
+          data-presetdata-prefix="genericdoc_"
+          data-searchresults-selector="#tax-man-results"
+          data-taxprops-selector="#tax-man-props"
+          data-searchresults-template-selector="#ts-taxman-search-result-template"
+          data-taxman-template-selector="#ts-taxman-taxmandata-template"
+          data-ajax-formie="edit-<%- genericdoctypename %>-wysiwyg-form"/>
+        </div>
+        <div class="ts-col-span12">
+          <div id="tax-man-results" class="ts-tax-man-results"></div>
+        </div>
+        <div id="tax-man-props" class="ts-col-span12  ts-text-sm">
+          
+        </div>
+      </div>
+      </form>
+    </div>
+  </aside>
+</details>
+<% 
+if(genericdoc ){
+  if(genericdoc.parent){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.parent,"genericdoc_parenttax") %>
+  </script>
+  <%}
+  if(genericdoc.tags){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.tags,"genericdoc_tags") %>
+  </script>
+  <%}
+  if(genericdoc.categories){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.categories,"genericdoc_categories") %>
+  </script>
+  <%}
+  if(genericdoc.authors){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.authors,"genericdoc_authors") %>
+  </script>
+  <%}
+  if(genericdoc.contenttypes){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.contenttypes,"genericdoc_contenttypes") %>
+  </script>
+  <%}
+}%>
+<% include _template_compose_taxonomies %>
+<script type="template/ejs" id="ts-taxman-search-result-template">
+  <% include _taxman_search_result_template %>
+</script>
+<script type="template/ejs" id="ts-taxman-taxmandata-template">
+  <% include _taxman_data_template %>
+</script>
+
+<!-- 
+<div id="tags-cbc" class="_ltr-cbc"><input id="lp-cbx_546608ee216039001a7cd1dc" name="tags" type="checkbox" value="546608ee216039001a7cd1dc" checked="checked"></input><input id="lp-cbx_55649562f34621960448bfe1" name="tags" type="checkbox" value="55649562f34621960448bfe1" checked="checked"></input></div> -->

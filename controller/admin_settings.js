@@ -5,6 +5,7 @@ var path = require('path'),
 	async = require('async'),
 	fs = require('fs-extra'),
 	npm = require('npm'),
+	os = require('os'),
 	semver = require('semver'),
 	str2json = require('string-to-json'),
 	merge = require('utils-merge'),
@@ -658,7 +659,6 @@ var update_theme_settings = function (req, res) {
 		});
 };
 
-
 /**
  * form upload handler to update theme settings, and sends notification email
  * @param  {object} req
@@ -882,14 +882,14 @@ var checkOutdatedModulesAndPeriodic = function (options, callback) {
 					appport: appSettings.application.port,
 					settingmessage: '<p>Your ' + appSettings.name + ' application dependencies are outdated - ' + new Date() + '</p><div>' + alerthtml + '</div>',
 				},
-				subject: appSettings.name + '[env:' + appenvironment + '] ' + appSettings.name + ' Dependency warning notification',
+				subject: appSettings.name + '[env:' + appenvironment + ' - ' + os.hostname() + ']  Dependency warning notification',
 				emailtemplate: changedemailtemplate,
 			}, function () {});
 
 
 			send_setting_server_callback({
 				functionName: 'showServerModal',
-				functionData: '<div class="ts-text-xl"><span class="ts-text-error-color">Node dependencies outdated warning</span></div><div>' + alerthtml + '</div>'
+				functionData: '<div class="ts-text-xl"><span class="ts-text-error-color">Node (' + os.hostname() + ') dependencies outdated warning</span></div><div>' + alerthtml + '</div>'
 			});
 
 			fs.writeJson(asyncadmin_outdated_log_file_path, result);
