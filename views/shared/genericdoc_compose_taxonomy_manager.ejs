@@ -1,30 +1,60 @@
 <details class="ts-text-sm" open="open" >
-  <summary>Taxonomy</summary>
+  <summary>
+  <div class="ts-float-right">
+      <span class="ts-button ts-button-light-primary-color" 
+      >
+        <select id="ts-create-entities" class="ts-button ts-button-transparent ts-width-100 ts-height-100" >
+          <option value="">create new...</option>  
+          <option value="contenttype">create contenttype</option>  
+        </select>
+      </span>
+    </div>
+
+  Taxonomy</summary>
   <aside>
     <div class="ts-document noFormSubmit">
       <form>
       <div class="ts-row ts-form-row">
         <div class="ts-col-span12">
+          <div class="ts-row">
+            <div class="ts-col-span3">
+              <span class="ts-button ts-button-divider-text-color ts-width-100" style="height:2.5em">
+                <select id="ts-search-entity-filters" class="ts-button ts-button-transparent ts-width-100 ts-height-100" >
+                  <option value="user,contenttype,tag,category,asset">Search All</option>  
+                  <option value="contenttype">Contenttypes</option>  
+                  <option value="user">Users</option>  
+                </select>
+              </span>
+            </div>
+            <div class="ts-col-span9">
+              <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
+                style="border-bottom:0" 
+                placeholder="Search existing users, contenttypes, tags, categories and assets"
+                data-search-entities="user,contenttype,category,asset" 
+                data-taxonomy-fields="assets:array:asset:media:createable,primaryasset:single:asset:media:createable,tags:array:tag:doc:createable,categories:array:category:media:createable,contenttypes:array:contenttype:doc:createable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
+                data-tax-man-results="tax-man-results"
+                data-presetdata-prefix="genericdoc_"
+                data-searchresults-selector="#tax-man-results"
+                data-taxprops-selector="#tax-man-props"
+                data-filter-selector="#ts-search-entity-filters"
+                data-create-filter-selector="#ts-create-entities"
+                data-searchresults-template-selector="#ts-taxman-search-result-template"
+                data-taxman-template-selector="#ts-taxman-taxmandata-template"
+                data-ajax-formie="edit-<%- genericdoctypename %>-wysiwyg-form"/>
+            </div>
+            
+          </div>
           <!--
           
-          data-taxonomy-fields="contenttypes:array:contenttype:doc:creatable,assets:array:asset:media:creatable,primaryasset:single:asset:media:creatable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
+          data-taxonomy-fields="contenttypes:array:contenttype:doc:createable,assets:array:asset:media:createable,primaryasset:single:asset:media:createable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
           entity : array or single : doc or media template : createable/new/uploadable or static
           -->
-          <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
-          data-search-entities="user,contenttype,tag,category,asset" 
-          data-taxonomy-fields="contenttypes:array:contenttype:doc:creatable,assets:array:asset:media:creatable,primaryasset:single:asset:media:creatable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
-          data-tax-man-results="tax-man-results"
-          data-presetdata-prefix="genericdoc_"
-          data-searchresults-selector="#tax-man-results"
-          data-taxprops-selector="#tax-man-props"
-          data-searchresults-template-selector="#ts-taxman-search-result-template"
-          data-taxman-template-selector="#ts-taxman-taxmandata-template"
-          data-ajax-formie="edit-<%- genericdoctypename %>-wysiwyg-form"/>
+
         </div>
         <div class="ts-col-span12">
           <div id="tax-man-results" class="ts-tax-man-results"></div>
         </div>
-        <div id="tax-man-props" class="ts-col-span12  ts-text-sm">
+        <div id="tax-man-props" class="ts-tax-man-props ts-col-span12  ts-text-sm">
           
         </div>
       </div>
@@ -36,7 +66,7 @@
 if(genericdoc ){
   if(genericdoc.parent){%>
   <script type="text/javascript">
-    <%- locals.viewhelper.passObjToClient(genericdoc.parent,"genericdoc_parenttax") %>
+    <%- locals.viewhelper.passObjToClient(genericdoc.parent,"genericdoc_parent") %>
   </script>
   <%}
   if(genericdoc.tags){%>
@@ -47,6 +77,21 @@ if(genericdoc ){
   if(genericdoc.categories){%>
   <script type="text/javascript">
     <%- locals.viewhelper.passObjToClient(genericdoc.categories,"genericdoc_categories") %>
+  </script>
+  <%}
+  if(genericdoc.assets){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.assets,"genericdoc_assets") %>
+  </script>
+  <%}
+  if(genericdoc.primaryasset){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.primaryasset,"genericdoc_primaryasset") %>
+  </script>
+  <%}
+  if(genericdoc.primaryauthor){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.primaryauthor,"genericdoc_primaryauthor") %>
   </script>
   <%}
   if(genericdoc.authors){%>

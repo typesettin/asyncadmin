@@ -1,16 +1,26 @@
 <div class="ts-row  ts-text-sm">
 	<div class="ts-col-span12">Search Results for "<?- request.query.search ?>"</div>
 </div>
-
  <? search_entities.forEach(function(entity){
 	var pluralentity = pluralize(entity);
-	// console.log(search_results[entity])
+	var create_tax_options={};
+	for(var t in taxfields){
+		create_tax_options[taxfields[t].field_entity_type] = create_tax_options[taxfields[t].field_entity_type] || {};
+		create_tax_options[taxfields[t].field_entity_type][taxfields[t].field_name]={
+			name:taxfields[t].field_name,
+			mapping_type:taxfields[t].field_mapping_type,
+			entity_type:taxfields[t].field_entity_type,
+		};
+	}
+
 	if(search_results[entity] && search_results[entity][pluralentity] && search_results[entity][pluralentity].length){?>
 			<div class="ts-row ts-text-sm">
 				<div class="ts-col-span12 ts-bg-accent-color ts-text-text-primary-color ts-text-bold ts-padding-md">
-					<!-- <h6><?- capitalize(pluralize( entity)) ?></h6> -->
-					<div class="ts-col-span10"><?- capitalize(pluralize( entity))  ?></div>
-					<div class="ts-col-span2">Create Date</div>
+					<div class="ts-row">
+						<div class="ts-col-span6"><?- capitalize(pluralize( entity))  ?></div>
+						<div class="ts-col-span4">Options</div>
+						<div class="ts-col-span2">Create Date</div>
+					</div>
 				</div>
 				<? search_results[entity][pluralentity].forEach(function(obj,i){
 					var labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
@@ -22,13 +32,35 @@
 								linktouse = search_results[entity][pluralentity+'customlink'].replace(/%obj._id%/gi,obj._id);
 							}
 					?>
-					<div class="ts-col-span10 ts-padding-md">
-						<!-- <section ><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- obj._id?></a></se`ction> -->
-						<div class="ts-col-span8"><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- labeltouse?></a></div>
+					<div class="ts-row">
+						<div class="ts-col-span6 ts-padding-md">
+							<? if(obj.fileurl && obj.assettype && obj.assettype.match("image")){?>
+								<figure>
+	       		 			<img class="" style="max-width:50%;height:auto" src="<?-obj.fileurl?>"/>
+       		 			</figure>
+							<?}?>
+							<a href="<?- linktouse ?>" class="async-admin-ajax-link breakword"><?- labeltouse?></a>
+						</div>
+						<div class="ts-col-span4">
+							<?if(create_tax_options[entity]){ 
+								for(var c in create_tax_options[entity]){
+								var button_text_prefix = (create_tax_options[entity][c].mapping_type==='array')? 'Add to ':'Set as ';
+								?> 
+								<span class="ts-button add-taxonomy" 
+								data-fieldname="<?- create_tax_options[entity][c].name ?>" 
+								data-mappingtype = "<?- create_tax_options[entity][c].mapping_type ?>"
+								data-id="<?- obj._id ?>" 
+								data-labeltouse="<?- labeltouse ?>" 
+								data-fileurl="<?- obj.fileurl ?>" 
+								data-assettype="<?- obj.assettype ?>" ><?- button_text_prefix ?><?- create_tax_options[entity][c].name ?></span>
+								<? } ?>
+							<?}?>
+						</div>
+						<div class="ts-col-span2 ts-text-sm "><?- new moment(obj.updatedat).fromNow()?></div>
 					</div>
-					
-					<div class="ts-col-span2  ts-padding-md"><?- new moment(obj.updatedat).fromNow()?></div>
-					<div class="ts-col-span12"> <hr/></div>
+					<div class="ts-row">
+						<div class="ts-col-span12"> <hr/></div>
+					</div>
 				<?
 
 				}) ?>

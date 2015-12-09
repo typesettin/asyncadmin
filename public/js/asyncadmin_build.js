@@ -33313,6 +33313,21 @@ var makeNiceName = function (makenicename) {
 	return makenicename.replace(/[^a-z0-9]/gi, '-');
 };
 
+var uniq_fast = function (a) {
+	var seen = {};
+	var out = [];
+	var len = a.length;
+	var j = 0;
+	for (var i = 0; i < len; i++) {
+		var item = a[i];
+		if (seen[item] !== 1) {
+			seen[item] = 1;
+			out[j++] = item;
+		}
+	}
+	return out;
+};
+
 /**
  * A module that represents a tstagmanager object, a componentTab is a page composition tool.
  * @{@link https://github.com/typesettin/tstagmanager}
@@ -33353,6 +33368,31 @@ var tstagmanager = function (options) {
 util.inherits(tstagmanager, events.EventEmitter);
 tstagmanager.prototype.initEventListeners = function () {
 	var self = this;
+	var handleSearchMenuContentClick = function (e) {
+		var etarget = e.target,
+			newtaxdata = {};
+		// console.log('before self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
+		if (classie.has(etarget, 'add-taxonomy')) {
+			newtaxdata = {
+				_id: etarget.getAttribute('data-id'),
+				id: etarget.getAttribute('data-id'),
+				title: etarget.getAttribute('data-labeltouse'),
+				name: etarget.getAttribute('data-labeltouse'),
+				fileurl: etarget.getAttribute('data-fileurl'),
+				assettype: etarget.getAttribute('data-assettype'),
+			};
+			if (etarget.getAttribute('data-mappingtype') === 'array') {
+				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data.push(newtaxdata);
+			}
+			else {
+				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data = newtaxdata;
+			}
+			// console.log('after self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
+
+			console.log('handleSearchMenuContentClick e.target', e.target);
+			self.__updateBindie();
+		}
+	};
 	var search_menu_callback = function () {
 		var searchhtml = '';
 		try {
@@ -33372,6 +33412,7 @@ tstagmanager.prototype.initEventListeners = function () {
 					responsedata.body.capitalize = capitalize;
 					responsedata.body.pluralize = pluralize;
 					responsedata.body.data_tables = data_tables;
+					responsedata.body.taxfields = self.options.taxfields;
 					searchhtml = ejs.render(self.options.search_result_template, responsedata.body);
 					self.options.search_menu_content.innerHTML = searchhtml;
 					console.log('responsedata.body', responsedata.body);
@@ -33382,16 +33423,29 @@ tstagmanager.prototype.initEventListeners = function () {
 			window.handleUncaughtError(e, 'ajax page error');
 		}
 	};
+	var search_filter_select_handler = function () {
+		self.options.element.setAttribute('data-search-entities', this.value);
+		if (this.value.match(/\,/gi)) {
+			self.options.element.setAttribute('placeholder', self.options.element.getAttribute('data-original-placeholder'));
+		}
+		else {
+			self.options.element.setAttribute('placeholder', 'Search ' + pluralize.plural(this.value));
+		}
+	};
 	// self.options.element.addEventListener('keydown', debounce(self.search_menu_callback.apply(self), 200), false);
 	self.options.element.addEventListener('keyup', debounce(search_menu_callback, 200), false);
+	self.options.search_menu_content.addEventListener('click', handleSearchMenuContentClick, false);
+	self.options.search_filter_select.addEventListener('change', search_filter_select_handler, false);
 };
 
 
 tstagmanager.prototype.__updateBindie = function () {
-	var new_taxdata = this.options.taxdata;
+	var new_taxfields = this.options.taxfields;
 	this.options.tagmanbindie.update({
 		data: {
-			taxdata: new_taxdata
+			taxfields: {
+				taxfields: new_taxfields
+			}
 
 		}
 	});
@@ -33430,23 +33484,33 @@ tstagmanager.prototype.__init = function () {
 		inputelement = this.options.element;
 
 	this.options.search_result_template = document.querySelector(this.options.element.getAttribute('data-searchresults-template-selector')).innerHTML;
+	this.options.presetdata_prefix = this.options.element.getAttribute('data-presetdata-prefix');
 	this.options.bindie_template_element = document.querySelector(this.options.element.getAttribute('data-taxman-template-selector'));
 	this.options.search_menu_content = document.querySelector(this.options.element.getAttribute('data-searchresults-selector'));
-	this.options.search_entities = this.options.element.getAttribute('data-search-entities').split(',');
+	this.options.create_filter_select = document.querySelector(this.options.element.getAttribute('data-create-filter-selector'));
+	this.options.search_filter_select = document.querySelector(this.options.element.getAttribute('data-filter-selector'));
+	// this.options.search_entities = this.options.element.getAttribute('data-search-entities').split(',');
+	this.options.search_entities = [];
+	this.options.createable_entities = [];
 	this.options.taxfields = {};
 	this.options.element.getAttribute('data-taxonomy-fields').split(',').forEach(function (taxfield) {
 		var taxfieldarray = taxfield.split(':');
-		self.options.taxfields[taxfieldarray[2]] = {
+		self.options.taxfields[taxfieldarray[0]] = {
 			field_name: taxfieldarray[0],
 			field_mapping_type: taxfieldarray[1],
 			field_entity_type: taxfieldarray[2],
 			field_media_type: taxfieldarray[3],
 			field_createable: taxfieldarray[4]
 		};
+		self.options.search_entities.push(taxfieldarray[2]);
+		if (taxfieldarray[4] === 'createable') {
+			self.options.createable_entities.push(taxfieldarray[2]);
+		}
+		// console.log(self.options.presetdata_prefix + taxfieldarray[0], 'window[self.options.presetdata_prefix + taxfieldarray[0]]', window[self.options.presetdata_prefix + taxfieldarray[0]]);
+		if (window[self.options.presetdata_prefix + taxfieldarray[0]]) {
+			self.options.taxfields[taxfieldarray[0]].field_data = window[self.options.presetdata_prefix + taxfieldarray[0]];
+		}
 	});
-	this.options.taxdata = {
-		taxfields: this.options.taxfields
-	};
 
 	this.options.formietosubmit = (this.options.element.getAttribute('data-ajax-formie') && this.options.element.getAttribute('data-ajax-formie') !== null) ? this.options.element.getAttribute('data-ajax-formie') : false;
 	this.options.tagmanbindie = new Bindie({
@@ -33456,11 +33520,12 @@ tstagmanager.prototype.__init = function () {
 	bindie_template_element = this.options.bindie_template_element;
 
 	this.options.tagmanbindie.addBinder({
-		prop: 'taxdata',
+		prop: 'taxfields',
 		elementSelector: this.options.element.getAttribute('data-taxprops-selector'),
 		binderType: 'template',
 		binderTemplate: bindie_template_element.innerHTML,
 		binderCallback: function (cbdata) {
+			// console.log('cbdata', cbdata);
 			var successsubmitFunctionString = inputelement.getAttribute('data-bindiecallback'),
 				successfn = window[successsubmitFunctionString];
 			// is object a function?
@@ -33473,21 +33538,26 @@ tstagmanager.prototype.__init = function () {
 		}.bind(this)
 	});
 
-	// if (this.options.inputelement.getAttribute('data-ajax-setdata-variable')) {
-	// 	presetdata = window[this.options.inputelement.getAttribute('data-ajax-setdata-variable')];
-	// 	if (presetdata) {
-	// 		for (var z = 0; z < presetdata.length; z++) {
-	// 			this.options.dataitems[presetdata[z]._id] = get_data_element_doc({
-	// 				data: get_generic_doc({
-	// 					data: presetdata[z]
-	// 				}),
-	// 				ajaxprop: this.options.ajaxprop
-	// 			});
-	// 		}
-	// 		this.__updateBindie();
-	// 	}
-	// }
 	this.__updateBindie();
+
+
+	//set other elements
+	this.options.search_entities = uniq_fast(this.options.search_entities);
+	this.options.createable_entities = uniq_fast(this.options.createable_entities);
+	this.options.element.setAttribute('data-original-placeholder', this.options.element.getAttribute('placeholder'));
+	this.options.element.setAttribute('data-search-entities', this.options.search_entities.join(','));
+	var filterselectinnerhtml = '<option value="' + this.options.element.getAttribute('placeholder') + '">Search All</option>';
+	this.options.search_entities.forEach(function (entity) {
+		filterselectinnerhtml += '<option value="' + entity + '">' + capitalize(pluralize(entity)) + '</option>';
+	});
+	this.options.search_filter_select.innerHTML = filterselectinnerhtml;
+	var createselectinnerhtml = '<option value="">Create new ...</option>';
+	this.options.createable_entities.forEach(function (entity) {
+		createselectinnerhtml += '<option value="' + entity + '"> Create new ' + capitalize(entity) + '</option>';
+	});
+	this.options.create_filter_select.innerHTML = createselectinnerhtml;
+
+
 	initializing = false;
 
 	this.emit('initialized');

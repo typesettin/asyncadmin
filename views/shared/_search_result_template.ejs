@@ -23,8 +23,26 @@
 							}
 					?>
 					<div class="ts-col-span10 ts-padding-md">
-						<!-- <section ><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- obj._id?></a></se`ction> -->
-						<section class="ts-col-span8"><a href="<?- linktouse ?>" class="async-admin-ajax-link"><?- labeltouse?></a></section>
+						<? if(obj.fileurl && obj.assettype ){?>
+							<figure>
+       		 			<? if(obj.assettype && obj.assettype.match("image")){ ?>
+       		 				<img class="" style="max-width:50%;height:auto" src="<?-obj.fileurl?>"/>
+					      <? } else if(obj.assettype && obj.assettype.match("pdf")){ ?>
+					        <span class="flaticon-acrobat2"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("zip")){ ?>
+					        <span class="flaticon-zipped2"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("audio")){ ?>
+					        <span class="flaticon-audio55"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("video")){ ?>
+					        <span class="flaticon-video170"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("text")){ ?>
+					        <span class="flaticon-code41"> </span>
+					      <? } else {?>
+					        <span class="flaticon-file82"> </span>
+					      <? }?>
+     		 			</figure>
+						<?}?>
+						<a href="<?- linktouse ?>" class="async-admin-ajax-link breakword"><?- labeltouse?></a>
 					</div>
 					
 					<div class="ts-col-span2  ts-padding-md"><?- new moment(obj.updatedat).fromNow()?></div>

@@ -1,7 +1,7 @@
 {
   "name": "periodicjs.ext.asyncadmin",
   "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
-  "version": "6.1.100",
+  "version": "6.2.0",
   "main": "index.js",
   "engines": {
     "node": ">=0.12.x"
