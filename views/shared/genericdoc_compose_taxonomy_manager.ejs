@@ -1,3 +1,8 @@
+<% 
+  ts_taxman_initial_placeholder = (typeof ts_taxman_initial_placeholder!=='undefined')? ts_taxman_initial_placeholder : 'Search existing users, contenttypes, tags, categories and assets';
+  ts_taxman_ajaxformie = (typeof ts_taxman_ajaxformie !=='undefined')? ts_taxman_ajaxformie : 'edit-'+genericdoctypename+'-wysiwyg-form';
+  ts_taxman_bindiecallback = (typeof ts_taxman_bindiecallback !=='undefined')? ts_taxman_bindiecallback : false;
+   %>
 <details class="ts-text-sm" open="open" >
   <summary>
   <div class="ts-float-right">
@@ -28,8 +33,8 @@
             </div>
             <div class="ts-col-span9">
               <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
-                style="border-bottom:0" 
-                placeholder="Search existing users, contenttypes, tags, categories and assets"
+                style="border-bottom:0;height:2.5em;" 
+                placeholder="<%- ts_taxman_initial_placeholder %>"
                 data-taxonomy-fields="<%- genericdoctaxfields %>" 
                 data-tax-man-results="tax-man-results"
                 data-presetdata-prefix="genericdoc_"
@@ -38,8 +43,9 @@
                 data-filter-selector="#ts-search-entity-filters"
                 data-create-filter-selector="#ts-create-entities"
                 data-searchresults-template-selector="#ts-taxman-search-result-template"
+                <%if(ts_taxman_bindiecallback){%>data-bindiecallback="<%- ts_taxman_bindiecallback %>"<%}%>
                 data-taxman-template-selector="#ts-taxman-taxmandata-template"
-                data-ajax-formie="edit-<%- genericdoctypename %>-wysiwyg-form"/>
+                data-ajax-formie="<%- ts_taxman_ajaxformie %>"/>
             </div>
             
           </div>

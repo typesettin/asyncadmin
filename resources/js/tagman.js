@@ -265,10 +265,15 @@ tstagmanager.prototype.__init = function () {
 	});
 	this.options.search_filter_select.innerHTML = filterselectinnerhtml;
 	var createselectinnerhtml = '<option value="">Create new ...</option>';
-	this.options.createable_entities.forEach(function (entity) {
-		createselectinnerhtml += '<option value="' + entity + '"> Create new ' + capitalize(entity) + '</option>';
-	});
-	this.options.create_filter_select.innerHTML = createselectinnerhtml;
+	if (this.options.createable_entities.length < 1) {
+		this.options.create_filter_select.parentElement.style.display = 'none';
+	}
+	else {
+		this.options.createable_entities.forEach(function (entity) {
+			createselectinnerhtml += '<option value="' + entity + '"> Create new ' + capitalize(entity) + '</option>';
+		});
+		this.options.create_filter_select.innerHTML = createselectinnerhtml;
+	}
 
 
 	initializing = false;

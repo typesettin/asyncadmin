@@ -551,7 +551,7 @@ var admin_search = function (resources) {
 		if (!Array.isArray(search_entities)) {
 			search_entities = search_entities.split(',');
 		}
-		console.log('search_entities', search_entities);
+		// console.log('search_entities', search_entities);
 		req.query.search = req.query['searchall-input'] || req.query.search;
 		req.query.limit = (req.query.limit && req.query.limit < 200) ? req.query.limit : 25;
 		var search_response_results = {};

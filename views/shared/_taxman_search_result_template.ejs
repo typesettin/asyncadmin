@@ -46,7 +46,7 @@
 								for(var c in create_tax_options[entity]){
 								var button_text_prefix = (create_tax_options[entity][c].mapping_type==='array')? 'Add to ':'Set as ';
 								?> 
-								<span class="ts-button add-taxonomy" 
+								<span class="ts-button add-taxonomy breakword" 
 								data-fieldname="<?- create_tax_options[entity][c].name ?>" 
 								data-mappingtype = "<?- create_tax_options[entity][c].mapping_type ?>"
 								data-id="<?- obj._id ?>" 
