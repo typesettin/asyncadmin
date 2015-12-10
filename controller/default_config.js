@@ -5,6 +5,7 @@ module.exports = {
 		socketIoPort: '8785',
 		adminIndexRedirectPath: 'dashboard',
 		show_periodic_credit: true,
+		send_cron_check_email: true,
 		check_dependency_cron: '00 00 06 * * 1-5' //'*/15 * * * * 1-5'//
 	}
 };

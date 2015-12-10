@@ -773,6 +773,7 @@ var checkOutdatedModulesAndPeriodic = function (options, callback) {
 	var list_of_extensions_recent_data;
 	var list_of_extensions_current_data = {};
 	var list_of_extensions_outdated_data = {};
+	var send_outdated_emails = (options) ? options.send_outdated_emails : (admin_ext_settings && admin_ext_settings.settings) ? admin_ext_settings.settings.send_cron_check_email : true;
 	var asyncadmin_outdated_log_file_path = path.resolve(process.cwd(), 'content/config/extensions/periodicjs.ext.asyncadmin/outdated_log.json'),
 		npmconfig = {
 			'strict-ssl': false,
@@ -781,7 +782,9 @@ var checkOutdatedModulesAndPeriodic = function (options, callback) {
 			'json': true,
 			'production': true
 		};
-
+	if (send_outdated_emails === undefined) {
+		send_outdated_emails = true;
+	}
 
 	async.series({
 		get_list_of_extensions: function (asyncCB) {
@@ -872,26 +875,29 @@ var checkOutdatedModulesAndPeriodic = function (options, callback) {
 			}
 			alerthtml += '<ul>';
 
-			sendSettingEmail({
-				// req: {},
-				user: {
-					username: 'application-cron',
-					email: appSettings.adminnotificationemail
-				},
-				emaildata: {
+			if (send_outdated_emails) {
+				sendSettingEmail({
+					// req: {},
 					user: {
 						username: 'application-cron',
 						email: appSettings.adminnotificationemail
 					},
-					hostname: appSettings.homepage,
-					appname: appSettings.name,
-					appenvironment: appenvironment,
-					appport: appSettings.application.port,
-					settingmessage: '<p>Your ' + appSettings.name + ' application dependencies are outdated - ' + new Date() + '</p><div>' + alerthtml + '</div>',
-				},
-				subject: appSettings.name + '[env:' + appenvironment + ' - ' + os.hostname() + ']  Dependency warning notification',
-				emailtemplate: changedemailtemplate,
-			}, function () {});
+					emaildata: {
+						user: {
+							username: 'application-cron',
+							email: appSettings.adminnotificationemail
+						},
+						hostname: appSettings.homepage,
+						appname: appSettings.name,
+						appenvironment: appenvironment,
+						appport: appSettings.application.port,
+						settingmessage: '<p>Your ' + appSettings.name + ' application dependencies are outdated - ' + new Date() + '</p><div>' + alerthtml + '</div>',
+					},
+					subject: appSettings.name + '[env:' + appenvironment + ' - ' + os.hostname() + ']  Dependency warning notification',
+					emailtemplate: changedemailtemplate,
+				}, function () {});
+			}
+
 
 
 			send_setting_server_callback({
@@ -920,7 +926,7 @@ var get_outdated_modules = function (req, res, next) {
 
 var useCronTasks = function () {
 	try {
-		var crontime_to_use = admin_ext_settings.settings.check_dependency_cron || '00 00 06 * * 1-5',
+		var crontime_to_use = (admin_ext_settings && admin_ext_settings.settings && admin_ext_settings.settings.check_dependency_cron) ? admin_ext_settings.settings.check_dependency_cron : '00 00 06 * * 1-5',
 			check_outdated_dependencies = new CronJob({
 				cronTime: crontime_to_use,
 				onTick: checkOutdatedModulesAndPeriodic,
