@@ -141,10 +141,14 @@ tstagmanager.prototype.initEventListeners = function () {
 			self.options.element.setAttribute('placeholder', 'Search ' + pluralize.plural(this.value));
 		}
 	};
+	var create_filter_select_handler = function () {
+		window.AdminModal.show('new-' + this.value + '-modal');
+	};
 	// self.options.element.addEventListener('keydown', debounce(self.search_menu_callback.apply(self), 200), false);
 	self.options.element.addEventListener('keyup', debounce(search_menu_callback, 200), false);
 	self.options.search_menu_content.addEventListener('click', handleSearchMenuContentClick, false);
 	self.options.search_filter_select.addEventListener('change', search_filter_select_handler, false);
+	self.options.create_filter_select.addEventListener('change', create_filter_select_handler, false);
 };
 
 

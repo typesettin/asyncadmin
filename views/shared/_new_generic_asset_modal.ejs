@@ -1,0 +1,92 @@
+<div class="ts-modal-hidden-container">
+  <div id="new-asset-modal" data-name="new-asset-modal" class="ts-modal ts-modal-effect-1">
+    <section class="ts-modal-content ts-bg-text-primary-color  ts-no-heading-margin ts-padding-md ts-shadow ">
+    <h6> Upload new assets </h6>
+      <form 
+        class="ts-form async-admin-ajax-forms" 
+        name="new-asset-form" 
+        id="new-asset-form" 
+        method="post" 
+        action="/<%- locals.adminPath %>/content/asset/new" 
+        enctype="multipart/form-data" >
+        <input type="hidden" name="_csrf" value=<%- locals.token %> >
+        <div  id="new-asset-modal-content">
+          <div class="ts-row">
+            <div class="ts-col-span12 ts-text-xs">You can upload multiple files at once.
+            </div>
+          </div>
+            <hr/>
+          <div class="ts-row ">
+              <details class="ts-text-xs ts-col-span12" style="margin-top:0">
+                <summary  style="margin-top:0">Advanced Options</summary>
+                <aside class="ts-row">
+                  <div class="ts-col-span6">
+                    <input type="checkbox" 
+                    id="existing-file-name"
+                    class="" 
+                    name="existing-file-name" 
+                    title="Do not automatically rename file" 
+                    />
+                    <label class="ts-label" for="existing-file-name">Maintain original filename</label>
+                  </div>
+                  <div class="ts-col-span6">
+                    <input type="checkbox" 
+                    id="exclude-timestamp"
+                    name="exclude-timestamp" 
+                    title="Do not add timestamp" 
+                    />
+                    <label class="ts-label" for="exclude-timestamp">Exclude filename timestamp</label>
+                  </div>
+                  <div class="ts-col-span6">
+                    <input type="checkbox" 
+                    id="exclude-userstamp"
+                    name="exclude-userstamp" 
+                    title="Do not add userstamp" 
+                    />
+                    <label class="ts-label" for="exclude-userstamp">Exclude filename user id</label>
+                  </div>
+                  <div class="ts-col-span6">
+                    <label class="ts-label" for="ts-format">Timestamp format</label>
+                    <input type="text" 
+                    value="YYYY-MM-DD_HH-m-ss"
+                    id="ts-format"
+                    class="" 
+                    name="ts-format" 
+                    title="Custom format" 
+                    />
+                  </div>
+                  
+                </aside>
+              </details>
+          </div>
+
+          <div class="ts-row ts-form-row">
+          <!--   <div>
+              <label class="ts-label">Upload new files</label>
+            </div> -->
+            <input type="file" 
+              value="Upload new assets"
+              id="padmin-assets"
+              multiple="multiple" 
+              class="ts-col-span12  " 
+              placeholder="Upload Assets" 
+              name="mediafiles" 
+              title="upload-assets" 
+              />
+
+          </div>
+          <hr/>
+        </div>
+        <div class="ts-row ts-form-row">
+          <div class="ts-col-span6 ts-text-center">
+            <button type="submit" class="ts-button ts-button-accent-color ts-modal-close">Upload Files</button>
+          </div>
+          <div class="ts-col-span6 ts-text-center">
+            <a class="ts-button ts-modal-close">cancel</a>
+          </div>
+        </div>
+      </form>
+    </section>
+  </div>
+  <div class="ts-modal-overlay ts-bg-primary-color"></div>
+</div>

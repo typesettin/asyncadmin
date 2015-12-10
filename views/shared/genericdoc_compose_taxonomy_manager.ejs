@@ -30,8 +30,7 @@
               <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
                 style="border-bottom:0" 
                 placeholder="Search existing users, contenttypes, tags, categories and assets"
-                data-search-entities="user,contenttype,category,asset" 
-                data-taxonomy-fields="assets:array:asset:media:createable,primaryasset:single:asset:media:createable,tags:array:tag:doc:createable,categories:array:category:media:createable,contenttypes:array:contenttype:doc:createable,authors:array:user:doc:static,primaryauthor:single:user:doc:static" 
+                data-taxonomy-fields="<%- genericdoctaxfields %>" 
                 data-tax-man-results="tax-man-results"
                 data-presetdata-prefix="genericdoc_"
                 data-searchresults-selector="#tax-man-results"
@@ -68,7 +67,7 @@ if(genericdoc ){
   <script type="text/javascript">
     <%- locals.viewhelper.passObjToClient(genericdoc.parent,"genericdoc_parent") %>
   </script>
-  <%}
+  <%} 
   if(genericdoc.tags){%>
   <script type="text/javascript">
     <%- locals.viewhelper.passObjToClient(genericdoc.tags,"genericdoc_tags") %>
@@ -104,8 +103,19 @@ if(genericdoc ){
     <%- locals.viewhelper.passObjToClient(genericdoc.contenttypes,"genericdoc_contenttypes") %>
   </script>
   <%}
-}%>
-<% include _template_compose_taxonomies %>
+}
+else{%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_parent") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_tags") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_categories") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_assets") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_primaryasset") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_primaryauthor") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_authors") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_contenttypes") %>
+  </script>
+<%}%>
 <script type="template/ejs" id="ts-taxman-search-result-template">
   <% include _taxman_search_result_template %>
 </script>
@@ -113,5 +123,3 @@ if(genericdoc ){
   <% include _taxman_data_template %>
 </script>
 
-<!-- 
-<div id="tags-cbc" class="_ltr-cbc"><input id="lp-cbx_546608ee216039001a7cd1dc" name="tags" type="checkbox" value="546608ee216039001a7cd1dc" checked="checked"></input><input id="lp-cbx_55649562f34621960448bfe1" name="tags" type="checkbox" value="55649562f34621960448bfe1" checked="checked"></input></div> -->

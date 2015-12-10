@@ -4,7 +4,12 @@
 		?>
 			<div class="ts-col-span4 ts-screenmd-col-span6 ts-screensm-col-span6 ts-screenxs-col-span12">
 			  <div class="ts-text-bold ts-text-xl"><u><?- taxonomyfield.field_name ?></u></div>
-		 		<? if(taxonomyfield.field_data && Array.isArray(taxonomyfield.field_data)){
+		 		<? 
+//console.log(t,'taxonomyfield.field_data',taxonomyfield.field_data)
+
+		 		if(taxonomyfield.field_data && Array.isArray(taxonomyfield.field_data) && taxonomyfield.field_data.length>0 && taxonomyfield.field_data[0]._id){
+
+//console.log(t,'taxonomyfield.field_data',taxonomyfield.field_data,'taxonomyfield.field_data.length',taxonomyfield.field_data.length)
 				  for(var y in taxonomyfield.field_data){ 
 					  var dataelement=taxonomyfield.field_data[y];
 					  var labeltouse = dataelement.title || dataelement.name || dataelement.label || dataelement.email || dataelement._id;
@@ -36,7 +41,7 @@
 						</span>
 				  <?}
 				}
-				else{
+				else if(taxonomyfield.field_data && taxonomyfield.field_data._id){
 					var dataelement=taxonomyfield.field_data;
 				  var labeltouse = dataelement.title || dataelement.name || dataelement.label || dataelement.email || dataelement._id;
 						if(dataelement.identification && dataelement.identification.guid){

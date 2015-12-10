@@ -35,6 +35,13 @@ var sendSettingEmail = function (options, callback) {
 	if (appSettings.adminnotificationemail_bcc) {
 		options.adminnotificationemail_bcc = appSettings.adminnotificationemail_bcc;
 	}
+	console.log({
+		to: appSettings.adminnotificationemail,
+		cc: options.user.email,
+		bcc: options.adminnotificationemail_bcc,
+		from: appSettings.serverfromemail,
+
+	});
 	CoreMailer.sendEmail({
 		appenvironment: appenvironment,
 		to: appSettings.adminnotificationemail,
