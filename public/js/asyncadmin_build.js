@@ -30697,6 +30697,9 @@ var ajaxlinks,
 	adminConsoleElement,
 	adminConsoleElementContent,
 	codeMirrorJSEditorsElements,
+	admin_command_inputElement,
+	admin_command_submit_buttonElement,
+	admin_command_submitForm,
 	codeMirrors = {},
 	flashMessageArray = [],
 	asyncFlashFunctions = [],
@@ -30933,14 +30936,16 @@ var logToAdminConsole = function (data) {
 	}
 	logInfoElement.appendChild(adminMessageLevel);
 	logInfoElement.appendChild(adminMessageMessage);
-	logInfoElement.appendChild(adminMessageMeta);
+	if (data.meta) {
+		logInfoElement.appendChild(adminMessageMeta);
+	}
 	adminConsoleElementContent.appendChild(logInfoElement);
 	acp.scrollTop = acp.scrollHeight;
 
-	if (acc && acc.childNodes && acc.childNodes.length > 10) {
+	if (acc && acc.childNodes && acc.childNodes.length > 30) {
 		//console.log('isClearingConsole', isClearingConsole);
 		isClearingConsole = true;
-		for (var x = 0; x < (acc.childNodes.length - 10); x++) {
+		for (var x = 0; x < (acc.childNodes.length - 30); x++) {
 			acc.removeChild(acc.childNodes[x]);
 		}
 		var t = setTimeout(function () {
@@ -31583,6 +31588,7 @@ var addStyleSheetToChildWindow = function () {
 		newstylesheet2.setAttribute('rel', 'stylesheet');
 		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
 		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+		classie.add(consolePlatter.config().windowObjectReference.document.querySelector('html'), 'ts');
 
 		adminConsoleWindowResizeEventHandler();
 		clearTimeout(t);
@@ -31640,8 +31646,23 @@ var initServerSocketCallback = function () {
 	});
 };
 
+var submit_admin_command = function () {
+	// console.log('this', this);
+	// console.log('this.value', this.value);
+	// console.log('admin_command_inputElement.value', admin_command_inputElement.value);
+
+	var data = admin_command_inputElement.value;
+	var nt = document.createElement('span');
+	nt.innerHTML = data;
+	adminConsoleElementContent.lastChild.appendChild(nt);
+	socket.emit('stdin', data);
+	admin_command_inputElement.value = '';
+};
+
 var adminConsolePlatterConfig = function () {
+	console.log('window.admin_user.apikey', window.admin_user.apikey);
 	socket = io();
+
 	window.adminSocket = socket;
 	// socket = io(window.location.hostname + ':' + window.socketIoPort);
 	// Whenever the server emits 'user joined', log it in the chat body
@@ -31650,6 +31671,7 @@ var adminConsolePlatterConfig = function () {
 	});
 	socket.on('connect', function () {
 		logToAdminConsole('connected socket');
+		socket.emit('createrepl', window.admin_user);
 	});
 	socket.on('disconnect', function () {
 		logToAdminConsole('disconnected socket');
@@ -31659,6 +31681,9 @@ var adminConsolePlatterConfig = function () {
 	});
 	socket.on('error', function () {
 		logToAdminConsole('socket error');
+	});
+	socket.on('stdout', function (data) {
+		logToAdminConsole(data);
 	});
 	consolePlatter = new platterjs({
 		idSelector: 'adminConsole',
@@ -31683,7 +31708,12 @@ var adminConsolePlatterConfig = function () {
 		consolePlatter.hidePlatterPane();
 	});
 
+	admin_command_submitForm.addEventListener('submit', submit_admin_command, false);
+	admin_command_submit_buttonElement.addEventListener('click', submit_admin_command, false);
+
 	window.consolePlatter = consolePlatter;
+
+	initServerSocketCallback();
 };
 
 window.showDefaultDataResponseModal = function (ajaxFormResponse) {
@@ -31888,6 +31918,12 @@ window.addEventListener('load', function () {
 	nav_header = document.querySelector('#nav-header');
 	mtpms = document.querySelector('main.ts-pushmenu-scroller');
 	ajaxlinks = document.querySelectorAll('.async-admin-ajax-link');
+
+	admin_command_inputElement = document.querySelector('#admin_command_input');
+	admin_command_submit_buttonElement = document.querySelector('#admin_command_submit_button');
+	admin_command_submitForm = document.querySelector('#admin_command_submitForm');
+
+
 	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
 	// summernotes = document.querySelectorAll('.ts-summernote');
 	preloaderElement = document.querySelector('#ts-preloading');
@@ -31929,7 +31965,6 @@ window.addEventListener('load', function () {
 	initTabs();
 	initModalWindows();
 	initCodemirrors();
-	initServerSocketCallback();
 	initAjaxDeleteButtonListeners();
 	initAjaxSubmitButtonListeners();
 	initDatalists();
@@ -31937,6 +31972,7 @@ window.addEventListener('load', function () {
 	initFilterlists();
 	initAdminSearch();
 
+	window.adminConsoleElementContent = adminConsoleElementContent;
 	window.servermodalElement = servermodalElement;
 	window.asyncHTMLWrapper = asyncHTMLWrapper;
 	window.logToAdminConsole = logToAdminConsole;

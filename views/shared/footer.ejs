@@ -35,10 +35,23 @@
 	</main>
 
 	<div class="ts-display-none">
-		<div id="ts-admin-console" >
-			<div id="ts-admin-console-content" class=" ts-padding-lg">
+		<div id="ts-admin-console" class="ts-position-relative" >
+			<div id="ts-admin-console-content" class=" ts-padding-lg" style="margin-bottom:3em;">
 				<!-- <pre>admin console</pre> -->
 			</div>
+			<form id="admin_command_submitForm" action="javascript://donothing">
+				<div class="ts-text-xl ts-position-bottom ts-position-fixed ts-width-50" style="bottom:3em;">
+					<div class="ts-row ts-form-row">
+						<div class="ts-col-span10 ">
+							<input  class="ts-input ts-width-100" id="admin_command_input" />
+						</div>
+						<div class="ts-col-span2 ts-text-center">
+							<button id="admin_command_submit_button" class="ts-button ts-button-accent-color ts-width-100">SEND</button>
+						</div>
+					</div>
+				</div>
+			</form>
+
 		</div>
 	</div>
 	<% if(locals.appenvironment==='production'){%>
@@ -51,6 +64,9 @@
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
 	<script type="text/javascript">
 	  <%- locals.viewhelper.passObjToClient(periodic,"periodic") %>
+	  <%if(typeof user!=='undefined' && user && user._id && user.apikey){%>
+			  <%- locals.viewhelper.passObjToClient({_id:user._id,apikey:user.apikey,email:user.email,username:user.username},"admin_user") %>
+	  	<%}%>
 	</script>
 	<script type="template/ejs" id="ts-search-result-template">
 	  <% include _search_result_template %>

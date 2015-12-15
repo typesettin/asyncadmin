@@ -245,6 +245,8 @@ module.exports = function (periodic) {
 	settingsAdminRouter.post('/themefiledata', adminSettingsController.update_theme_filedata);
 	settingsAdminRouter.post('/updateconfigjson', adminSettingsController.update_config_json_files);
 
+	adminRouter.get('/replie/new', periodic.app.controller.extension.asyncadmin.socket_log.create_repl);
+
 	//user priviliges
 	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
 	adminRouter.get('/userprivileges/search', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
@@ -256,6 +258,16 @@ module.exports = function (periodic) {
 	//mail settings
 	periodic.app.get('/' + periodic.app.locals.adminPath + '/mailer/test', mailController.testemail);
 	periodic.app.post('/' + periodic.app.locals.adminPath + '/mailer/sendmail', mailController.sendmail);
+
+	periodic.app.get('/sockettest', function (req, res) {
+		var io = global.io;
+		console.log('io.sockets', io.sockets);
+		res.send({
+			data: 'ok'
+		});
+		// res.send({'io.sockets.clients().length':io.sockets.clients().length});
+	});
+	periodic.app.get('/replietest', periodic.app.controller.extension.asyncadmin.socket_log.get_replie_stats);
 
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);
