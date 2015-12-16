@@ -1,69 +1,180 @@
 'use strict';
-var repl = require('repl');
 var Stream = require('stream');
+var minimist = require('minimist');
+var repl = require('repl');
 var logger,
 	socketForLogger,
 	io = global.io,
-	REPLIE = require('replie'),
-	inputstream = {},
-	outputstream = {},
+	periodicResources,
+	// REPLIE = require('replie'),
+	replstream = {},
+	replstream_last_msg = {},
 	rooms = {},
+	repl_users = {},
+	repl_username_map = {},
 	REPLIES = {};
-
+// process.stdout.write('what');
 var useSocketIOLogger = function () {
 	var util = require('util'),
 		winston = require('winston');
 
+	var disconnectSocketHandler = function () {
+		// console.log('disconnectSocketHandler this.conn.id', this.conn.id);
+		var apikeyofconn = rooms[this.conn.id],
+			otherconnid = [];
+		delete rooms[this.conn.id];
+		for (var k in rooms) {
+			if (rooms[k] === apikeyofconn) {
+				otherconnid.push(k);
+			}
+		}
+		// console.log('otherconnid', otherconnid);
+		if (otherconnid.length === 0) {
+			delete repl_users[apikeyofconn];
+			delete REPLIES[apikeyofconn];
+			delete replstream_last_msg[apikeyofconn];
+			delete repl_users[apikeyofconn];
+			for (var x in repl_username_map) {
+				if (repl_username_map[x] === apikeyofconn) {
+					delete repl_username_map[x];
+				}
+			}
+		}
+	};
+
 	io.on('connection', function (socket) {
 		socketForLogger = socket;
 		socketForLogger.emit('log', {
-			level: 'level',
-			msg: 'connection id: ' + socket.conn.id,
-			meta: 'meta'
+			level: 'info',
+			msg: ' Type \'help\' for help. > ',
+			// meta: 'meta'
 		});
 
 		socket.on('createrepl', function (data) {
 			if (REPLIES[data.apikey]) {
-				socket.emit('log', {
-					level: 'level',
-					msg: 'already has reple and joining room connection id: ' + socket.conn.id,
-				});
+				// socket.emit('log', {
+				// 	level: 'info',
+				// 	msg: 'already has reple and joining room connection id: ' + socket.conn.id + ' > ',
+				// });
 				rooms[socket.conn.id] = data.apikey;
 				socket.join(data.apikey);
+				replstream[data.apikey].write('reconnecting session > ');
 			}
 			else {
 				console.log('data.apikey', data.apikey);
+				repl_users[data.apikey] = data;
+				repl_username_map[data.username] = data.apikey;
 				rooms[socket.conn.id] = data.apikey;
-				inputstream[data.apikey] = new Stream();
-				inputstream[data.apikey].readable = true;
-				outputstream[data.apikey] = new Stream();
-				outputstream[data.apikey].readable = true;
+				replstream[data.apikey] = new Stream();
+				replstream[data.apikey].readable = true;
 
-				outputstream[data.apikey].resume = function () {};
-				outputstream[data.apikey].pause = function () {};
-				inputstream[data.apikey].resume = function () {};
-				inputstream[data.apikey].pause = function () {};
+				replstream[data.apikey].resume = function () {};
+				replstream[data.apikey].pause = function () {};
 
-				outputstream[data.apikey].write = function (repl_data) {
+				replstream[data.apikey].write = function (repl_data) {
 					console.log('reple write', repl_data);
-					if (repl_data) {
+					if (repl_data && replstream_last_msg[data.apikey] !== repl_data) {
 						io.sockets.to(data.apikey).emit('stdout', repl_data);
+						replstream_last_msg[data.apikey] = repl_data;
 					}
 				};
 				REPLIES[data.apikey] = repl.start({
 					prompt: '> ',
-					input: inputstream[data.apikey],
-					output: outputstream[data.apikey],
+					input: replstream[data.apikey],
+					output: replstream[data.apikey],
 					ignoreUndefined: true
 				});
+				REPLIES[data.apikey].defineCommand('listUsers', {
+					help: 'List All Logged In Users',
+					action: function () {
+						var msghtml = '<ul>';
+						for (var x in repl_users) {
+							msghtml += '<li>' + repl_users[x].username + '</li>';
+						}
+						msghtml += '</ul>';
+						this.outputStream.write(msghtml);
+						// io.sockets.to(data.apikey).emit('log', {
+						// 	level: 'info',
+						// 	msg: msghtml,
+						// });
+					}
+				});
+				REPLIES[data.apikey].defineCommand('listCommands', {
+					help: 'List All Available Commands',
+					action: function () {
+						var listOfCommands = Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd);
+						var msghtml = '<ul>';
+						for (var l in listOfCommands) {
+							msghtml += '<li>' + listOfCommands[l] + ' -> ' + Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd[listOfCommands[l]]) + '</li>';
+						}
+						msghtml += '</ul>';
+						this.outputStream.write(msghtml);
+						// io.sockets.to(data.apikey).emit('log', {
+						// 	level: 'info',
+						// 	msg: msghtml,
+						// });
+					}
+				});
+
 				socket.join(data.apikey);
 			}
 		});
 
 		socket.on('stdin', function (data) {
-			inputstream[rooms[this.conn.id]].emit('data', data + '\r\n');
+			if (data.charAt(0) === '@') {
+				var words = data.split(' ');
+				var tousername = words[0].replace('@', '');
+				var apikeyofusername = repl_username_map[tousername];
+				var fromusername = repl_users[rooms[this.conn.id]].username;
+				io.sockets.to(apikeyofusername).emit('log', {
+					level: 'info',
+					msg: fromusername + ': ' + data,
+				});
+				io.sockets.to(apikeyofusername).emit('server_callback', {
+					functionName: 'showStylieAlert',
+					functionData: {
+						ttl: 8000,
+						message: '<div style="text-align:left;"><p><strong>New Message Alert</strong></p> ' +
+							'<p>Message from : ' + fromusername + '</p>' +
+							'</div>'
+					}
+				});
+			}
+			else if (data.substr(0, 5) === 'exec ') {
+				var inputdata = data.split(' ');
+
+				if (periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]] && periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]][inputdata[2]]) {
+					REPLIES[rooms[this.conn.id]].context.ondemand = periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]][inputdata[2]];
+					console.log('REPLIES[rooms[this.conn.id]].context.ondemand.console', REPLIES[rooms[this.conn.id]].context.ondemand.console);
+					replstream[rooms[this.conn.id]].emit('data', 'ondemand(' + JSON.stringify(minimist(inputdata)) + ')' + '\r\n');
+				}
+				else {
+					io.sockets.to(rooms[this.conn.id]).emit('stdout', 'INVALID ADMIN COMMAND');
+				}
+			}
+			else {
+				if (data === 'help' || data === 'h' || data === '-h' || data === '--help') {
+					data = '.help';
+				}
+				else if (data === 'clear') {
+					data = '.clear';
+				}
+				else if (data === 'break') {
+					data = '.break';
+				}
+				else if (data === 'listUsers') {
+					data = '.listUsers';
+				}
+				else if (data === 'listCommands') {
+					data = '.listCommands';
+				}
+				replstream[rooms[this.conn.id]].emit('data', data + '\r\n');
+			}
 		});
 
+		socket.on('disconnect', disconnectSocketHandler);
+		socket.on('end', disconnectSocketHandler);
+		socket.on('close', disconnectSocketHandler);
 	});
 
 
@@ -101,50 +212,14 @@ var get_replie_stats = function (req, res) {
 	io.to('yawetse').emit('stdout', 'test msg to yaw');
 	res.send({
 		REPLIES: Object.keys(REPLIES),
+		streams: Object.keys(replstream),
+		rooms: rooms,
+		repl_users: repl_users,
+		repl_username_map: repl_username_map,
 	});
 };
 
 
-var create_repl = function (req, res) {
-	if (REPLIES[req.user.apikey]) {
-		console.log('already has reple');
-		res.send('ok');
-	}
-	else {
-		console.log('req.user.apikey', req.user.apikey);
-		inputstream[req.user.apikey] = new Stream();
-		inputstream[req.user.apikey].readable = true;
-		outputstream[req.user.apikey] = new Stream();
-		outputstream[req.user.apikey].readable = true;
-		REPLIES[req.user.apikey] = repl.start({
-			prompt: '> ',
-			input: inputstream[req.user.apikey],
-			output: outputstream[req.user.apikey],
-		});
-
-		io.on('createrepl', function (data) {
-
-		});
-		// REPLIES[req.user.apikey] = new REPLIE({
-		// 	prompt: 'REPLIE',
-		// 	startServer: false,
-		// 	connectionMessage: 'in the repl',
-		// 	io_server: io,
-		// 	modules: [{
-		// 		name: 'shelljs',
-		// 		type: 'external'
-		// 	}, {
-		// 		name: 'async',
-		// 		type: 'external'
-		// 	}],
-		// 	// namespace: req.user.apikey,
-		// 	room: req.user.username
-		// });
-		// setTimeout(function () {
-		// 	res.send('ok');
-		// }, 1000);
-	}
-};
 
 /**
  * admin controller
@@ -160,14 +235,15 @@ var create_repl = function (req, res) {
  * @return {object}          
  */
 var controller = function (resources) {
+	periodicResources = resources;
 	logger = resources.logger;
 	useSocketIOLogger();
 	return {
 		get_replie_stats: get_replie_stats,
-		create_repl: create_repl
-			// getMarkdownReleases: getMarkdownReleases,
-			// getHomepageStats: getHomepageStats,
-			// adminExtSettings: adminExtSettings,
+		// create_repl: create_repl
+		// getMarkdownReleases: getMarkdownReleases,
+		// getHomepageStats: getHomepageStats,
+		// adminExtSettings: adminExtSettings,
 	};
 };
 

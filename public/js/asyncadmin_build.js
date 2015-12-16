@@ -30922,6 +30922,7 @@ var logToAdminConsole = function (data) {
 		adminMessageMeta = document.createElement('pre'),
 		acp = document.querySelector('#adminConsole_pltr-pane-wrapper'),
 		acc = document.querySelector('#ts-admin-console-content'),
+		acwc = window.consolePlatter.config(),
 		loglevel = data.level || 'log';
 	classie.add(adminMessageMeta, 'ts-sans-serif');
 
@@ -30941,6 +30942,10 @@ var logToAdminConsole = function (data) {
 	}
 	adminConsoleElementContent.appendChild(logInfoElement);
 	acp.scrollTop = acp.scrollHeight;
+
+	if (acwc.windowObjectReference && acwc.windowObjectReference.scrollTo && typeof acwc.windowObjectReference.scrollTo === 'function') {
+		acwc.windowObjectReference.scrollTo(0, acwc.windowObjectReference.document.querySelector('#ts-admin-console-content').scrollHeight);
+	}
 
 	if (acc && acc.childNodes && acc.childNodes.length > 30) {
 		//console.log('isClearingConsole', isClearingConsole);
@@ -31577,6 +31582,7 @@ var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
 };
 
 var addStyleSheetToChildWindow = function () {
+	var childWindowReference = consolePlatter.config().windowObjectReference;
 	var t = setTimeout(function () {
 		var newstylesheet = document.createElement('link');
 		newstylesheet.setAttribute('type', 'text/css');
@@ -31586,15 +31592,17 @@ var addStyleSheetToChildWindow = function () {
 		newstylesheet2.setAttribute('type', 'text/css');
 		newstylesheet2.setAttribute('href', window.location.origin + '/extensions/periodicjs.ext.asyncadmin/stylesheets/asyncadmin.css');
 		newstylesheet2.setAttribute('rel', 'stylesheet');
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
-		consolePlatter.config().windowObjectReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
-		classie.add(consolePlatter.config().windowObjectReference.document.querySelector('html'), 'ts');
+		childWindowReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet);
+		childWindowReference.document.getElementsByTagName('head')[0].appendChild(newstylesheet2);
+		classie.add(childWindowReference.document.querySelector('html'), 'ts');
+
+		childWindowReference.document.querySelector('body').setAttribute('id', 'admin-console-body');
 
 		adminConsoleWindowResizeEventHandler();
 		clearTimeout(t);
 	}, 200);
 
-	consolePlatter.config().windowObjectReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
+	childWindowReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
 };
 
 var asyncAdminContentElementClick = function (e) {
@@ -31670,7 +31678,7 @@ var adminConsolePlatterConfig = function () {
 		logToAdminConsole(data);
 	});
 	socket.on('connect', function () {
-		logToAdminConsole('connected socket');
+		logToAdminConsole('connected socket in client');
 		socket.emit('createrepl', window.admin_user);
 	});
 	socket.on('disconnect', function () {
