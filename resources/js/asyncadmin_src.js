@@ -635,12 +635,14 @@ var search_menu_callback = function () {
 var initAdminSearch = function () {
 	search_menu_input = document.querySelector('#searchall-input');
 	search_menu_content = document.querySelector('#ts-search-content');
-	document.querySelector('#searchall-input').addEventListener('keydown', debounce(search_menu_callback, 200), false);
-	// search_menu_input.addEventListener('change', debounce(search_menu_callback, 200), false);
-	document.querySelector('#searchall-input').addEventListener('focus', controlSearchNav, false);
-	document.querySelector('#searchall-input').addEventListener('blur', function () {
-		setTimeout(closeSearchNav, 400);
-	}, false);
+	if (document.querySelector('#searchall-input')) {
+		document.querySelector('#searchall-input').addEventListener('keydown', debounce(search_menu_callback, 200), false);
+		// search_menu_input.addEventListener('change', debounce(search_menu_callback, 200), false);
+		document.querySelector('#searchall-input').addEventListener('focus', controlSearchNav, false);
+		document.querySelector('#searchall-input').addEventListener('blur', function () {
+			setTimeout(closeSearchNav, 400);
+		}, false);
+	}
 };
 
 var confirmDeleteDialog = function (e) {
@@ -1015,7 +1017,7 @@ var submit_admin_command = function () {
 };
 
 var adminConsolePlatterConfig = function () {
-	console.log('window.admin_user.apikey', window.admin_user.apikey);
+	// console.log('window.admin_user.apikey', window.admin_user.apikey);
 	socket = io();
 
 	window.adminSocket = socket;
