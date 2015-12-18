@@ -18,28 +18,34 @@ var async = require('async'),
 
 var extcmd = {
 	search: function (options) {
+		// console.log('options', options);
 		var output = this.outputStream;
-		output.write('searching github for extensions named: periodicjs.ext.' + options.q);
-		// console.log('searching github for extensions named: periodicjs.ext.' + options.q);
+		var searchQuery = options._[2] || options.q || '';
+		output.write('searching github for extensions named: periodicjs.ext.' + searchQuery);
+		// console.log('searching github for extensions named: periodicjs.ext.' + searchQuery);
 		// console.log('search this', this);
 		request
 			.get('https://api.github.com/search/repositories')
 			.query({
-				q: 'periodicjs.ext.' + options.q
+				q: 'periodicjs.ext.' + searchQuery
 			})
 			.set('Accept', 'application/json')
 			.end(function (error, res) {
-				console.log('res.body.items', res.body.items);
+				// console.log('res.body.items', res.body.items);
 				if (error) {
 					output.write(error.message);
 				}
 				else if (!res.body.items) {
-					output.write('could not find periodicjs.ext.' + options.q + ' on github');
+					output.write('could not find periodicjs.ext.' + searchQuery + ' on github');
 				}
 				else {
+					var returnhtml = '<p><strong>Search Results:</strong></p><ul>';
 					res.body.items.forEach(function (ext) {
-						output.write('exec extension install periodicjs.ext.' + ext.name + '(' + ext.full_name + ')');
+						returnhtml += '<li><span data-prefill-admin-input="execCommand extension install periodicjs.ext.' + ext.name + '" style="cursor:pointer">periodicjs.ext.' + ext.name + '</span> <br><a class="ts-text-xs" target="_blank" href="' + ext.html_url + '">' + ext.full_name + '</a></li>';
 					});
+					returnhtml += '</ul><p> To install, example: <span class="ts-text-light-primary-color" data-prefill-admin-input="execCommand extension install periodicjs.ext.example" style="cursor:pointer">execCommand extension install <em>periodicjs.ext.example</em></span>';
+					output.write(returnhtml);
+
 				}
 			});
 		return options;

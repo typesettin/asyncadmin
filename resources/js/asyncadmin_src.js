@@ -71,6 +71,8 @@ var ajaxlinks,
 	tagmanagerelements,
 	sortlistelements,
 	alreadyAttachedAppResponse = false,
+	adminCommandListIndex = 0,
+	adminCommandList = [],
 	AdminFormies = {},
 	AdminTagManagers = {},
 	StylieDataLists = {},
@@ -932,6 +934,7 @@ var adminConsoleWindowResizeEventHandler = function ( /*e*/ ) {
 
 var addStyleSheetToChildWindow = function () {
 	var childWindowReference = consolePlatter.config().windowObjectReference;
+	var acwc = window.consolePlatter.config();
 	var t = setTimeout(function () {
 		var newstylesheet = document.createElement('link');
 		newstylesheet.setAttribute('type', 'text/css');
@@ -948,6 +951,11 @@ var addStyleSheetToChildWindow = function () {
 		childWindowReference.document.querySelector('body').setAttribute('id', 'admin-console-body');
 
 		adminConsoleWindowResizeEventHandler();
+
+		if (acwc.windowObjectReference && acwc.windowObjectReference.scrollTo && typeof acwc.windowObjectReference.scrollTo === 'function' && acwc.windowObjectReference.document.querySelector('#ts-admin-console-content')) {
+			acwc.windowObjectReference.scrollTo(0, acwc.windowObjectReference.document.querySelector('#ts-admin-console-content').scrollHeight);
+		}
+
 		clearTimeout(t);
 	}, 200);
 
@@ -973,7 +981,10 @@ var asyncAdminContentElementClick = function (e) {
 };
 
 var showAdminConsoleElementClick = function () {
+	var acp = document.querySelector('#adminConsole_pltr-pane-wrapper');
 	window.consolePlatter.showPlatterPane();
+	acp.scrollTop = acp.scrollHeight;
+
 	document.querySelector('#admin_command_input').focus();
 };
 
@@ -1008,13 +1019,48 @@ var submit_admin_command = function () {
 	// console.log('this', this);
 	// console.log('this.value', this.value);
 	// console.log('admin_command_inputElement.value', admin_command_inputElement.value);
+	if (admin_command_inputElement.value) {
+		adminCommandList.unshift(admin_command_inputElement.value);
+		adminCommandListIndex = 0;
 
+		if (adminCommandList.length > 10) {
+			adminCommandList.splice(9, (adminCommandList.length - 10));
+		}
+	}
 	var data = admin_command_inputElement.value;
 	var nt = document.createElement('span');
 	nt.innerHTML = data;
+	classie.add(nt, 'ts-text-divider-text-color');
 	adminConsoleElementContent.lastChild.appendChild(nt);
 	socket.emit('stdin', data);
 	admin_command_inputElement.value = '';
+};
+
+var admin_input_key_shorcut = function (e) {
+	var movedir = false;
+	if (e.keyCode === 38 || e.keyCode === 40) {
+		admin_command_inputElement.value = adminCommandList[adminCommandListIndex];
+	}
+	switch (e.keyCode) {
+	case 38:
+		movedir = 'up';
+		adminCommandListIndex = (adminCommandListIndex < adminCommandList.length - 1) ? adminCommandListIndex + 1 : 0;
+		break;
+	case 40:
+		movedir = 'down';
+		adminCommandListIndex = (adminCommandListIndex > 0) ? adminCommandListIndex - 1 : (adminCommandList.length - 1);
+		break;
+	}
+};
+
+var acecClickHandler = function (e) {
+	var eventTarget = e.target;
+	if (eventTarget.getAttribute('data-prefill-admin-input')) {
+		admin_command_inputElement.value = eventTarget.getAttribute('data-prefill-admin-input');
+		if (document.querySelector('#admin_command_input')) {
+			document.querySelector('#admin_command_input').focus();
+		}
+	}
 };
 
 var adminConsolePlatterConfig = function () {
@@ -1068,7 +1114,9 @@ var adminConsolePlatterConfig = function () {
 	});
 
 	admin_command_submitForm.addEventListener('submit', submit_admin_command, false);
+	admin_command_inputElement.addEventListener('keyup', admin_input_key_shorcut, false);
 	admin_command_submit_buttonElement.addEventListener('click', submit_admin_command, false);
+	adminConsoleElementContent.addEventListener('click', acecClickHandler, false);
 
 	window.consolePlatter = consolePlatter;
 
