@@ -103,7 +103,8 @@ var useSocketIOLogger = function () {
 					help: 'List All Available Commands',
 					action: function () {
 						var listOfCommands = Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd);
-						var msghtml = '<ul>';
+						var msghtml = '<p>example command:<br>"exec extension search -q cloud"</p>';
+						msghtml += '<ul>';
 						for (var l in listOfCommands) {
 							msghtml += '<li>' + listOfCommands[l] + ' -> ' + Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd[listOfCommands[l]]) + '</li>';
 						}
@@ -113,6 +114,28 @@ var useSocketIOLogger = function () {
 						// 	level: 'info',
 						// 	msg: msghtml,
 						// });
+					}
+				});
+				REPLIES[data.apikey].defineCommand('execCommand', {
+					help: 'List All Available Commands',
+					action: function (parameters) {
+						var inputdata = parameters.split(' ');
+						var ec;
+						console.log('inputdata', inputdata);
+						if (periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[0]] && periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[0]][inputdata[1]]) {
+							// this.context.ondemand = periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[0]][inputdata[1]];
+							ec = periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[0]][inputdata[1]];
+
+							ec.call(this, minimist(inputdata));
+							// console.log('REPLIES[rooms[this.conn.id]].context.ondemand.console', REPLIES[rooms[this.conn.id]].context.ondemand.console);
+							// 
+							// this.context.ondemand(minimist(inputdata));
+							// replstream[rooms[this.conn.id]].emit('data', 'ondemand(' + JSON.stringify(minimist(inputdata)) + ')' + '\r\n');
+						}
+						else {
+							this.outputStream.write('INVALID ADMIN COMMAND');
+						}
+
 					}
 				});
 
@@ -140,18 +163,6 @@ var useSocketIOLogger = function () {
 					}
 				});
 			}
-			else if (data.substr(0, 5) === 'exec ') {
-				var inputdata = data.split(' ');
-
-				if (periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]] && periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]][inputdata[2]]) {
-					REPLIES[rooms[this.conn.id]].context.ondemand = periodicResources.app.controller.extension.asyncadmin.cmd[inputdata[1]][inputdata[2]];
-					console.log('REPLIES[rooms[this.conn.id]].context.ondemand.console', REPLIES[rooms[this.conn.id]].context.ondemand.console);
-					replstream[rooms[this.conn.id]].emit('data', 'ondemand(' + JSON.stringify(minimist(inputdata)) + ')' + '\r\n');
-				}
-				else {
-					io.sockets.to(rooms[this.conn.id]).emit('stdout', 'INVALID ADMIN COMMAND');
-				}
-			}
 			else {
 				if (data === 'help' || data === 'h' || data === '-h' || data === '--help') {
 					data = '.help';
@@ -167,6 +178,9 @@ var useSocketIOLogger = function () {
 				}
 				else if (data === 'listCommands') {
 					data = '.listCommands';
+				}
+				else if (data.substr(0, 11) === 'execCommand') {
+					data = '.' + data;
 				}
 				replstream[rooms[this.conn.id]].emit('data', data + '\r\n');
 			}

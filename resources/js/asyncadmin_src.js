@@ -290,7 +290,7 @@ var logToAdminConsole = function (data) {
 	adminConsoleElementContent.appendChild(logInfoElement);
 	acp.scrollTop = acp.scrollHeight;
 
-	if (acwc.windowObjectReference && acwc.windowObjectReference.scrollTo && typeof acwc.windowObjectReference.scrollTo === 'function') {
+	if (acwc.windowObjectReference && acwc.windowObjectReference.scrollTo && typeof acwc.windowObjectReference.scrollTo === 'function' && acwc.windowObjectReference.document.querySelector('#ts-admin-console-content')) {
 		acwc.windowObjectReference.scrollTo(0, acwc.windowObjectReference.document.querySelector('#ts-admin-console-content').scrollHeight);
 	}
 
@@ -974,6 +974,7 @@ var asyncAdminContentElementClick = function (e) {
 
 var showAdminConsoleElementClick = function () {
 	window.consolePlatter.showPlatterPane();
+	document.querySelector('#admin_command_input').focus();
 };
 
 var navOverlayClickHandler = function () {
@@ -1063,6 +1064,7 @@ var adminConsolePlatterConfig = function () {
 		// console.log('openedPlatterWindow data', data);
 		addStyleSheetToChildWindow();
 		consolePlatter.hidePlatterPane();
+		consolePlatter.config().windowObjectReference.document.querySelector('#admin_command_input').focus();
 	});
 
 	admin_command_submitForm.addEventListener('submit', submit_admin_command, false);

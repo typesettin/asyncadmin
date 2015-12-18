@@ -91,6 +91,7 @@ module.exports = function (periodic) {
 		user: require('./controller/admin_user')(periodic),
 		socket_log: require('./controller/socket_log')(periodic),
 		socket_callback: require('./controller/server_callback')(periodic),
+		admin_extensions: require('./controller/admin_extensions')(periodic),
 		data_tables: data_tables,
 		search: {},
 		cmd: {}
@@ -100,6 +101,7 @@ module.exports = function (periodic) {
 	periodic.app.controller.extension.asyncadmin.search.extension = periodic.app.controller.extension.asyncadmin.admin.extensionsearch;
 
 	periodic.app.controller.extension.asyncadmin.cmd.theme = periodic.app.controller.extension.asyncadmin.admin.themecmd;
+	periodic.app.controller.extension.asyncadmin.cmd.extension = periodic.app.controller.extension.asyncadmin.admin_extensions.extcmd;
 
 
 	var adminRouter = periodic.express.Router(),

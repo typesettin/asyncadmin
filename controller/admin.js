@@ -269,6 +269,16 @@ var themecmd = {
 	}
 };
 
+var extcmd = {
+	search: function (options) {
+		process.stdout.write('search all themes ' + options.q);
+		return options;
+	},
+	install: function (options) {
+		console.log('install theme  ' + options.n);
+	}
+};
+
 var themesearch = function (options, callback) {
 	var req = options.req;
 	var searchterm = req.query.search;
@@ -697,6 +707,7 @@ var controller = function (resources) {
 		extensions_index: extensions_index,
 		get_entity_search: get_entity_search,
 		themecmd: themecmd,
+		extcmd: extcmd,
 		user_search: get_entity_search({
 			entity: 'user'
 		}),
