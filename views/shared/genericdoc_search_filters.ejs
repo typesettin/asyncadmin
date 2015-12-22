@@ -7,7 +7,9 @@
   <details class="ts-genericdoc" <%if(request.query.fq){%> open="open"<%}%> >
     <summary>
       <span class="ts-text-xx ts-text-bold">Manage &rsaquo; <%-genericdoctype%>s</span>
-      <% if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag"  || genericdoctypelink ==="userrole" || genericdoctypelink==="userprivilege"  || ( typeof genericdocusemodal!=="undefined" && genericdocusemodal )) {%>
+      <% if(typeof genericdocopen_admin!=="undefined" && genericdocopen_admin ) {%>
+        <a class=" ts-button ts-pull-right ts-cursor-pointer ts-open-admin-console" data-prefill-admin-input="execCommand <%- genericdoctypelink %> search " >New <%- genericdoctype %></a>
+      <%}else if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag"  || genericdoctypelink ==="userrole" || genericdoctypelink==="userprivilege"  || ( typeof genericdocusemodal!=="undefined" && genericdocusemodal )) {%>
         <a class=" ts-button ts-pull-right ts-open-modal" href="/<%- locals.adminPath %>/content/<%- genericdoctypelink  %>/new" data-tsmodal-id="new-<%- genericdoctypelink  %>-modal">New <%- genericdoctype %></a>
       <%}else if(genericdoctypelink ==="user" ) {%>
         <a class="async-admin-ajax-link ts-button ts-pull-right" href="/<%- locals.adminPath %>/<%- genericdoctypelink  %>/new">New <%- genericdoctype %></a>

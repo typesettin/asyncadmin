@@ -31565,6 +31565,12 @@ var async_admin_ajax_link_handler = function (e) {
 		// StyliePushMenu._resetMenu();
 		return false;
 	}
+
+	if (classie.has(etarget, 'ts-open-admin-console')) {
+		e.preventDefault();
+		showAdminConsoleElementClick();
+		acecClickHandler(e);
+	}
 };
 
 var statecallback = function (data) {

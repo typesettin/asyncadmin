@@ -41,6 +41,12 @@ var useSocketIOLogger = function () {
 			}
 		}
 	};
+	var strip = function (html) {
+		return html.replace(/<(?:.|\n)*?>/gm, '');
+		// var tmp = document.createElement('DIV');
+		// tmp.innerHTML = html;
+		// return tmp.textContent || tmp.innerText || '';
+	};
 
 	io.on('connection', function (socket) {
 		socketForLogger = socket;
@@ -51,7 +57,7 @@ var useSocketIOLogger = function () {
 		});
 
 		socket.on('createrepl', function (data) {
-			if (REPLIES[data.apikey]) {
+			if (data && data.apikey && REPLIES[data.apikey]) {
 				// socket.emit('log', {
 				// 	level: 'info',
 				// 	msg: 'already has reple and joining room connection id: ' + socket.conn.id + ' > ',
@@ -60,8 +66,8 @@ var useSocketIOLogger = function () {
 				socket.join(data.apikey);
 				replstream[data.apikey].write('reconnecting session > ');
 			}
-			else {
-				console.log('data.apikey', data.apikey);
+			else if (data && data.apikey) {
+				// console.log('data.apikey', data.apikey);
 				repl_users[data.apikey] = data;
 				repl_username_map[data.username] = data.apikey;
 				rooms[socket.conn.id] = data.apikey;
@@ -72,7 +78,7 @@ var useSocketIOLogger = function () {
 				replstream[data.apikey].pause = function () {};
 
 				replstream[data.apikey].write = function (repl_data) {
-					console.log('reple write', repl_data);
+					// console.log('reple write', repl_data);
 					if (repl_data && replstream_last_msg[data.apikey] !== repl_data) {
 						io.sockets.to(data.apikey).emit('stdout', repl_data);
 						replstream_last_msg[data.apikey] = repl_data;
@@ -89,7 +95,7 @@ var useSocketIOLogger = function () {
 					action: function () {
 						var msghtml = '<ul>';
 						for (var x in repl_users) {
-							msghtml += '<li>' + repl_users[x].username + '</li>';
+							msghtml += '<li><span class="ts-text-light-primary-color" data-prefill-admin-input="@' + repl_users[x].username + ' " style="cursor:pointer">@' + repl_users[x].username + ' </span></li>';
 						}
 						msghtml += '</ul>';
 						this.outputStream.write(msghtml);
@@ -103,10 +109,19 @@ var useSocketIOLogger = function () {
 					help: 'List All Available Commands',
 					action: function () {
 						var listOfCommands = Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd);
-						var msghtml = '<p>example command:<br>"execCommand extension search cloud"</p>';
+						var commandArray = [];
+						var msghtml = '<p>example command:<br>"<span class="ts-text-light-primary-color" data-prefill-admin-input="execCommand extension search cloud" style="cursor:pointer">execCommand extension search <em>cloud</em></span>"</p>';
 						msghtml += '<ul>';
 						for (var l in listOfCommands) {
-							msghtml += '<li>' + listOfCommands[l] + ' -> ' + Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd[listOfCommands[l]]) + '</li>';
+							commandArray = Object.keys(periodicResources.app.controller.extension.asyncadmin.cmd[listOfCommands[l]]);
+							msghtml += '<li>' + listOfCommands[l] + ' -> ';
+							for (var x = 0; x < commandArray.length; x++) {
+								msghtml += '<span class="ts-text-light-primary-color" data-prefill-admin-input="execCommand ' + listOfCommands[l] + ' ' + commandArray[x] + '" style="cursor:pointer">' + commandArray[x] + '</span>';
+								if (x !== commandArray.length - 1) {
+									msghtml += ', ';
+								}
+							}
+							msghtml += '</li>';
 						}
 						msghtml += '</ul>';
 						this.outputStream.write(msghtml);
@@ -146,7 +161,7 @@ var useSocketIOLogger = function () {
 				var fromusername = repl_users[rooms[this.conn.id]].username;
 				io.sockets.to(apikeyofusername).emit('log', {
 					level: 'info',
-					msg: fromusername + ': ' + data,
+					msg: fromusername + ': ' + strip(data),
 				});
 				io.sockets.to(apikeyofusername).emit('server_callback', {
 					functionName: 'showStylieAlert',
@@ -158,7 +173,7 @@ var useSocketIOLogger = function () {
 					}
 				});
 			}
-			else {
+			else if (this.conn.id && rooms[this.conn.id] && replstream[rooms[this.conn.id]]) {
 				if (data === 'help' || data === 'h' || data === '-h' || data === '--help') {
 					data = '.help';
 				}
