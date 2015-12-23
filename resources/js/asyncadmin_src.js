@@ -43,6 +43,7 @@ var ajaxlinks,
 	asyncAdminContentElement,
 	adminConsoleElement,
 	adminConsoleElementContent,
+	adminConsoleSpanContainer,
 	codeMirrorJSEditorsElements,
 	admin_command_inputElement,
 	admin_command_submit_buttonElement,
@@ -1103,13 +1104,16 @@ var adminConsolePlatterConfig = function () {
 	});
 	consolePlatter.init(function (data) {
 		// console.log('consolePlatter init data', data);
-		var spanSeparator = document.createElement('span'),
-			adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
+		var spanSeparator = document.createElement('span');
+
+		adminConsoleSpanContainer = document.querySelector('#admin-console-span-container');
 
 		// spanSeparator.innerHTML = ' | ';
 		adminConsoleSpanContainer.appendChild(adminButtonElement);
 		adminConsoleSpanContainer.appendChild(data.element);
 		adminConsoleSpanContainer.appendChild(spanSeparator);
+		classie.add(adminConsoleSpanContainer, 'animated-medium');
+		window.adminConsoleSpanContainer = adminConsoleSpanContainer;
 	});
 
 	consolePlatter.on('openedPlatterWindow', function ( /*data*/ ) {
@@ -1320,6 +1324,18 @@ window.restartAppResponse = function ( /*ajaxFormResponse*/ ) {
 	}
 };
 
+window.notifyAdminButton = function () {
+	if (classie.has(adminConsoleSpanContainer, 'tada')) {
+		classie.remove(adminConsoleSpanContainer, 'tada');
+		setTimeout(function () {
+			classie.add(adminConsoleSpanContainer, 'tada');
+		}, 500);
+	}
+	else {
+		classie.add(adminConsoleSpanContainer, 'tada');
+	}
+};
+
 window.addEventListener('load', function () {
 	window.domLoadEventFired = true;
 	adminConsoleElement = document.querySelector('#ts-admin-console');
@@ -1345,6 +1361,7 @@ window.addEventListener('load', function () {
 	adminButtonElement.innerHTML = 'Admin Console';
 	classie.add(adminButtonElement, 'ts-cursor-pointer');
 	classie.add(adminButtonElement, 'ts-open-admin-console');
+
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
 

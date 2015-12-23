@@ -36,6 +36,10 @@ var useSocketIOLogger = function () {
 			delete repl_users[apikeyofconn];
 			for (var x in repl_username_map) {
 				if (repl_username_map[x] === apikeyofconn) {
+					io.sockets.emit('log', {
+						level: 'info',
+						msg: '<span class="ts-text-light-primary-color" data-prefill-admin-input="@' + x + ' " style="cursor:pointer">@' + x + ' </span> has disconnected',
+					});
 					delete repl_username_map[x];
 				}
 			}
@@ -151,6 +155,13 @@ var useSocketIOLogger = function () {
 
 				socket.join(data.apikey);
 			}
+
+			if (data && data.username) {
+				io.sockets.emit('log', {
+					level: 'info',
+					msg: '<span class="ts-text-light-primary-color" data-prefill-admin-input="@' + data.username + ' " style="cursor:pointer">@' + data.username + ' </span> has connected',
+				});
+			}
 		});
 
 		socket.on('stdin', function (data) {
@@ -171,6 +182,10 @@ var useSocketIOLogger = function () {
 							'<p>Message from : ' + fromusername + '</p>' +
 							'</div>'
 					}
+				});
+				io.sockets.to(apikeyofusername).emit('server_callback', {
+					functionName: 'notifyAdminButton',
+					functionData: {}
 				});
 			}
 			else if (this.conn.id && rooms[this.conn.id] && replstream[rooms[this.conn.id]]) {
@@ -195,6 +210,7 @@ var useSocketIOLogger = function () {
 				replstream[rooms[this.conn.id]].emit('data', data + '\r\n');
 			}
 		});
+
 
 		socket.on('disconnect', disconnectSocketHandler);
 		socket.on('end', disconnectSocketHandler);
