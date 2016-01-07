@@ -512,7 +512,7 @@
     };
 
     async.auto = function (tasks, concurrency, callback) {
-        if (!callback) {
+        if (typeof arguments[1] === 'function') {
             // concurrency is optional, shift the args.
             callback = concurrency;
             concurrency = null;
@@ -529,6 +529,8 @@
 
         var results = {};
         var runningTasks = 0;
+
+        var hasError = false;
 
         var listeners = [];
         function addListener(fn) {
@@ -552,6 +554,7 @@
         });
 
         _arrayEach(keys, function (k) {
+            if (hasError) return;
             var task = _isArray(tasks[k]) ? tasks[k]: [tasks[k]];
             var taskCallback = _restParam(function(err, args) {
                 runningTasks--;
@@ -564,6 +567,8 @@
                         safeResults[rkey] = val;
                     });
                     safeResults[k] = args;
+                    hasError = true;
+
                     callback(err, safeResults);
                 }
                 else {
@@ -783,7 +788,7 @@
                 } else if (test.apply(this, args)) {
                     iterator(next);
                 } else {
-                    callback(null);
+                    callback.apply(null, [null].concat(args));
                 }
             });
             iterator(next);
@@ -931,24 +936,23 @@
                 _insert(q, data, true, callback);
             },
             process: function () {
-                if (!q.paused && workers < q.concurrency && q.tasks.length) {
-                    while(workers < q.concurrency && q.tasks.length){
-                        var tasks = q.payload ?
-                            q.tasks.splice(0, q.payload) :
-                            q.tasks.splice(0, q.tasks.length);
+                while(!q.paused && workers < q.concurrency && q.tasks.length){
 
-                        var data = _map(tasks, function (task) {
-                            return task.data;
-                        });
+                    var tasks = q.payload ?
+                        q.tasks.splice(0, q.payload) :
+                        q.tasks.splice(0, q.tasks.length);
 
-                        if (q.tasks.length === 0) {
-                            q.empty();
-                        }
-                        workers += 1;
-                        workersList.push(tasks[0]);
-                        var cb = only_once(_next(q, tasks));
-                        worker(data, cb);
+                    var data = _map(tasks, function (task) {
+                        return task.data;
+                    });
+
+                    if (q.tasks.length === 0) {
+                        q.empty();
                     }
+                    workers += 1;
+                    workersList.push(tasks[0]);
+                    var cb = only_once(_next(q, tasks));
+                    worker(data, cb);
                 }
             },
             length: function () {
@@ -2223,12 +2227,12 @@ module.exports={
 
 },{}],6:[function(require,module,exports){
 //! moment.js
-//! version : 2.10.6
+//! version : 2.11.0
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
 //! license : MIT
 //! momentjs.com
 
-(function (global, factory) {
+;(function (global, factory) {
     typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
     typeof define === 'function' && define.amd ? define(factory) :
     global.moment = factory()
@@ -2345,39 +2349,45 @@ module.exports={
         return m;
     }
 
+    function isUndefined(input) {
+        return input === void 0;
+    }
+
+    // Plugins that add properties should also add the key here (null value),
+    // so we can properly clone ourselves.
     var momentProperties = utils_hooks__hooks.momentProperties = [];
 
     function copyConfig(to, from) {
         var i, prop, val;
 
-        if (typeof from._isAMomentObject !== 'undefined') {
+        if (!isUndefined(from._isAMomentObject)) {
             to._isAMomentObject = from._isAMomentObject;
         }
-        if (typeof from._i !== 'undefined') {
+        if (!isUndefined(from._i)) {
             to._i = from._i;
         }
-        if (typeof from._f !== 'undefined') {
+        if (!isUndefined(from._f)) {
             to._f = from._f;
         }
-        if (typeof from._l !== 'undefined') {
+        if (!isUndefined(from._l)) {
             to._l = from._l;
         }
-        if (typeof from._strict !== 'undefined') {
+        if (!isUndefined(from._strict)) {
             to._strict = from._strict;
         }
-        if (typeof from._tzm !== 'undefined') {
+        if (!isUndefined(from._tzm)) {
             to._tzm = from._tzm;
         }
-        if (typeof from._isUTC !== 'undefined') {
+        if (!isUndefined(from._isUTC)) {
             to._isUTC = from._isUTC;
         }
-        if (typeof from._offset !== 'undefined') {
+        if (!isUndefined(from._offset)) {
             to._offset = from._offset;
         }
-        if (typeof from._pf !== 'undefined') {
+        if (!isUndefined(from._pf)) {
             to._pf = getParsingFlags(from);
         }
-        if (typeof from._locale !== 'undefined') {
+        if (!isUndefined(from._locale)) {
             to._locale = from._locale;
         }
 
@@ -2385,7 +2395,7 @@ module.exports={
             for (i in momentProperties) {
                 prop = momentProperties[i];
                 val = from[prop];
-                if (typeof val !== 'undefined') {
+                if (!isUndefined(val)) {
                     to[prop] = val;
                 }
             }
@@ -2432,6 +2442,7 @@ module.exports={
         return value;
     }
 
+    // compare two arrays, return the number of differences
     function compareArrays(array1, array2, dontConvert) {
         var len = Math.min(array1.length, array2.length),
             lengthDiff = Math.abs(array1.length - array2.length),
@@ -2449,6 +2460,7 @@ module.exports={
     function Locale() {
     }
 
+    // internal storage for locale config files
     var locales = {};
     var globalLocale;
 
@@ -2486,7 +2498,7 @@ module.exports={
     function loadLocale(name) {
         var oldLocale = null;
         // TODO: Find a better way to register and load all the locales in Node
-        if (!locales[name] && typeof module !== 'undefined' &&
+        if (!locales[name] && !isUndefined(module) &&
                 module && module.exports) {
             try {
                 oldLocale = globalLocale._abbr;
@@ -2505,7 +2517,7 @@ module.exports={
     function locale_locales__getSetGlobalLocale (key, values) {
         var data;
         if (key) {
-            if (typeof values === 'undefined') {
+            if (isUndefined(values)) {
                 data = locale_locales__getLocale(key);
             }
             else {
@@ -2590,6 +2602,10 @@ module.exports={
         return normalizedInput;
     }
 
+    function isFunction(input) {
+        return input instanceof Function || Object.prototype.toString.call(input) === '[object Function]';
+    }
+
     function makeGetSet (unit, keepTime) {
         return function (value) {
             if (value != null) {
@@ -2603,11 +2619,14 @@ module.exports={
     }
 
     function get_set__get (mom, unit) {
-        return mom._d['get' + (mom._isUTC ? 'UTC' : '') + unit]();
+        return mom.isValid() ?
+            mom._d['get' + (mom._isUTC ? 'UTC' : '') + unit]() : NaN;
     }
 
     function get_set__set (mom, unit, value) {
-        return mom._d['set' + (mom._isUTC ? 'UTC' : '') + unit](value);
+        if (mom.isValid()) {
+            mom._d['set' + (mom._isUTC ? 'UTC' : '') + unit](value);
+        }
     }
 
     // MOMENTS
@@ -2620,7 +2639,7 @@ module.exports={
             }
         } else {
             units = normalizeUnits(units);
-            if (typeof this[units] === 'function') {
+            if (isFunction(this[units])) {
                 return this[units](value);
             }
         }
@@ -2635,7 +2654,7 @@ module.exports={
             Math.pow(10, Math.max(0, zerosToFill)).toString().substr(1) + absNumber;
     }
 
-    var formattingTokens = /(\[[^\[]*\])|(\\)?(Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Q|YYYYYY|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)/g;
+    var formattingTokens = /(\[[^\[]*\])|(\\)?([Hh]mm(ss)?|Mo|MM?M?M?|Do|DDDo|DD?D?D?|ddd?d?|do?|w[o|w]?|W[o|W]?|Qo?|YYYYYY|YYYYY|YYYY|YY|gg(ggg?)?|GG(GGG?)?|e|E|a|A|hh?|HH?|mm?|ss?|S{1,9}|x|X|zz?|ZZ?|.)/g;
 
     var localFormattingTokens = /(\[[^\[]*\])|(\\)?(LTS|LT|LL?L?L?|l{1,4})/g;
 
@@ -2731,6 +2750,8 @@ module.exports={
     var match4         = /\d{4}/;         //    0000 - 9999
     var match6         = /[+-]?\d{6}/;    // -999999 - 999999
     var match1to2      = /\d\d?/;         //       0 - 99
+    var match3to4      = /\d\d\d\d?/;     //     999 - 9999
+    var match5to6      = /\d\d\d\d\d\d?/; //   99999 - 999999
     var match1to3      = /\d{1,3}/;       //       0 - 999
     var match1to4      = /\d{1,4}/;       //       0 - 9999
     var match1to6      = /[+-]?\d{1,6}/;  // -999999 - 999999
@@ -2739,20 +2760,16 @@ module.exports={
     var matchSigned    = /[+-]?\d+/;      //    -inf - inf
 
     var matchOffset    = /Z|[+-]\d\d:?\d\d/gi; // +00:00 -00:00 +0000 -0000 or Z
+    var matchShortOffset = /Z|[+-]\d\d(?::?\d\d)?/gi; // +00 -00 +00:00 -00:00 +0000 -0000 or Z
 
     var matchTimestamp = /[+-]?\d+(\.\d{1,3})?/; // 123456789 123456789.123
 
     // any word (or two) characters or numbers including two/three word month in arabic.
-    var matchWord = /[0-9]*['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i;
+    // includes scottish gaelic two word and hyphenated months
+    var matchWord = /[0-9]*(a[mn]\s?)?['a-z\u00A0-\u05FF\u0700-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF\-]+|[\u0600-\u06FF\/]+(\s*?[\u0600-\u06FF]+){1,2}/i;
+
 
     var regexes = {};
-
-    function isFunction (sth) {
-        // https://github.com/moment/moment/issues/2325
-        return typeof sth === 'function' &&
-            Object.prototype.toString.call(sth) === '[object Function]';
-    }
-
 
     function addRegexToken (token, regex, strictRegex) {
         regexes[token] = isFunction(regex) ? regex : function (isStrict) {
@@ -2812,6 +2829,8 @@ module.exports={
     var MINUTE = 4;
     var SECOND = 5;
     var MILLISECOND = 6;
+    var WEEK = 7;
+    var WEEKDAY = 8;
 
     function daysInMonth(year, month) {
         return new Date(Date.UTC(year, month + 1, 0)).getUTCDate();
@@ -2858,14 +2877,17 @@ module.exports={
 
     // LOCALES
 
+    var MONTHS_IN_FORMAT = /D[oD]?(\[[^\[\]]*\]|\s+)+MMMM?/;
     var defaultLocaleMonths = 'January_February_March_April_May_June_July_August_September_October_November_December'.split('_');
-    function localeMonths (m) {
-        return this._months[m.month()];
+    function localeMonths (m, format) {
+        return isArray(this._months) ? this._months[m.month()] :
+            this._months[MONTHS_IN_FORMAT.test(format) ? 'format' : 'standalone'][m.month()];
     }
 
-    var defaultLocaleMonthsShort = 'Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sep_Oct_Nov_Dec'.split('_');
-    function localeMonthsShort (m) {
-        return this._monthsShort[m.month()];
+    var defaultLocaleMonthsShort = 'Jan_Feb_Mar_Apr_May_Jun_Jul_Aug_Sept_Oct_Nov_Dec'.split('_');
+    function localeMonthsShort (m, format) {
+        return isArray(this._monthsShort) ? this._monthsShort[m.month()] :
+            this._monthsShort[MONTHS_IN_FORMAT.test(format) ? 'format' : 'standalone'][m.month()];
     }
 
     function localeMonthsParse (monthName, format, strict) {
@@ -2903,6 +2925,11 @@ module.exports={
 
     function setMonth (mom, value) {
         var dayOfMonth;
+
+        if (!mom.isValid()) {
+            // No op
+            return mom;
+        }
 
         // TODO: Move this out of here!
         if (typeof value === 'string') {
@@ -2949,6 +2976,12 @@ module.exports={
             if (getParsingFlags(m)._overflowDayOfYear && (overflow < YEAR || overflow > DATE)) {
                 overflow = DATE;
             }
+            if (getParsingFlags(m)._overflowWeeks && overflow === -1) {
+                overflow = WEEK;
+            }
+            if (getParsingFlags(m)._overflowWeekday && overflow === -1) {
+                overflow = WEEKDAY;
+            }
 
             getParsingFlags(m).overflow = overflow;
         }
@@ -2957,7 +2990,7 @@ module.exports={
     }
 
     function warn(msg) {
-        if (utils_hooks__hooks.suppressDeprecationWarnings === false && typeof console !== 'undefined' && console.warn) {
+        if (utils_hooks__hooks.suppressDeprecationWarnings === false && !isUndefined(console) && console.warn) {
             console.warn('Deprecation warning: ' + msg);
         }
     }
@@ -2967,7 +3000,7 @@ module.exports={
 
         return extend(function () {
             if (firstTime) {
-                warn(msg + '\n' + (new Error()).stack);
+                warn(msg + '\nArguments: ' + Array.prototype.slice.call(arguments).join(', ') + '\n' + (new Error()).stack);
                 firstTime = false;
             }
             return fn.apply(this, arguments);
@@ -2985,22 +3018,39 @@ module.exports={
 
     utils_hooks__hooks.suppressDeprecationWarnings = false;
 
-    var from_string__isoRegex = /^\s*(?:[+-]\d{6}|\d{4})-(?:(\d\d-\d\d)|(W\d\d$)|(W\d\d-\d)|(\d\d\d))((T| )(\d\d(:\d\d(:\d\d(\.\d+)?)?)?)?([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?$/;
+    // iso 8601 regex
+    // 0000-00-00 0000-W00 or 0000-W00-0 + T + 00 or 00:00 or 00:00:00 or 00:00:00.000 + +00:00 or +0000 or +00)
+    var extendedIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})-(?:\d\d-\d\d|W\d\d-\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?::\d\d(?::\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/;
+    var basicIsoRegex = /^\s*((?:[+-]\d{6}|\d{4})(?:\d\d\d\d|W\d\d\d|W\d\d|\d\d\d|\d\d))(?:(T| )(\d\d(?:\d\d(?:\d\d(?:[.,]\d+)?)?)?)([\+\-]\d\d(?::?\d\d)?|\s*Z)?)?/;
+
+    var tzRegex = /Z|[+-]\d\d(?::?\d\d)?/;
 
     var isoDates = [
-        ['YYYYYY-MM-DD', /[+-]\d{6}-\d{2}-\d{2}/],
-        ['YYYY-MM-DD', /\d{4}-\d{2}-\d{2}/],
-        ['GGGG-[W]WW-E', /\d{4}-W\d{2}-\d/],
-        ['GGGG-[W]WW', /\d{4}-W\d{2}/],
-        ['YYYY-DDD', /\d{4}-\d{3}/]
+        ['YYYYYY-MM-DD', /[+-]\d{6}-\d\d-\d\d/],
+        ['YYYY-MM-DD', /\d{4}-\d\d-\d\d/],
+        ['GGGG-[W]WW-E', /\d{4}-W\d\d-\d/],
+        ['GGGG-[W]WW', /\d{4}-W\d\d/, false],
+        ['YYYY-DDD', /\d{4}-\d{3}/],
+        ['YYYY-MM', /\d{4}-\d\d/, false],
+        ['YYYYYYMMDD', /[+-]\d{10}/],
+        ['YYYYMMDD', /\d{8}/],
+        // YYYYMM is NOT allowed by the standard
+        ['GGGG[W]WWE', /\d{4}W\d{3}/],
+        ['GGGG[W]WW', /\d{4}W\d{2}/, false],
+        ['YYYYDDD', /\d{7}/]
     ];
 
     // iso time formats and regexes
     var isoTimes = [
-        ['HH:mm:ss.SSSS', /(T| )\d\d:\d\d:\d\d\.\d+/],
-        ['HH:mm:ss', /(T| )\d\d:\d\d:\d\d/],
-        ['HH:mm', /(T| )\d\d:\d\d/],
-        ['HH', /(T| )\d\d/]
+        ['HH:mm:ss.SSSS', /\d\d:\d\d:\d\d\.\d+/],
+        ['HH:mm:ss,SSSS', /\d\d:\d\d:\d\d,\d+/],
+        ['HH:mm:ss', /\d\d:\d\d:\d\d/],
+        ['HH:mm', /\d\d:\d\d/],
+        ['HHmmss.SSSS', /\d\d\d\d\d\d\.\d+/],
+        ['HHmmss,SSSS', /\d\d\d\d\d\d,\d+/],
+        ['HHmmss', /\d\d\d\d\d\d/],
+        ['HHmm', /\d\d\d\d/],
+        ['HH', /\d\d/]
     ];
 
     var aspNetJsonRegex = /^\/?Date\((\-?\d+)/i;
@@ -3009,26 +3059,49 @@ module.exports={
     function configFromISO(config) {
         var i, l,
             string = config._i,
-            match = from_string__isoRegex.exec(string);
+            match = extendedIsoRegex.exec(string) || basicIsoRegex.exec(string),
+            allowTime, dateFormat, timeFormat, tzFormat;
 
         if (match) {
             getParsingFlags(config).iso = true;
+
             for (i = 0, l = isoDates.length; i < l; i++) {
-                if (isoDates[i][1].exec(string)) {
-                    config._f = isoDates[i][0];
+                if (isoDates[i][1].exec(match[1])) {
+                    dateFormat = isoDates[i][0];
+                    allowTime = isoDates[i][2] !== false;
                     break;
                 }
             }
-            for (i = 0, l = isoTimes.length; i < l; i++) {
-                if (isoTimes[i][1].exec(string)) {
-                    // match[6] should be 'T' or space
-                    config._f += (match[6] || ' ') + isoTimes[i][0];
-                    break;
+            if (dateFormat == null) {
+                config._isValid = false;
+                return;
+            }
+            if (match[3]) {
+                for (i = 0, l = isoTimes.length; i < l; i++) {
+                    if (isoTimes[i][1].exec(match[3])) {
+                        // match[2] should be 'T' or space
+                        timeFormat = (match[2] || ' ') + isoTimes[i][0];
+                        break;
+                    }
+                }
+                if (timeFormat == null) {
+                    config._isValid = false;
+                    return;
                 }
             }
-            if (string.match(matchOffset)) {
-                config._f += 'Z';
+            if (!allowTime && timeFormat != null) {
+                config._isValid = false;
+                return;
             }
+            if (match[4]) {
+                if (tzRegex.exec(match[4])) {
+                    tzFormat = 'Z';
+                } else {
+                    config._isValid = false;
+                    return;
+                }
+            }
+            config._f = dateFormat + (timeFormat || '') + (tzFormat || '');
             configFromStringAndFormat(config);
         } else {
             config._isValid = false;
@@ -3066,8 +3139,8 @@ module.exports={
         //http://stackoverflow.com/questions/181348/instantiating-a-javascript-object-by-calling-prototype-constructor-apply
         var date = new Date(y, m, d, h, M, s, ms);
 
-        //the date constructor doesn't accept years < 1970
-        if (y < 1970) {
+        //the date constructor remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0 && isFinite(date.getFullYear())) {
             date.setFullYear(y);
         }
         return date;
@@ -3075,11 +3148,15 @@ module.exports={
 
     function createUTCDate (y) {
         var date = new Date(Date.UTC.apply(null, arguments));
-        if (y < 1970) {
+
+        //the Date.UTC function remaps years 0-99 to 1900-1999
+        if (y < 100 && y >= 0 && isFinite(date.getUTCFullYear())) {
             date.setUTCFullYear(y);
         }
         return date;
     }
+
+    // FORMATTING
 
     addFormatToken(0, ['YY', 2], 0, function () {
         return this.year() % 100;
@@ -3133,124 +3210,66 @@ module.exports={
         return isLeapYear(this.year());
     }
 
-    addFormatToken('w', ['ww', 2], 'wo', 'week');
-    addFormatToken('W', ['WW', 2], 'Wo', 'isoWeek');
+    // start-of-first-week - start-of-year
+    function firstWeekOffset(year, dow, doy) {
+        var // first-week day -- which january is always in the first week (4 for iso, 1 for other)
+            fwd = 7 + dow - doy,
+            // first-week day local weekday -- which local weekday is fwd
+            fwdlw = (7 + createUTCDate(year, 0, fwd).getUTCDay() - dow) % 7;
 
-    // ALIASES
-
-    addUnitAlias('week', 'w');
-    addUnitAlias('isoWeek', 'W');
-
-    // PARSING
-
-    addRegexToken('w',  match1to2);
-    addRegexToken('ww', match1to2, match2);
-    addRegexToken('W',  match1to2);
-    addRegexToken('WW', match1to2, match2);
-
-    addWeekParseToken(['w', 'ww', 'W', 'WW'], function (input, week, config, token) {
-        week[token.substr(0, 1)] = toInt(input);
-    });
-
-    // HELPERS
-
-    // firstDayOfWeek       0 = sun, 6 = sat
-    //                      the day of the week that starts the week
-    //                      (usually sunday or monday)
-    // firstDayOfWeekOfYear 0 = sun, 6 = sat
-    //                      the first week is the week that contains the first
-    //                      of this day of the week
-    //                      (eg. ISO weeks use thursday (4))
-    function weekOfYear(mom, firstDayOfWeek, firstDayOfWeekOfYear) {
-        var end = firstDayOfWeekOfYear - firstDayOfWeek,
-            daysToDayOfWeek = firstDayOfWeekOfYear - mom.day(),
-            adjustedMoment;
-
-
-        if (daysToDayOfWeek > end) {
-            daysToDayOfWeek -= 7;
-        }
-
-        if (daysToDayOfWeek < end - 7) {
-            daysToDayOfWeek += 7;
-        }
-
-        adjustedMoment = local__createLocal(mom).add(daysToDayOfWeek, 'd');
-        return {
-            week: Math.ceil(adjustedMoment.dayOfYear() / 7),
-            year: adjustedMoment.year()
-        };
+        return -fwdlw + fwd - 1;
     }
-
-    // LOCALES
-
-    function localeWeek (mom) {
-        return weekOfYear(mom, this._week.dow, this._week.doy).week;
-    }
-
-    var defaultLocaleWeek = {
-        dow : 0, // Sunday is the first day of the week.
-        doy : 6  // The week that contains Jan 1st is the first week of the year.
-    };
-
-    function localeFirstDayOfWeek () {
-        return this._week.dow;
-    }
-
-    function localeFirstDayOfYear () {
-        return this._week.doy;
-    }
-
-    // MOMENTS
-
-    function getSetWeek (input) {
-        var week = this.localeData().week(this);
-        return input == null ? week : this.add((input - week) * 7, 'd');
-    }
-
-    function getSetISOWeek (input) {
-        var week = weekOfYear(this, 1, 4).week;
-        return input == null ? week : this.add((input - week) * 7, 'd');
-    }
-
-    addFormatToken('DDD', ['DDDD', 3], 'DDDo', 'dayOfYear');
-
-    // ALIASES
-
-    addUnitAlias('dayOfYear', 'DDD');
-
-    // PARSING
-
-    addRegexToken('DDD',  match1to3);
-    addRegexToken('DDDD', match3);
-    addParseToken(['DDD', 'DDDD'], function (input, array, config) {
-        config._dayOfYear = toInt(input);
-    });
-
-    // HELPERS
 
     //http://en.wikipedia.org/wiki/ISO_week_date#Calculating_a_date_given_the_year.2C_week_number_and_weekday
-    function dayOfYearFromWeeks(year, week, weekday, firstDayOfWeekOfYear, firstDayOfWeek) {
-        var week1Jan = 6 + firstDayOfWeek - firstDayOfWeekOfYear, janX = createUTCDate(year, 0, 1 + week1Jan), d = janX.getUTCDay(), dayOfYear;
-        if (d < firstDayOfWeek) {
-            d += 7;
+    function dayOfYearFromWeeks(year, week, weekday, dow, doy) {
+        var localWeekday = (7 + weekday - dow) % 7,
+            weekOffset = firstWeekOffset(year, dow, doy),
+            dayOfYear = 1 + 7 * (week - 1) + localWeekday + weekOffset,
+            resYear, resDayOfYear;
+
+        if (dayOfYear <= 0) {
+            resYear = year - 1;
+            resDayOfYear = daysInYear(resYear) + dayOfYear;
+        } else if (dayOfYear > daysInYear(year)) {
+            resYear = year + 1;
+            resDayOfYear = dayOfYear - daysInYear(year);
+        } else {
+            resYear = year;
+            resDayOfYear = dayOfYear;
         }
 
-        weekday = weekday != null ? 1 * weekday : firstDayOfWeek;
-
-        dayOfYear = 1 + week1Jan + 7 * (week - 1) - d + weekday;
-
         return {
-            year: dayOfYear > 0 ? year : year - 1,
-            dayOfYear: dayOfYear > 0 ?  dayOfYear : daysInYear(year - 1) + dayOfYear
+            year: resYear,
+            dayOfYear: resDayOfYear
         };
     }
 
-    // MOMENTS
+    function weekOfYear(mom, dow, doy) {
+        var weekOffset = firstWeekOffset(mom.year(), dow, doy),
+            week = Math.floor((mom.dayOfYear() - weekOffset - 1) / 7) + 1,
+            resWeek, resYear;
 
-    function getSetDayOfYear (input) {
-        var dayOfYear = Math.round((this.clone().startOf('day') - this.clone().startOf('year')) / 864e5) + 1;
-        return input == null ? dayOfYear : this.add((input - dayOfYear), 'd');
+        if (week < 1) {
+            resYear = mom.year() - 1;
+            resWeek = week + weeksInYear(resYear, dow, doy);
+        } else if (week > weeksInYear(mom.year(), dow, doy)) {
+            resWeek = week - weeksInYear(mom.year(), dow, doy);
+            resYear = mom.year() + 1;
+        } else {
+            resYear = mom.year();
+            resWeek = week;
+        }
+
+        return {
+            week: resWeek,
+            year: resYear
+        };
+    }
+
+    function weeksInYear(year, dow, doy) {
+        var weekOffset = firstWeekOffset(year, dow, doy),
+            weekOffsetNext = firstWeekOffset(year + 1, dow, doy);
+        return (daysInYear(year) - weekOffset + weekOffsetNext) / 7;
     }
 
     // Pick the first defined of two or three arguments.
@@ -3265,11 +3284,12 @@ module.exports={
     }
 
     function currentDateArray(config) {
-        var now = new Date();
+        // hooks is actually the exported moment object
+        var nowValue = new Date(utils_hooks__hooks.now());
         if (config._useUTC) {
-            return [now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()];
+            return [nowValue.getUTCFullYear(), nowValue.getUTCMonth(), nowValue.getUTCDate()];
         }
-        return [now.getFullYear(), now.getMonth(), now.getDate()];
+        return [nowValue.getFullYear(), nowValue.getMonth(), nowValue.getDate()];
     }
 
     // convert an array to a date.
@@ -3339,7 +3359,7 @@ module.exports={
     }
 
     function dayOfYearFromWeekInfo(config) {
-        var w, weekYear, week, weekday, dow, doy, temp;
+        var w, weekYear, week, weekday, dow, doy, temp, weekdayOverflow;
 
         w = config._w;
         if (w.GG != null || w.W != null || w.E != null) {
@@ -3353,6 +3373,9 @@ module.exports={
             weekYear = defaults(w.GG, config._a[YEAR], weekOfYear(local__createLocal(), 1, 4).year);
             week = defaults(w.W, 1);
             weekday = defaults(w.E, 1);
+            if (weekday < 1 || weekday > 7) {
+                weekdayOverflow = true;
+            }
         } else {
             dow = config._locale._week.dow;
             doy = config._locale._week.doy;
@@ -3363,23 +3386,32 @@ module.exports={
             if (w.d != null) {
                 // weekday -- low day numbers are considered next week
                 weekday = w.d;
-                if (weekday < dow) {
-                    ++week;
+                if (weekday < 0 || weekday > 6) {
+                    weekdayOverflow = true;
                 }
             } else if (w.e != null) {
                 // local weekday -- counting starts from begining of week
                 weekday = w.e + dow;
+                if (w.e < 0 || w.e > 6) {
+                    weekdayOverflow = true;
+                }
             } else {
                 // default to begining of week
                 weekday = dow;
             }
         }
-        temp = dayOfYearFromWeeks(weekYear, week, weekday, doy, dow);
-
-        config._a[YEAR] = temp.year;
-        config._dayOfYear = temp.dayOfYear;
+        if (week < 1 || week > weeksInYear(weekYear, dow, doy)) {
+            getParsingFlags(config)._overflowWeeks = true;
+        } else if (weekdayOverflow != null) {
+            getParsingFlags(config)._overflowWeekday = true;
+        } else {
+            temp = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy);
+            config._a[YEAR] = temp.year;
+            config._dayOfYear = temp.dayOfYear;
+        }
     }
 
+    // constant that refers to the ISO standard
     utils_hooks__hooks.ISO_8601 = function () {};
 
     // date from string and format string
@@ -3472,6 +3504,7 @@ module.exports={
         }
     }
 
+    // date from string and array of format strings
     function configFromStringAndArray(config) {
         var tempConfig,
             bestMoment,
@@ -3522,7 +3555,9 @@ module.exports={
         }
 
         var i = normalizeObjectUnits(config._i);
-        config._a = [i.year, i.month, i.day || i.date, i.hour, i.minute, i.second, i.millisecond];
+        config._a = map([i.year, i.month, i.day || i.date, i.hour, i.minute, i.second, i.millisecond], function (obj) {
+            return obj && parseInt(obj, 10);
+        });
 
         configFromArray(config);
     }
@@ -3564,13 +3599,17 @@ module.exports={
             configFromInput(config);
         }
 
+        if (!valid__isValid(config)) {
+            config._d = null;
+        }
+
         return config;
     }
 
     function configFromInput(config) {
         var input = config._i;
         if (input === undefined) {
-            config._d = new Date();
+            config._d = new Date(utils_hooks__hooks.now());
         } else if (isDate(input)) {
             config._d = new Date(+input);
         } else if (typeof input === 'string') {
@@ -3617,7 +3656,11 @@ module.exports={
          'moment().min is deprecated, use moment.min instead. https://github.com/moment/moment/issues/1548',
          function () {
              var other = local__createLocal.apply(null, arguments);
-             return other < this ? this : other;
+             if (this.isValid() && other.isValid()) {
+                 return other < this ? this : other;
+             } else {
+                 return valid__createInvalid();
+             }
          }
      );
 
@@ -3625,7 +3668,11 @@ module.exports={
         'moment().max is deprecated, use moment.max instead. https://github.com/moment/moment/issues/1548',
         function () {
             var other = local__createLocal.apply(null, arguments);
-            return other > this ? this : other;
+            if (this.isValid() && other.isValid()) {
+                return other > this ? this : other;
+            } else {
+                return valid__createInvalid();
+            }
         }
     );
 
@@ -3663,6 +3710,10 @@ module.exports={
 
         return pickBy('isAfter', args);
     }
+
+    var now = Date.now || function () {
+        return +(new Date());
+    };
 
     function Duration (duration) {
         var normalizedInput = normalizeObjectUnits(duration),
@@ -3703,6 +3754,8 @@ module.exports={
         return obj instanceof Duration;
     }
 
+    // FORMATTING
+
     function offset (token, separator) {
         addFormatToken(token, 0, 0, function () {
             var offset = this.utcOffset();
@@ -3720,11 +3773,11 @@ module.exports={
 
     // PARSING
 
-    addRegexToken('Z',  matchOffset);
-    addRegexToken('ZZ', matchOffset);
+    addRegexToken('Z',  matchShortOffset);
+    addRegexToken('ZZ', matchShortOffset);
     addParseToken(['Z', 'ZZ'], function (input, array, config) {
         config._useUTC = true;
-        config._tzm = offsetFromString(input);
+        config._tzm = offsetFromString(matchShortOffset, input);
     });
 
     // HELPERS
@@ -3734,8 +3787,8 @@ module.exports={
     // '-1530'  > ['-15', '30']
     var chunkOffset = /([\+\-]|\d\d)/gi;
 
-    function offsetFromString(string) {
-        var matches = ((string || '').match(matchOffset) || []);
+    function offsetFromString(matcher, string) {
+        var matches = ((string || '').match(matcher) || []);
         var chunk   = matches[matches.length - 1] || [];
         var parts   = (chunk + '').match(chunkOffset) || ['-', 0, 0];
         var minutes = +(parts[1] * 60) + toInt(parts[2]);
@@ -3785,11 +3838,13 @@ module.exports={
     function getSetOffset (input, keepLocalTime) {
         var offset = this._offset || 0,
             localAdjust;
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
         if (input != null) {
             if (typeof input === 'string') {
-                input = offsetFromString(input);
-            }
-            if (Math.abs(input) < 16) {
+                input = offsetFromString(matchShortOffset, input);
+            } else if (Math.abs(input) < 16) {
                 input = input * 60;
             }
             if (!this._isUTC && keepLocalTime) {
@@ -3849,12 +3904,15 @@ module.exports={
         if (this._tzm) {
             this.utcOffset(this._tzm);
         } else if (typeof this._i === 'string') {
-            this.utcOffset(offsetFromString(this._i));
+            this.utcOffset(offsetFromString(matchOffset, this._i));
         }
         return this;
     }
 
     function hasAlignedHourOffset (input) {
+        if (!this.isValid()) {
+            return false;
+        }
         input = input ? local__createLocal(input).utcOffset() : 0;
 
         return (this.utcOffset() - input) % 60 === 0;
@@ -3868,7 +3926,7 @@ module.exports={
     }
 
     function isDaylightSavingTimeShifted () {
-        if (typeof this._isDSTShifted !== 'undefined') {
+        if (!isUndefined(this._isDSTShifted)) {
             return this._isDSTShifted;
         }
 
@@ -3889,22 +3947,23 @@ module.exports={
     }
 
     function isLocal () {
-        return !this._isUTC;
+        return this.isValid() ? !this._isUTC : false;
     }
 
     function isUtcOffset () {
-        return this._isUTC;
+        return this.isValid() ? this._isUTC : false;
     }
 
     function isUtc () {
-        return this._isUTC && this._offset === 0;
+        return this.isValid() ? this._isUTC && this._offset === 0 : false;
     }
 
-    var aspNetRegex = /(\-)?(?:(\d*)\.)?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?)?/;
+    // ASP.NET json date format regex
+    var aspNetRegex = /(\-)?(?:(\d*)[. ])?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?)?/;
 
     // from http://docs.closure-library.googlecode.com/git/closure_goog_date_date.js.source.html
     // somewhat more in line with 4.4.3.2 2004 spec, but allows decimal anywhere
-    var create__isoRegex = /^(-)?P(?:(?:([0-9,.]*)Y)?(?:([0-9,.]*)M)?(?:([0-9,.]*)D)?(?:T(?:([0-9,.]*)H)?(?:([0-9,.]*)M)?(?:([0-9,.]*)S)?)?|([0-9,.]*)W)$/;
+    var isoRegex = /^(-)?P(?:(?:([0-9,.]*)Y)?(?:([0-9,.]*)M)?(?:([0-9,.]*)D)?(?:T(?:([0-9,.]*)H)?(?:([0-9,.]*)M)?(?:([0-9,.]*)S)?)?|([0-9,.]*)W)$/;
 
     function create__createDuration (input, key) {
         var duration = input,
@@ -3937,7 +3996,7 @@ module.exports={
                 s  : toInt(match[SECOND])      * sign,
                 ms : toInt(match[MILLISECOND]) * sign
             };
-        } else if (!!(match = create__isoRegex.exec(input))) {
+        } else if (!!(match = isoRegex.exec(input))) {
             sign = (match[1] === '-') ? -1 : 1;
             duration = {
                 y : parseIso(match[2], sign),
@@ -3994,6 +4053,10 @@ module.exports={
 
     function momentsDifference(base, other) {
         var res;
+        if (!(base.isValid() && other.isValid())) {
+            return {milliseconds: 0, months: 0};
+        }
+
         other = cloneWithOffset(other, base);
         if (base.isBefore(other)) {
             res = positiveMomentsDifference(base, other);
@@ -4006,6 +4069,7 @@ module.exports={
         return res;
     }
 
+    // TODO: remove 'name' arg after deprecation is removed
     function createAdder(direction, name) {
         return function (val, period) {
             var dur, tmp;
@@ -4026,6 +4090,12 @@ module.exports={
         var milliseconds = duration._milliseconds,
             days = duration._days,
             months = duration._months;
+
+        if (!mom.isValid()) {
+            // No op
+            return;
+        }
+
         updateOffset = updateOffset == null ? true : updateOffset;
 
         if (milliseconds) {
@@ -4057,7 +4127,10 @@ module.exports={
                 diff < 1 ? 'sameDay' :
                 diff < 2 ? 'nextDay' :
                 diff < 7 ? 'nextWeek' : 'sameElse';
-        return this.format(formats && formats[format] || this.localeData().calendar(format, this, local__createLocal(now)));
+
+        var output = formats && (isFunction(formats[format]) ? formats[format]() : formats[format]);
+
+        return this.format(output || this.localeData().calendar(format, this, local__createLocal(now)));
     }
 
     function clone () {
@@ -4065,26 +4138,28 @@ module.exports={
     }
 
     function isAfter (input, units) {
-        var inputMs;
-        units = normalizeUnits(typeof units !== 'undefined' ? units : 'millisecond');
+        var localInput = isMoment(input) ? input : local__createLocal(input);
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
+        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
         if (units === 'millisecond') {
-            input = isMoment(input) ? input : local__createLocal(input);
-            return +this > +input;
+            return +this > +localInput;
         } else {
-            inputMs = isMoment(input) ? +input : +local__createLocal(input);
-            return inputMs < +this.clone().startOf(units);
+            return +localInput < +this.clone().startOf(units);
         }
     }
 
     function isBefore (input, units) {
-        var inputMs;
-        units = normalizeUnits(typeof units !== 'undefined' ? units : 'millisecond');
+        var localInput = isMoment(input) ? input : local__createLocal(input);
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
+        units = normalizeUnits(!isUndefined(units) ? units : 'millisecond');
         if (units === 'millisecond') {
-            input = isMoment(input) ? input : local__createLocal(input);
-            return +this < +input;
+            return +this < +localInput;
         } else {
-            inputMs = isMoment(input) ? +input : +local__createLocal(input);
-            return +this.clone().endOf(units) < inputMs;
+            return +this.clone().endOf(units) < +localInput;
         }
     }
 
@@ -4093,21 +4168,44 @@ module.exports={
     }
 
     function isSame (input, units) {
-        var inputMs;
+        var localInput = isMoment(input) ? input : local__createLocal(input),
+            inputMs;
+        if (!(this.isValid() && localInput.isValid())) {
+            return false;
+        }
         units = normalizeUnits(units || 'millisecond');
         if (units === 'millisecond') {
-            input = isMoment(input) ? input : local__createLocal(input);
-            return +this === +input;
+            return +this === +localInput;
         } else {
-            inputMs = +local__createLocal(input);
+            inputMs = +localInput;
             return +(this.clone().startOf(units)) <= inputMs && inputMs <= +(this.clone().endOf(units));
         }
     }
 
+    function isSameOrAfter (input, units) {
+        return this.isSame(input, units) || this.isAfter(input,units);
+    }
+
+    function isSameOrBefore (input, units) {
+        return this.isSame(input, units) || this.isBefore(input,units);
+    }
+
     function diff (input, units, asFloat) {
-        var that = cloneWithOffset(input, this),
-            zoneDelta = (that.utcOffset() - this.utcOffset()) * 6e4,
+        var that,
+            zoneDelta,
             delta, output;
+
+        if (!this.isValid()) {
+            return NaN;
+        }
+
+        that = cloneWithOffset(input, this);
+
+        if (!that.isValid()) {
+            return NaN;
+        }
+
+        zoneDelta = (that.utcOffset() - this.utcOffset()) * 6e4;
 
         units = normalizeUnits(units);
 
@@ -4159,7 +4257,7 @@ module.exports={
     function moment_format__toISOString () {
         var m = this.clone().utc();
         if (0 < m.year() && m.year() <= 9999) {
-            if ('function' === typeof Date.prototype.toISOString) {
+            if (isFunction(Date.prototype.toISOString)) {
                 // native implementation is ~50x faster, use it when we can
                 return this.toDate().toISOString();
             } else {
@@ -4176,10 +4274,13 @@ module.exports={
     }
 
     function from (time, withoutSuffix) {
-        if (!this.isValid()) {
+        if (this.isValid() &&
+                ((isMoment(time) && time.isValid()) ||
+                 local__createLocal(time).isValid())) {
+            return create__createDuration({to: this, from: time}).locale(this.locale()).humanize(!withoutSuffix);
+        } else {
             return this.localeData().invalidDate();
         }
-        return create__createDuration({to: this, from: time}).locale(this.locale()).humanize(!withoutSuffix);
     }
 
     function fromNow (withoutSuffix) {
@@ -4187,16 +4288,22 @@ module.exports={
     }
 
     function to (time, withoutSuffix) {
-        if (!this.isValid()) {
+        if (this.isValid() &&
+                ((isMoment(time) && time.isValid()) ||
+                 local__createLocal(time).isValid())) {
+            return create__createDuration({from: this, to: time}).locale(this.locale()).humanize(!withoutSuffix);
+        } else {
             return this.localeData().invalidDate();
         }
-        return create__createDuration({from: this, to: time}).locale(this.locale()).humanize(!withoutSuffix);
     }
 
     function toNow (withoutSuffix) {
         return this.to(local__createLocal(), withoutSuffix);
     }
 
+    // If passed a locale key, it will set the locale for this
+    // instance.  Otherwise, it will return the locale configuration
+    // variables for this instance.
     function locale (key) {
         var newLocaleData;
 
@@ -4307,6 +4414,11 @@ module.exports={
         };
     }
 
+    function toJSON () {
+        // JSON.stringify(new Date(NaN)) === 'null'
+        return this.isValid() ? this.toISOString() : 'null';
+    }
+
     function moment_valid__isValid () {
         return valid__isValid(this);
     }
@@ -4318,6 +4430,18 @@ module.exports={
     function invalidAt () {
         return getParsingFlags(this).overflow;
     }
+
+    function creationData() {
+        return {
+            input: this._i,
+            format: this._f,
+            locale: this._locale,
+            isUTC: this._isUTC,
+            strict: this._strict
+        };
+    }
+
+    // FORMATTING
 
     addFormatToken(0, ['gg', 2], 0, function () {
         return this.weekYear() % 100;
@@ -4360,22 +4484,20 @@ module.exports={
         week[token] = utils_hooks__hooks.parseTwoDigitYear(input);
     });
 
-    // HELPERS
-
-    function weeksInYear(year, dow, doy) {
-        return weekOfYear(local__createLocal([year, 11, 31 + dow - doy]), dow, doy).week;
-    }
-
     // MOMENTS
 
     function getSetWeekYear (input) {
-        var year = weekOfYear(this, this.localeData()._week.dow, this.localeData()._week.doy).year;
-        return input == null ? year : this.add((input - year), 'y');
+        return getSetWeekYearHelper.call(this,
+                input,
+                this.week(),
+                this.weekday(),
+                this.localeData()._week.dow,
+                this.localeData()._week.doy);
     }
 
     function getSetISOWeekYear (input) {
-        var year = weekOfYear(this, 1, 4).year;
-        return input == null ? year : this.add((input - year), 'y');
+        return getSetWeekYearHelper.call(this,
+                input, this.isoWeek(), this.isoWeekday(), 1, 4);
     }
 
     function getISOWeeksInYear () {
@@ -4387,7 +4509,33 @@ module.exports={
         return weeksInYear(this.year(), weekInfo.dow, weekInfo.doy);
     }
 
-    addFormatToken('Q', 0, 0, 'quarter');
+    function getSetWeekYearHelper(input, week, weekday, dow, doy) {
+        var weeksTarget;
+        if (input == null) {
+            return weekOfYear(this, dow, doy).year;
+        } else {
+            weeksTarget = weeksInYear(input, dow, doy);
+            if (week > weeksTarget) {
+                week = weeksTarget;
+            }
+            return setWeekAll.call(this, input, week, weekday, dow, doy);
+        }
+    }
+
+    function setWeekAll(weekYear, week, weekday, dow, doy) {
+        var dayOfYearData = dayOfYearFromWeeks(weekYear, week, weekday, dow, doy),
+            date = createUTCDate(dayOfYearData.year, 0, dayOfYearData.dayOfYear);
+
+        // console.log("got", weekYear, week, weekday, "set", date.toISOString());
+        this.year(date.getUTCFullYear());
+        this.month(date.getUTCMonth());
+        this.date(date.getUTCDate());
+        return this;
+    }
+
+    // FORMATTING
+
+    addFormatToken('Q', 0, 'Qo', 'quarter');
 
     // ALIASES
 
@@ -4405,6 +4553,62 @@ module.exports={
     function getSetQuarter (input) {
         return input == null ? Math.ceil((this.month() + 1) / 3) : this.month((input - 1) * 3 + this.month() % 3);
     }
+
+    // FORMATTING
+
+    addFormatToken('w', ['ww', 2], 'wo', 'week');
+    addFormatToken('W', ['WW', 2], 'Wo', 'isoWeek');
+
+    // ALIASES
+
+    addUnitAlias('week', 'w');
+    addUnitAlias('isoWeek', 'W');
+
+    // PARSING
+
+    addRegexToken('w',  match1to2);
+    addRegexToken('ww', match1to2, match2);
+    addRegexToken('W',  match1to2);
+    addRegexToken('WW', match1to2, match2);
+
+    addWeekParseToken(['w', 'ww', 'W', 'WW'], function (input, week, config, token) {
+        week[token.substr(0, 1)] = toInt(input);
+    });
+
+    // HELPERS
+
+    // LOCALES
+
+    function localeWeek (mom) {
+        return weekOfYear(mom, this._week.dow, this._week.doy).week;
+    }
+
+    var defaultLocaleWeek = {
+        dow : 0, // Sunday is the first day of the week.
+        doy : 6  // The week that contains Jan 1st is the first week of the year.
+    };
+
+    function localeFirstDayOfWeek () {
+        return this._week.dow;
+    }
+
+    function localeFirstDayOfYear () {
+        return this._week.doy;
+    }
+
+    // MOMENTS
+
+    function getSetWeek (input) {
+        var week = this.localeData().week(this);
+        return input == null ? week : this.add((input - week) * 7, 'd');
+    }
+
+    function getSetISOWeek (input) {
+        var week = weekOfYear(this, 1, 4).week;
+        return input == null ? week : this.add((input - week) * 7, 'd');
+    }
+
+    // FORMATTING
 
     addFormatToken('D', ['DD', 2], 'Do', 'date');
 
@@ -4428,6 +4632,8 @@ module.exports={
     // MOMENTS
 
     var getSetDayOfMonth = makeGetSet('Date', true);
+
+    // FORMATTING
 
     addFormatToken('d', 0, 'do', 'day');
 
@@ -4461,8 +4667,8 @@ module.exports={
     addRegexToken('ddd',  matchWord);
     addRegexToken('dddd', matchWord);
 
-    addWeekParseToken(['dd', 'ddd', 'dddd'], function (input, week, config) {
-        var weekday = config._locale.weekdaysParse(input);
+    addWeekParseToken(['dd', 'ddd', 'dddd'], function (input, week, config, token) {
+        var weekday = config._locale.weekdaysParse(input, token, config._strict);
         // if we didn't get a weekday name, mark the date as invalid
         if (weekday != null) {
             week.d = weekday;
@@ -4497,8 +4703,9 @@ module.exports={
     // LOCALES
 
     var defaultLocaleWeekdays = 'Sunday_Monday_Tuesday_Wednesday_Thursday_Friday_Saturday'.split('_');
-    function localeWeekdays (m) {
-        return this._weekdays[m.day()];
+    function localeWeekdays (m, format) {
+        return isArray(this._weekdays) ? this._weekdays[m.day()] :
+            this._weekdays[this._weekdays.isFormat.test(format) ? 'format' : 'standalone'][m.day()];
     }
 
     var defaultLocaleWeekdaysShort = 'Sun_Mon_Tue_Wed_Thu_Fri_Sat'.split('_');
@@ -4511,20 +4718,37 @@ module.exports={
         return this._weekdaysMin[m.day()];
     }
 
-    function localeWeekdaysParse (weekdayName) {
+    function localeWeekdaysParse (weekdayName, format, strict) {
         var i, mom, regex;
 
-        this._weekdaysParse = this._weekdaysParse || [];
+        if (!this._weekdaysParse) {
+            this._weekdaysParse = [];
+            this._minWeekdaysParse = [];
+            this._shortWeekdaysParse = [];
+            this._fullWeekdaysParse = [];
+        }
 
         for (i = 0; i < 7; i++) {
             // make the regex if we don't have it already
+
+            mom = local__createLocal([2000, 1]).day(i);
+            if (strict && !this._fullWeekdaysParse[i]) {
+                this._fullWeekdaysParse[i] = new RegExp('^' + this.weekdays(mom, '').replace('.', '\.?') + '$', 'i');
+                this._shortWeekdaysParse[i] = new RegExp('^' + this.weekdaysShort(mom, '').replace('.', '\.?') + '$', 'i');
+                this._minWeekdaysParse[i] = new RegExp('^' + this.weekdaysMin(mom, '').replace('.', '\.?') + '$', 'i');
+            }
             if (!this._weekdaysParse[i]) {
-                mom = local__createLocal([2000, 1]).day(i);
                 regex = '^' + this.weekdays(mom, '') + '|^' + this.weekdaysShort(mom, '') + '|^' + this.weekdaysMin(mom, '');
                 this._weekdaysParse[i] = new RegExp(regex.replace('.', ''), 'i');
             }
             // test the regex
-            if (this._weekdaysParse[i].test(weekdayName)) {
+            if (strict && format === 'dddd' && this._fullWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (strict && format === 'ddd' && this._shortWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (strict && format === 'dd' && this._minWeekdaysParse[i].test(weekdayName)) {
+                return i;
+            } else if (!strict && this._weekdaysParse[i].test(weekdayName)) {
                 return i;
             }
         }
@@ -4533,6 +4757,9 @@ module.exports={
     // MOMENTS
 
     function getSetDayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
         var day = this._isUTC ? this._d.getUTCDay() : this._d.getDay();
         if (input != null) {
             input = parseWeekday(input, this.localeData());
@@ -4543,20 +4770,73 @@ module.exports={
     }
 
     function getSetLocaleDayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
         var weekday = (this.day() + 7 - this.localeData()._week.dow) % 7;
         return input == null ? weekday : this.add(input - weekday, 'd');
     }
 
     function getSetISODayOfWeek (input) {
+        if (!this.isValid()) {
+            return input != null ? this : NaN;
+        }
         // behaves the same as moment#day except
         // as a getter, returns 7 instead of 0 (1-7 range instead of 0-6)
         // as a setter, sunday should belong to the previous week.
         return input == null ? this.day() || 7 : this.day(this.day() % 7 ? input : input - 7);
     }
 
-    addFormatToken('H', ['HH', 2], 0, 'hour');
-    addFormatToken('h', ['hh', 2], 0, function () {
+    // FORMATTING
+
+    addFormatToken('DDD', ['DDDD', 3], 'DDDo', 'dayOfYear');
+
+    // ALIASES
+
+    addUnitAlias('dayOfYear', 'DDD');
+
+    // PARSING
+
+    addRegexToken('DDD',  match1to3);
+    addRegexToken('DDDD', match3);
+    addParseToken(['DDD', 'DDDD'], function (input, array, config) {
+        config._dayOfYear = toInt(input);
+    });
+
+    // HELPERS
+
+    // MOMENTS
+
+    function getSetDayOfYear (input) {
+        var dayOfYear = Math.round((this.clone().startOf('day') - this.clone().startOf('year')) / 864e5) + 1;
+        return input == null ? dayOfYear : this.add((input - dayOfYear), 'd');
+    }
+
+    // FORMATTING
+
+    function hFormat() {
         return this.hours() % 12 || 12;
+    }
+
+    addFormatToken('H', ['HH', 2], 0, 'hour');
+    addFormatToken('h', ['hh', 2], 0, hFormat);
+
+    addFormatToken('hmm', 0, 0, function () {
+        return '' + hFormat.apply(this) + zeroFill(this.minutes(), 2);
+    });
+
+    addFormatToken('hmmss', 0, 0, function () {
+        return '' + hFormat.apply(this) + zeroFill(this.minutes(), 2) +
+            zeroFill(this.seconds(), 2);
+    });
+
+    addFormatToken('Hmm', 0, 0, function () {
+        return '' + this.hours() + zeroFill(this.minutes(), 2);
+    });
+
+    addFormatToken('Hmmss', 0, 0, function () {
+        return '' + this.hours() + zeroFill(this.minutes(), 2) +
+            zeroFill(this.seconds(), 2);
     });
 
     function meridiem (token, lowercase) {
@@ -4585,6 +4865,11 @@ module.exports={
     addRegexToken('HH', match1to2, match2);
     addRegexToken('hh', match1to2, match2);
 
+    addRegexToken('hmm', match3to4);
+    addRegexToken('hmmss', match5to6);
+    addRegexToken('Hmm', match3to4);
+    addRegexToken('Hmmss', match5to6);
+
     addParseToken(['H', 'HH'], HOUR);
     addParseToken(['a', 'A'], function (input, array, config) {
         config._isPm = config._locale.isPM(input);
@@ -4593,6 +4878,32 @@ module.exports={
     addParseToken(['h', 'hh'], function (input, array, config) {
         array[HOUR] = toInt(input);
         getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('hmm', function (input, array, config) {
+        var pos = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos));
+        array[MINUTE] = toInt(input.substr(pos));
+        getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('hmmss', function (input, array, config) {
+        var pos1 = input.length - 4;
+        var pos2 = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos1));
+        array[MINUTE] = toInt(input.substr(pos1, 2));
+        array[SECOND] = toInt(input.substr(pos2));
+        getParsingFlags(config).bigHour = true;
+    });
+    addParseToken('Hmm', function (input, array, config) {
+        var pos = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos));
+        array[MINUTE] = toInt(input.substr(pos));
+    });
+    addParseToken('Hmmss', function (input, array, config) {
+        var pos1 = input.length - 4;
+        var pos2 = input.length - 2;
+        array[HOUR] = toInt(input.substr(0, pos1));
+        array[MINUTE] = toInt(input.substr(pos1, 2));
+        array[SECOND] = toInt(input.substr(pos2));
     });
 
     // LOCALES
@@ -4621,6 +4932,8 @@ module.exports={
     // this rule.
     var getSetHour = makeGetSet('Hours', true);
 
+    // FORMATTING
+
     addFormatToken('m', ['mm', 2], 0, 'minute');
 
     // ALIASES
@@ -4637,6 +4950,8 @@ module.exports={
 
     var getSetMinute = makeGetSet('Minutes', false);
 
+    // FORMATTING
+
     addFormatToken('s', ['ss', 2], 0, 'second');
 
     // ALIASES
@@ -4652,6 +4967,8 @@ module.exports={
     // MOMENTS
 
     var getSetSecond = makeGetSet('Seconds', false);
+
+    // FORMATTING
 
     addFormatToken('S', 0, 0, function () {
         return ~~(this.millisecond() / 100);
@@ -4708,6 +5025,8 @@ module.exports={
 
     var getSetMillisecond = makeGetSet('Milliseconds', false);
 
+    // FORMATTING
+
     addFormatToken('z',  0, 0, 'zoneAbbr');
     addFormatToken('zz', 0, 0, 'zoneName');
 
@@ -4723,40 +5042,43 @@ module.exports={
 
     var momentPrototype__proto = Moment.prototype;
 
-    momentPrototype__proto.add          = add_subtract__add;
-    momentPrototype__proto.calendar     = moment_calendar__calendar;
-    momentPrototype__proto.clone        = clone;
-    momentPrototype__proto.diff         = diff;
-    momentPrototype__proto.endOf        = endOf;
-    momentPrototype__proto.format       = format;
-    momentPrototype__proto.from         = from;
-    momentPrototype__proto.fromNow      = fromNow;
-    momentPrototype__proto.to           = to;
-    momentPrototype__proto.toNow        = toNow;
-    momentPrototype__proto.get          = getSet;
-    momentPrototype__proto.invalidAt    = invalidAt;
-    momentPrototype__proto.isAfter      = isAfter;
-    momentPrototype__proto.isBefore     = isBefore;
-    momentPrototype__proto.isBetween    = isBetween;
-    momentPrototype__proto.isSame       = isSame;
-    momentPrototype__proto.isValid      = moment_valid__isValid;
-    momentPrototype__proto.lang         = lang;
-    momentPrototype__proto.locale       = locale;
-    momentPrototype__proto.localeData   = localeData;
-    momentPrototype__proto.max          = prototypeMax;
-    momentPrototype__proto.min          = prototypeMin;
-    momentPrototype__proto.parsingFlags = parsingFlags;
-    momentPrototype__proto.set          = getSet;
-    momentPrototype__proto.startOf      = startOf;
-    momentPrototype__proto.subtract     = add_subtract__subtract;
-    momentPrototype__proto.toArray      = toArray;
-    momentPrototype__proto.toObject     = toObject;
-    momentPrototype__proto.toDate       = toDate;
-    momentPrototype__proto.toISOString  = moment_format__toISOString;
-    momentPrototype__proto.toJSON       = moment_format__toISOString;
-    momentPrototype__proto.toString     = toString;
-    momentPrototype__proto.unix         = unix;
-    momentPrototype__proto.valueOf      = to_type__valueOf;
+    momentPrototype__proto.add               = add_subtract__add;
+    momentPrototype__proto.calendar          = moment_calendar__calendar;
+    momentPrototype__proto.clone             = clone;
+    momentPrototype__proto.diff              = diff;
+    momentPrototype__proto.endOf             = endOf;
+    momentPrototype__proto.format            = format;
+    momentPrototype__proto.from              = from;
+    momentPrototype__proto.fromNow           = fromNow;
+    momentPrototype__proto.to                = to;
+    momentPrototype__proto.toNow             = toNow;
+    momentPrototype__proto.get               = getSet;
+    momentPrototype__proto.invalidAt         = invalidAt;
+    momentPrototype__proto.isAfter           = isAfter;
+    momentPrototype__proto.isBefore          = isBefore;
+    momentPrototype__proto.isBetween         = isBetween;
+    momentPrototype__proto.isSame            = isSame;
+    momentPrototype__proto.isSameOrAfter     = isSameOrAfter;
+    momentPrototype__proto.isSameOrBefore    = isSameOrBefore;
+    momentPrototype__proto.isValid           = moment_valid__isValid;
+    momentPrototype__proto.lang              = lang;
+    momentPrototype__proto.locale            = locale;
+    momentPrototype__proto.localeData        = localeData;
+    momentPrototype__proto.max               = prototypeMax;
+    momentPrototype__proto.min               = prototypeMin;
+    momentPrototype__proto.parsingFlags      = parsingFlags;
+    momentPrototype__proto.set               = getSet;
+    momentPrototype__proto.startOf           = startOf;
+    momentPrototype__proto.subtract          = add_subtract__subtract;
+    momentPrototype__proto.toArray           = toArray;
+    momentPrototype__proto.toObject          = toObject;
+    momentPrototype__proto.toDate            = toDate;
+    momentPrototype__proto.toISOString       = moment_format__toISOString;
+    momentPrototype__proto.toJSON            = toJSON;
+    momentPrototype__proto.toString          = toString;
+    momentPrototype__proto.unix              = unix;
+    momentPrototype__proto.valueOf           = to_type__valueOf;
+    momentPrototype__proto.creationData      = creationData;
 
     // Year
     momentPrototype__proto.year       = getSetYear;
@@ -4842,7 +5164,7 @@ module.exports={
 
     function locale_calendar__calendar (key, mom, now) {
         var output = this._calendar[key];
-        return typeof output === 'function' ? output.call(mom, now) : output;
+        return isFunction(output) ? output.call(mom, now) : output;
     }
 
     var defaultLongDateFormat = {
@@ -4904,21 +5226,21 @@ module.exports={
 
     function relative__relativeTime (number, withoutSuffix, string, isFuture) {
         var output = this._relativeTime[string];
-        return (typeof output === 'function') ?
+        return (isFunction(output)) ?
             output(number, withoutSuffix, string, isFuture) :
             output.replace(/%d/i, number);
     }
 
     function pastFuture (diff, output) {
         var format = this._relativeTime[diff > 0 ? 'future' : 'past'];
-        return typeof format === 'function' ? format(output) : format.replace(/%s/i, output);
+        return isFunction(format) ? format(output) : format.replace(/%s/i, output);
     }
 
     function locale_set__set (config) {
         var prop, i;
         for (i in config) {
             prop = config[i];
-            if (typeof prop === 'function') {
+            if (isFunction(prop)) {
                 this[i] = prop;
             } else {
                 this['_' + i] = prop;
@@ -5021,6 +5343,9 @@ module.exports={
     }
 
     locale_locales__getSetGlobalLocale('en', {
+        monthsParse : [/^jan/i, /^feb/i, /^mar/i, /^apr/i, /^may/i, /^jun/i, /^jul/i, /^aug/i, /^sep/i, /^oct/i, /^nov/i, /^dec/i],
+        longMonthsParse : [/^january$/i, /^february$/i, /^march$/i, /^april$/i, /^may$/i, /^june$/i, /^july$/i, /^august$/i, /^september$/i, /^october$/i, /^november$/i, /^december$/i],
+        shortMonthsParse : [/^jan$/i, /^feb$/i, /^mar$/i, /^apr$/i, /^may$/i, /^jun$/i, /^jul$/i, /^aug/i, /^sept?$/i, /^oct$/i, /^nov$/i, /^dec$/i],
         ordinalParse: /\d{1,2}(th|st|nd|rd)/,
         ordinal : function (number) {
             var b = number % 10,
@@ -5240,15 +5565,15 @@ module.exports={
         var years    = round(duration.as('y'));
 
         var a = seconds < thresholds.s && ['s', seconds]  ||
-                minutes === 1          && ['m']           ||
+                minutes <= 1           && ['m']           ||
                 minutes < thresholds.m && ['mm', minutes] ||
-                hours   === 1          && ['h']           ||
+                hours   <= 1           && ['h']           ||
                 hours   < thresholds.h && ['hh', hours]   ||
-                days    === 1          && ['d']           ||
+                days    <= 1           && ['d']           ||
                 days    < thresholds.d && ['dd', days]    ||
-                months  === 1          && ['M']           ||
+                months  <= 1           && ['M']           ||
                 months  < thresholds.M && ['MM', months]  ||
-                years   === 1          && ['y']           || ['yy', years];
+                years   <= 1           && ['y']           || ['yy', years];
 
         a[2] = withoutSuffix;
         a[3] = +posNegDuration > 0;
@@ -5369,6 +5694,8 @@ module.exports={
 
     // Side effect imports
 
+    // FORMATTING
+
     addFormatToken('X', 0, 0, 'unix');
     addFormatToken('x', 0, 0, 'valueOf');
 
@@ -5386,13 +5713,14 @@ module.exports={
     // Side effect imports
 
 
-    utils_hooks__hooks.version = '2.10.6';
+    utils_hooks__hooks.version = '2.11.0';
 
     setHookCallback(local__createLocal);
 
     utils_hooks__hooks.fn                    = momentPrototype;
     utils_hooks__hooks.min                   = min;
     utils_hooks__hooks.max                   = max;
+    utils_hooks__hooks.now                   = now;
     utils_hooks__hooks.utc                   = create_utc__createUTC;
     utils_hooks__hooks.unix                  = moment__createUnix;
     utils_hooks__hooks.months                = lists__listMonths;
@@ -5411,6 +5739,7 @@ module.exports={
     utils_hooks__hooks.weekdaysShort         = lists__listWeekdaysShort;
     utils_hooks__hooks.normalizeUnits        = normalizeUnits;
     utils_hooks__hooks.relativeTimeThreshold = duration_humanize__getSetRelativeTimeThreshold;
+    utils_hooks__hooks.prototype             = momentPrototype;
 
     var _moment = utils_hooks__hooks;
 
@@ -23684,10 +24013,6 @@ module.exports = pushie;
 
 },{"events":46,"util":54,"util-extend":139}],61:[function(require,module,exports){
 
-module.exports = require('./lib/');
-
-},{"./lib/":62}],62:[function(require,module,exports){
-
 /**
  * Module dependencies.
  */
@@ -23733,9 +24058,14 @@ function lookup(uri, opts) {
   var parsed = url(uri);
   var source = parsed.source;
   var id = parsed.id;
+  var path = parsed.path;
+  var sameNamespace = cache[id] && path in cache[id].nsps;
+  var newConnection = opts.forceNew || opts['force new connection'] ||
+                      false === opts.multiplex || sameNamespace;
+
   var io;
 
-  if (opts.forceNew || opts['force new connection'] || false === opts.multiplex) {
+  if (newConnection) {
     debug('ignoring socket cache for %s', source);
     io = Manager(source, opts);
   } else {
@@ -23775,23 +24105,27 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":63,"./socket":65,"./url":66,"debug":70,"socket.io-parser":104}],63:[function(require,module,exports){
+},{"./manager":62,"./socket":64,"./url":65,"debug":69,"socket.io-parser":103}],62:[function(require,module,exports){
 
 /**
  * Module dependencies.
  */
 
-var url = require('./url');
 var eio = require('engine.io-client');
 var Socket = require('./socket');
 var Emitter = require('component-emitter');
 var parser = require('socket.io-parser');
 var on = require('./on');
 var bind = require('component-bind');
-var object = require('object-component');
 var debug = require('debug')('socket.io-client:manager');
 var indexOf = require('indexof');
 var Backoff = require('backo2');
+
+/**
+ * IE6+ hasOwnProperty
+ */
+
+var has = Object.prototype.hasOwnProperty;
 
 /**
  * Module exports
@@ -23832,7 +24166,8 @@ function Manager(uri, opts){
   this.timeout(null == opts.timeout ? 20000 : opts.timeout);
   this.readyState = 'closed';
   this.uri = uri;
-  this.connected = [];
+  this.connecting = [];
+  this.lastPing = null;
   this.encoding = false;
   this.packetBuffer = [];
   this.encoder = new parser.Encoder();
@@ -23850,7 +24185,9 @@ function Manager(uri, opts){
 Manager.prototype.emitAll = function() {
   this.emit.apply(this, arguments);
   for (var nsp in this.nsps) {
-    this.nsps[nsp].emit.apply(this.nsps[nsp], arguments);
+    if (has.call(this.nsps, nsp)) {
+      this.nsps[nsp].emit.apply(this.nsps[nsp], arguments);
+    }
   }
 };
 
@@ -23862,7 +24199,9 @@ Manager.prototype.emitAll = function() {
 
 Manager.prototype.updateSocketIds = function(){
   for (var nsp in this.nsps) {
-    this.nsps[nsp].id = this.engine.id;
+    if (has.call(this.nsps, nsp)) {
+      this.nsps[nsp].id = this.engine.id;
+    }
   }
 };
 
@@ -24054,9 +24393,32 @@ Manager.prototype.onopen = function(){
   // add new subs
   var socket = this.engine;
   this.subs.push(on(socket, 'data', bind(this, 'ondata')));
-  this.subs.push(on(this.decoder, 'decoded', bind(this, 'ondecoded')));
+  this.subs.push(on(socket, 'ping', bind(this, 'onping')));
+  this.subs.push(on(socket, 'pong', bind(this, 'onpong')));
   this.subs.push(on(socket, 'error', bind(this, 'onerror')));
   this.subs.push(on(socket, 'close', bind(this, 'onclose')));
+  this.subs.push(on(this.decoder, 'decoded', bind(this, 'ondecoded')));
+};
+
+/**
+ * Called upon a ping.
+ *
+ * @api private
+ */
+
+Manager.prototype.onping = function(){
+  this.lastPing = new Date;
+  this.emitAll('ping');
+};
+
+/**
+ * Called upon a packet.
+ *
+ * @api private
+ */
+
+Manager.prototype.onpong = function(){
+  this.emitAll('pong', new Date - this.lastPing);
 };
 
 /**
@@ -24103,13 +24465,23 @@ Manager.prototype.socket = function(nsp){
     socket = new Socket(this, nsp);
     this.nsps[nsp] = socket;
     var self = this;
+    socket.on('connecting', onConnecting);
     socket.on('connect', function(){
       socket.id = self.engine.id;
-      if (!~indexOf(self.connected, socket)) {
-        self.connected.push(socket);
-      }
     });
+
+    if (this.autoConnect) {
+      // manually call here since connecting evnet is fired before listening
+      onConnecting();
+    }
   }
+
+  function onConnecting() {
+    if (!~indexOf(self.connecting, socket)) {
+      self.connecting.push(socket);
+    }
+  }
+
   return socket;
 };
 
@@ -24120,9 +24492,9 @@ Manager.prototype.socket = function(nsp){
  */
 
 Manager.prototype.destroy = function(socket){
-  var index = indexOf(this.connected, socket);
-  if (~index) this.connected.splice(index, 1);
-  if (this.connected.length) return;
+  var index = indexOf(this.connecting, socket);
+  if (~index) this.connecting.splice(index, 1);
+  if (this.connecting.length) return;
 
   this.close();
 };
@@ -24143,7 +24515,7 @@ Manager.prototype.packet = function(packet){
     self.encoding = true;
     this.encoder.encode(packet, function(encodedPackets) {
       for (var i = 0; i < encodedPackets.length; i++) {
-        self.engine.write(encodedPackets[i]);
+        self.engine.write(encodedPackets[i], packet.options);
       }
       self.encoding = false;
       self.processPacketQueue();
@@ -24174,11 +24546,14 @@ Manager.prototype.processPacketQueue = function() {
  */
 
 Manager.prototype.cleanup = function(){
+  debug('cleanup');
+
   var sub;
   while (sub = this.subs.shift()) sub.destroy();
 
   this.packetBuffer = [];
   this.encoding = false;
+  this.lastPing = null;
 
   this.decoder.destroy();
 };
@@ -24191,10 +24566,17 @@ Manager.prototype.cleanup = function(){
 
 Manager.prototype.close =
 Manager.prototype.disconnect = function(){
+  debug('disconnect');
   this.skipReconnect = true;
+  this.reconnecting = false;
+  if ('opening' == this.readyState) {
+    // `onclose` will not fire because
+    // an open event never happened
+    this.cleanup();
+  }
   this.backoff.reset();
   this.readyState = 'closed';
-  this.engine && this.engine.close();
+  if (this.engine) this.engine.close();
 };
 
 /**
@@ -24204,11 +24586,13 @@ Manager.prototype.disconnect = function(){
  */
 
 Manager.prototype.onclose = function(reason){
-  debug('close');
+  debug('onclose');
+
   this.cleanup();
   this.backoff.reset();
   this.readyState = 'closed';
   this.emit('close', reason);
+
   if (this._reconnection && !this.skipReconnect) {
     this.reconnect();
   }
@@ -24280,7 +24664,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":64,"./socket":65,"./url":66,"backo2":67,"component-bind":68,"component-emitter":69,"debug":70,"engine.io-client":71,"indexof":100,"object-component":101,"socket.io-parser":104}],64:[function(require,module,exports){
+},{"./on":63,"./socket":64,"backo2":66,"component-bind":67,"component-emitter":68,"debug":69,"engine.io-client":72,"indexof":100,"socket.io-parser":103}],63:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -24306,7 +24690,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],65:[function(require,module,exports){
+},{}],64:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -24337,13 +24721,16 @@ var events = {
   connect: 1,
   connect_error: 1,
   connect_timeout: 1,
+  connecting: 1,
   disconnect: 1,
   error: 1,
   reconnect: 1,
   reconnect_attempt: 1,
   reconnect_failed: 1,
   reconnect_error: 1,
-  reconnecting: 1
+  reconnecting: 1,
+  ping: 1,
+  pong: 1
 };
 
 /**
@@ -24364,11 +24751,11 @@ function Socket(io, nsp){
   this.json = this; // compat
   this.ids = 0;
   this.acks = {};
-  if (this.io.autoConnect) this.open();
   this.receiveBuffer = [];
   this.sendBuffer = [];
   this.connected = false;
   this.disconnected = true;
+  if (this.io.autoConnect) this.open();
 }
 
 /**
@@ -24407,6 +24794,7 @@ Socket.prototype.connect = function(){
   this.subEvents();
   this.io.open(); // ensure open
   if ('open' == this.io.readyState) this.onopen();
+  this.emit('connecting');
   return this;
 };
 
@@ -24444,6 +24832,9 @@ Socket.prototype.emit = function(ev){
   if (hasBin(args)) { parserType = parser.BINARY_EVENT; } // binary
   var packet = { type: parserType, data: args };
 
+  packet.options = {};
+  packet.options.compress = !this.flags || false !== this.flags.compress;
+
   // event ack callback
   if ('function' == typeof args[args.length - 1]) {
     debug('emitting packet with ack id %d', this.ids);
@@ -24456,6 +24847,8 @@ Socket.prototype.emit = function(ev){
   } else {
     this.sendBuffer.push(packet);
   }
+
+  delete this.flags;
 
   return this;
 };
@@ -24599,10 +24992,14 @@ Socket.prototype.ack = function(id){
  */
 
 Socket.prototype.onack = function(packet){
-  debug('calling ack %s with %j', packet.id, packet.data);
-  var fn = this.acks[packet.id];
-  fn.apply(this, packet.data);
-  delete this.acks[packet.id];
+  var ack = this.acks[packet.id];
+  if ('function' == typeof ack) {
+    debug('calling ack %s with %j', packet.id, packet.data);
+    ack.apply(this, packet.data);
+    delete this.acks[packet.id];
+  } else {
+    debug('bad ack %s', packet.id);
+  }
 };
 
 /**
@@ -24693,7 +25090,21 @@ Socket.prototype.disconnect = function(){
   return this;
 };
 
-},{"./on":64,"component-bind":68,"component-emitter":69,"debug":70,"has-binary":98,"socket.io-parser":104,"to-array":108}],66:[function(require,module,exports){
+/**
+ * Sets the compress flag.
+ *
+ * @param {Boolean} if `true`, compresses the sending data
+ * @return {Socket} self
+ * @api public
+ */
+
+Socket.prototype.compress = function(compress){
+  this.flags = this.flags || {};
+  this.flags.compress = compress;
+  return this;
+};
+
+},{"./on":63,"component-bind":67,"component-emitter":68,"debug":69,"has-binary":98,"socket.io-parser":103,"to-array":108}],65:[function(require,module,exports){
 (function (global){
 
 /**
@@ -24731,7 +25142,7 @@ function url(uri, loc){
       if ('/' == uri.charAt(1)) {
         uri = loc.protocol + uri;
       } else {
-        uri = loc.hostname + uri;
+        uri = loc.host + uri;
       }
     }
 
@@ -24761,16 +25172,19 @@ function url(uri, loc){
 
   obj.path = obj.path || '/';
 
+  var ipv6 = obj.host.indexOf(':') !== -1;
+  var host = ipv6 ? '[' + obj.host + ']' : obj.host;
+
   // define unique id
-  obj.id = obj.protocol + '://' + obj.host + ':' + obj.port;
+  obj.id = obj.protocol + '://' + host + ':' + obj.port;
   // define href
-  obj.href = obj.protocol + '://' + obj.host + (loc && loc.port == obj.port ? '' : (':' + obj.port));
+  obj.href = obj.protocol + '://' + host + (loc && loc.port == obj.port ? '' : (':' + obj.port));
 
   return obj;
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":70,"parseuri":102}],67:[function(require,module,exports){
+},{"debug":69,"parseuri":101}],66:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -24857,7 +25271,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],68:[function(require,module,exports){
+},{}],67:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -24882,7 +25296,7 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],69:[function(require,module,exports){
+},{}],68:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -24927,7 +25341,7 @@ function mixin(obj) {
 Emitter.prototype.on =
 Emitter.prototype.addEventListener = function(event, fn){
   this._callbacks = this._callbacks || {};
-  (this._callbacks[event] = this._callbacks[event] || [])
+  (this._callbacks['$' + event] = this._callbacks['$' + event] || [])
     .push(fn);
   return this;
 };
@@ -24943,11 +25357,8 @@ Emitter.prototype.addEventListener = function(event, fn){
  */
 
 Emitter.prototype.once = function(event, fn){
-  var self = this;
-  this._callbacks = this._callbacks || {};
-
   function on() {
-    self.off(event, on);
+    this.off(event, on);
     fn.apply(this, arguments);
   }
 
@@ -24979,12 +25390,12 @@ Emitter.prototype.removeEventListener = function(event, fn){
   }
 
   // specific event
-  var callbacks = this._callbacks[event];
+  var callbacks = this._callbacks['$' + event];
   if (!callbacks) return this;
 
   // remove all handlers
   if (1 == arguments.length) {
-    delete this._callbacks[event];
+    delete this._callbacks['$' + event];
     return this;
   }
 
@@ -25011,7 +25422,7 @@ Emitter.prototype.removeEventListener = function(event, fn){
 Emitter.prototype.emit = function(event){
   this._callbacks = this._callbacks || {};
   var args = [].slice.call(arguments, 1)
-    , callbacks = this._callbacks[event];
+    , callbacks = this._callbacks['$' + event];
 
   if (callbacks) {
     callbacks = callbacks.slice(0);
@@ -25033,7 +25444,7 @@ Emitter.prototype.emit = function(event){
 
 Emitter.prototype.listeners = function(event){
   this._callbacks = this._callbacks || {};
-  return this._callbacks[event] || [];
+  return this._callbacks['$' + event] || [];
 };
 
 /**
@@ -25048,78 +25459,328 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],70:[function(require,module,exports){
+},{}],69:[function(require,module,exports){
 
 /**
+ * This is the web browser implementation of `debug()`.
+ *
  * Expose `debug()` as the module.
  */
 
-module.exports = debug;
+exports = module.exports = require('./debug');
+exports.log = log;
+exports.formatArgs = formatArgs;
+exports.save = save;
+exports.load = load;
+exports.useColors = useColors;
+exports.storage = 'undefined' != typeof chrome
+               && 'undefined' != typeof chrome.storage
+                  ? chrome.storage.local
+                  : localstorage();
 
 /**
- * Create a debugger with the given `name`.
- *
- * @param {String} name
- * @return {Type}
- * @api public
+ * Colors.
  */
 
-function debug(name) {
-  if (!debug.enabled(name)) return function(){};
+exports.colors = [
+  'lightseagreen',
+  'forestgreen',
+  'goldenrod',
+  'dodgerblue',
+  'darkorchid',
+  'crimson'
+];
 
-  return function(fmt){
-    fmt = coerce(fmt);
+/**
+ * Currently only WebKit-based Web Inspectors, Firefox >= v31,
+ * and the Firebug extension (any Firefox version) are known
+ * to support "%c" CSS customizations.
+ *
+ * TODO: add a `localStorage` variable to explicitly enable/disable colors
+ */
 
-    var curr = new Date;
-    var ms = curr - (debug[name] || curr);
-    debug[name] = curr;
-
-    fmt = name
-      + ' '
-      + fmt
-      + ' +' + debug.humanize(ms);
-
-    // This hackery is required for IE8
-    // where `console.log` doesn't have 'apply'
-    window.console
-      && console.log
-      && Function.prototype.apply.call(console.log, console, arguments);
-  }
+function useColors() {
+  // is webkit? http://stackoverflow.com/a/16459606/376773
+  return ('WebkitAppearance' in document.documentElement.style) ||
+    // is firebug? http://stackoverflow.com/a/398120/376773
+    (window.console && (console.firebug || (console.exception && console.table))) ||
+    // is firefox >= v31?
+    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
+    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
 }
 
 /**
- * The currently active debug mode names.
+ * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
  */
 
-debug.names = [];
-debug.skips = [];
+exports.formatters.j = function(v) {
+  return JSON.stringify(v);
+};
+
 
 /**
- * Enables a debug mode by name. This can include modes
- * separated by a colon and wildcards.
+ * Colorize log arguments if enabled.
  *
- * @param {String} name
  * @api public
  */
 
-debug.enable = function(name) {
-  try {
-    localStorage.debug = name;
-  } catch(e){}
+function formatArgs() {
+  var args = arguments;
+  var useColors = this.useColors;
 
-  var split = (name || '').split(/[\s,]+/)
-    , len = split.length;
+  args[0] = (useColors ? '%c' : '')
+    + this.namespace
+    + (useColors ? ' %c' : ' ')
+    + args[0]
+    + (useColors ? '%c ' : ' ')
+    + '+' + exports.humanize(this.diff);
+
+  if (!useColors) return args;
+
+  var c = 'color: ' + this.color;
+  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
+
+  // the final "%c" is somewhat tricky, because there could be other
+  // arguments passed either before or after the %c, so we need to
+  // figure out the correct index to insert the CSS into
+  var index = 0;
+  var lastC = 0;
+  args[0].replace(/%[a-z%]/g, function(match) {
+    if ('%%' === match) return;
+    index++;
+    if ('%c' === match) {
+      // we only are interested in the *last* %c
+      // (the user may have provided their own)
+      lastC = index;
+    }
+  });
+
+  args.splice(lastC, 0, c);
+  return args;
+}
+
+/**
+ * Invokes `console.log()` when available.
+ * No-op when `console.log` is not a "function".
+ *
+ * @api public
+ */
+
+function log() {
+  // this hackery is required for IE8/9, where
+  // the `console.log` function doesn't have 'apply'
+  return 'object' === typeof console
+    && console.log
+    && Function.prototype.apply.call(console.log, console, arguments);
+}
+
+/**
+ * Save `namespaces`.
+ *
+ * @param {String} namespaces
+ * @api private
+ */
+
+function save(namespaces) {
+  try {
+    if (null == namespaces) {
+      exports.storage.removeItem('debug');
+    } else {
+      exports.storage.debug = namespaces;
+    }
+  } catch(e) {}
+}
+
+/**
+ * Load `namespaces`.
+ *
+ * @return {String} returns the previously persisted debug modes
+ * @api private
+ */
+
+function load() {
+  var r;
+  try {
+    r = exports.storage.debug;
+  } catch(e) {}
+  return r;
+}
+
+/**
+ * Enable namespaces listed in `localStorage.debug` initially.
+ */
+
+exports.enable(load());
+
+/**
+ * Localstorage attempts to return the localstorage.
+ *
+ * This is necessary because safari throws
+ * when a user disables cookies/localstorage
+ * and you attempt to access it.
+ *
+ * @return {LocalStorage}
+ * @api private
+ */
+
+function localstorage(){
+  try {
+    return window.localStorage;
+  } catch (e) {}
+}
+
+},{"./debug":70}],70:[function(require,module,exports){
+
+/**
+ * This is the common logic for both the Node.js and web browser
+ * implementations of `debug()`.
+ *
+ * Expose `debug()` as the module.
+ */
+
+exports = module.exports = debug;
+exports.coerce = coerce;
+exports.disable = disable;
+exports.enable = enable;
+exports.enabled = enabled;
+exports.humanize = require('ms');
+
+/**
+ * The currently active debug mode names, and names to skip.
+ */
+
+exports.names = [];
+exports.skips = [];
+
+/**
+ * Map of special "%n" handling functions, for the debug "format" argument.
+ *
+ * Valid key names are a single, lowercased letter, i.e. "n".
+ */
+
+exports.formatters = {};
+
+/**
+ * Previously assigned color.
+ */
+
+var prevColor = 0;
+
+/**
+ * Previous log timestamp.
+ */
+
+var prevTime;
+
+/**
+ * Select a color.
+ *
+ * @return {Number}
+ * @api private
+ */
+
+function selectColor() {
+  return exports.colors[prevColor++ % exports.colors.length];
+}
+
+/**
+ * Create a debugger with the given `namespace`.
+ *
+ * @param {String} namespace
+ * @return {Function}
+ * @api public
+ */
+
+function debug(namespace) {
+
+  // define the `disabled` version
+  function disabled() {
+  }
+  disabled.enabled = false;
+
+  // define the `enabled` version
+  function enabled() {
+
+    var self = enabled;
+
+    // set `diff` timestamp
+    var curr = +new Date();
+    var ms = curr - (prevTime || curr);
+    self.diff = ms;
+    self.prev = prevTime;
+    self.curr = curr;
+    prevTime = curr;
+
+    // add the `color` if not set
+    if (null == self.useColors) self.useColors = exports.useColors();
+    if (null == self.color && self.useColors) self.color = selectColor();
+
+    var args = Array.prototype.slice.call(arguments);
+
+    args[0] = exports.coerce(args[0]);
+
+    if ('string' !== typeof args[0]) {
+      // anything else let's inspect with %o
+      args = ['%o'].concat(args);
+    }
+
+    // apply any `formatters` transformations
+    var index = 0;
+    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
+      // if we encounter an escaped % then don't increase the array index
+      if (match === '%%') return match;
+      index++;
+      var formatter = exports.formatters[format];
+      if ('function' === typeof formatter) {
+        var val = args[index];
+        match = formatter.call(self, val);
+
+        // now we need to remove `args[index]` since it's inlined in the `format`
+        args.splice(index, 1);
+        index--;
+      }
+      return match;
+    });
+
+    if ('function' === typeof exports.formatArgs) {
+      args = exports.formatArgs.apply(self, args);
+    }
+    var logFn = enabled.log || exports.log || console.log.bind(console);
+    logFn.apply(self, args);
+  }
+  enabled.enabled = true;
+
+  var fn = exports.enabled(namespace) ? enabled : disabled;
+
+  fn.namespace = namespace;
+
+  return fn;
+}
+
+/**
+ * Enables a debug mode by namespaces. This can include modes
+ * separated by a colon and wildcards.
+ *
+ * @param {String} namespaces
+ * @api public
+ */
+
+function enable(namespaces) {
+  exports.save(namespaces);
+
+  var split = (namespaces || '').split(/[\s,]+/);
+  var len = split.length;
 
   for (var i = 0; i < len; i++) {
-    name = split[i].replace('*', '.*?');
-    if (name[0] === '-') {
-      debug.skips.push(new RegExp('^' + name.substr(1) + '$'));
-    }
-    else {
-      debug.names.push(new RegExp('^' + name + '$'));
+    if (!split[i]) continue; // ignore empty strings
+    namespaces = split[i].replace(/\*/g, '.*?');
+    if (namespaces[0] === '-') {
+      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
+    } else {
+      exports.names.push(new RegExp('^' + namespaces + '$'));
     }
   }
-};
+}
 
 /**
  * Disable debug output.
@@ -25127,28 +25788,9 @@ debug.enable = function(name) {
  * @api public
  */
 
-debug.disable = function(){
-  debug.enable('');
-};
-
-/**
- * Humanize the given `ms`.
- *
- * @param {Number} m
- * @return {String}
- * @api private
- */
-
-debug.humanize = function(ms) {
-  var sec = 1000
-    , min = 60 * 1000
-    , hour = 60 * min;
-
-  if (ms >= hour) return (ms / hour).toFixed(1) + 'h';
-  if (ms >= min) return (ms / min).toFixed(1) + 'm';
-  if (ms >= sec) return (ms / sec | 0) + 's';
-  return ms + 'ms';
-};
+function disable() {
+  exports.enable('');
+}
 
 /**
  * Returns true if the given mode name is enabled, false otherwise.
@@ -25158,22 +25800,27 @@ debug.humanize = function(ms) {
  * @api public
  */
 
-debug.enabled = function(name) {
-  for (var i = 0, len = debug.skips.length; i < len; i++) {
-    if (debug.skips[i].test(name)) {
+function enabled(name) {
+  var i, len;
+  for (i = 0, len = exports.skips.length; i < len; i++) {
+    if (exports.skips[i].test(name)) {
       return false;
     }
   }
-  for (var i = 0, len = debug.names.length; i < len; i++) {
-    if (debug.names[i].test(name)) {
+  for (i = 0, len = exports.names.length; i < len; i++) {
+    if (exports.names[i].test(name)) {
       return true;
     }
   }
   return false;
-};
+}
 
 /**
  * Coerce `val`.
+ *
+ * @param {Mixed} val
+ * @return {Mixed}
+ * @api private
  */
 
 function coerce(val) {
@@ -25181,17 +25828,138 @@ function coerce(val) {
   return val;
 }
 
-// persist
+},{"ms":71}],71:[function(require,module,exports){
+/**
+ * Helpers.
+ */
 
-try {
-  if (window.localStorage) debug.enable(localStorage.debug);
-} catch(e){}
+var s = 1000;
+var m = s * 60;
+var h = m * 60;
+var d = h * 24;
+var y = d * 365.25;
 
-},{}],71:[function(require,module,exports){
+/**
+ * Parse or format the given `val`.
+ *
+ * Options:
+ *
+ *  - `long` verbose formatting [false]
+ *
+ * @param {String|Number} val
+ * @param {Object} options
+ * @return {String|Number}
+ * @api public
+ */
+
+module.exports = function(val, options){
+  options = options || {};
+  if ('string' == typeof val) return parse(val);
+  return options.long
+    ? long(val)
+    : short(val);
+};
+
+/**
+ * Parse the given `str` and return milliseconds.
+ *
+ * @param {String} str
+ * @return {Number}
+ * @api private
+ */
+
+function parse(str) {
+  str = '' + str;
+  if (str.length > 10000) return;
+  var match = /^((?:\d+)?\.?\d+) *(milliseconds?|msecs?|ms|seconds?|secs?|s|minutes?|mins?|m|hours?|hrs?|h|days?|d|years?|yrs?|y)?$/i.exec(str);
+  if (!match) return;
+  var n = parseFloat(match[1]);
+  var type = (match[2] || 'ms').toLowerCase();
+  switch (type) {
+    case 'years':
+    case 'year':
+    case 'yrs':
+    case 'yr':
+    case 'y':
+      return n * y;
+    case 'days':
+    case 'day':
+    case 'd':
+      return n * d;
+    case 'hours':
+    case 'hour':
+    case 'hrs':
+    case 'hr':
+    case 'h':
+      return n * h;
+    case 'minutes':
+    case 'minute':
+    case 'mins':
+    case 'min':
+    case 'm':
+      return n * m;
+    case 'seconds':
+    case 'second':
+    case 'secs':
+    case 'sec':
+    case 's':
+      return n * s;
+    case 'milliseconds':
+    case 'millisecond':
+    case 'msecs':
+    case 'msec':
+    case 'ms':
+      return n;
+  }
+}
+
+/**
+ * Short format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function short(ms) {
+  if (ms >= d) return Math.round(ms / d) + 'd';
+  if (ms >= h) return Math.round(ms / h) + 'h';
+  if (ms >= m) return Math.round(ms / m) + 'm';
+  if (ms >= s) return Math.round(ms / s) + 's';
+  return ms + 'ms';
+}
+
+/**
+ * Long format for `ms`.
+ *
+ * @param {Number} ms
+ * @return {String}
+ * @api private
+ */
+
+function long(ms) {
+  return plural(ms, d, 'day')
+    || plural(ms, h, 'hour')
+    || plural(ms, m, 'minute')
+    || plural(ms, s, 'second')
+    || ms + ' ms';
+}
+
+/**
+ * Pluralization helper.
+ */
+
+function plural(ms, n, name) {
+  if (ms < n) return;
+  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
+  return Math.ceil(ms / n) + ' ' + name + 's';
+}
+
+},{}],72:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":72}],72:[function(require,module,exports){
+},{"./lib/":73}],73:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -25203,7 +25971,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":73,"engine.io-parser":85}],73:[function(require,module,exports){
+},{"./socket":74,"engine.io-parser":84}],74:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -25252,24 +26020,20 @@ function Socket(uri, opts){
 
   if (uri) {
     uri = parseuri(uri);
-    opts.host = uri.host;
+    opts.hostname = uri.host;
     opts.secure = uri.protocol == 'https' || uri.protocol == 'wss';
     opts.port = uri.port;
     if (uri.query) opts.query = uri.query;
+  } else if (opts.host) {
+    opts.hostname = parseuri(opts.host).host;
   }
 
   this.secure = null != opts.secure ? opts.secure :
     (global.location && 'https:' == location.protocol);
 
-  if (opts.host) {
-    var pieces = opts.host.split(':');
-    opts.hostname = pieces.shift();
-    if (pieces.length) {
-      opts.port = pieces.pop();
-    } else if (!opts.port) {
-      // if no port is specified manually, use the protocol default
-      opts.port = this.secure ? '443' : '80';
-    }
+  if (opts.hostname && !opts.port) {
+    // if no port is specified manually, use the protocol default
+    opts.port = this.secure ? '443' : '80';
   }
 
   this.agent = opts.agent || false;
@@ -25291,11 +26055,16 @@ function Socket(uri, opts){
   this.transports = opts.transports || ['polling', 'websocket'];
   this.readyState = '';
   this.writeBuffer = [];
-  this.callbackBuffer = [];
   this.policyPort = opts.policyPort || 843;
   this.rememberUpgrade = opts.rememberUpgrade || false;
   this.binaryType = null;
   this.onlyBinaryUpgrades = opts.onlyBinaryUpgrades;
+  this.perMessageDeflate = false !== opts.perMessageDeflate ? (opts.perMessageDeflate || {}) : false;
+
+  if (true === this.perMessageDeflate) this.perMessageDeflate = {};
+  if (this.perMessageDeflate && null == this.perMessageDeflate.threshold) {
+    this.perMessageDeflate.threshold = 1024;
+  }
 
   // SSL options for Node.js client
   this.pfx = opts.pfx || null;
@@ -25304,7 +26073,15 @@ function Socket(uri, opts){
   this.cert = opts.cert || null;
   this.ca = opts.ca || null;
   this.ciphers = opts.ciphers || null;
-  this.rejectUnauthorized = opts.rejectUnauthorized || null;
+  this.rejectUnauthorized = opts.rejectUnauthorized === undefined ? null : opts.rejectUnauthorized;
+
+  // other options for Node.js client
+  var freeGlobal = typeof global == 'object' && global;
+  if (freeGlobal.global === freeGlobal) {
+    if (opts.extraHeaders && Object.keys(opts.extraHeaders).length > 0) {
+      this.extraHeaders = opts.extraHeaders;
+    }
+  }
 
   this.open();
 }
@@ -25377,7 +26154,9 @@ Socket.prototype.createTransport = function (name) {
     cert: this.cert,
     ca: this.ca,
     ciphers: this.ciphers,
-    rejectUnauthorized: this.rejectUnauthorized
+    rejectUnauthorized: this.rejectUnauthorized,
+    perMessageDeflate: this.perMessageDeflate,
+    extraHeaders: this.extraHeaders
   });
 
   return transport;
@@ -25402,7 +26181,7 @@ Socket.prototype.open = function () {
   var transport;
   if (this.rememberUpgrade && Socket.priorWebsocketSuccess && this.transports.indexOf('websocket') != -1) {
     transport = 'websocket';
-  } else if (0 == this.transports.length) {
+  } else if (0 === this.transports.length) {
     // Emit error on next tick so it can be listened to
     var self = this;
     setTimeout(function() {
@@ -25415,7 +26194,6 @@ Socket.prototype.open = function () {
   this.readyState = 'opening';
 
   // Retry with the next transport if the transport is disabled (jsonp: false)
-  var transport;
   try {
     transport = this.createTransport(transport);
   } catch (e) {
@@ -25625,12 +26403,13 @@ Socket.prototype.onPacket = function (packet) {
 
       case 'pong':
         this.setPing();
+        this.emit('pong');
         break;
 
       case 'error':
         var err = new Error('server error');
         err.code = packet.data;
-        this.emit('error', err);
+        this.onError(err);
         break;
 
       case 'message':
@@ -25702,11 +26481,14 @@ Socket.prototype.setPing = function () {
 /**
 * Sends a ping packet.
 *
-* @api public
+* @api private
 */
 
 Socket.prototype.ping = function () {
-  this.sendPacket('ping');
+  var self = this;
+  this.sendPacket('ping', function(){
+    self.emit('ping');
+  });
 };
 
 /**
@@ -25716,21 +26498,14 @@ Socket.prototype.ping = function () {
  */
 
 Socket.prototype.onDrain = function() {
-  for (var i = 0; i < this.prevBufferLen; i++) {
-    if (this.callbackBuffer[i]) {
-      this.callbackBuffer[i]();
-    }
-  }
-
   this.writeBuffer.splice(0, this.prevBufferLen);
-  this.callbackBuffer.splice(0, this.prevBufferLen);
 
   // setting prevBufferLen = 0 is very important
   // for example, when upgrading, upgrade packet is sent over,
   // and a nonzero prevBufferLen could cause problems on `drain`
   this.prevBufferLen = 0;
 
-  if (this.writeBuffer.length == 0) {
+  if (0 === this.writeBuffer.length) {
     this.emit('drain');
   } else {
     this.flush();
@@ -25760,13 +26535,14 @@ Socket.prototype.flush = function () {
  *
  * @param {String} message.
  * @param {Function} callback function.
+ * @param {Object} options.
  * @return {Socket} for chaining.
  * @api public
  */
 
 Socket.prototype.write =
-Socket.prototype.send = function (msg, fn) {
-  this.sendPacket('message', msg, fn);
+Socket.prototype.send = function (msg, options, fn) {
+  this.sendPacket('message', msg, options, fn);
   return this;
 };
 
@@ -25775,19 +26551,37 @@ Socket.prototype.send = function (msg, fn) {
  *
  * @param {String} packet type.
  * @param {String} data.
+ * @param {Object} options.
  * @param {Function} callback function.
  * @api private
  */
 
-Socket.prototype.sendPacket = function (type, data, fn) {
+Socket.prototype.sendPacket = function (type, data, options, fn) {
+  if('function' == typeof data) {
+    fn = data;
+    data = undefined;
+  }
+
+  if ('function' == typeof options) {
+    fn = options;
+    options = null;
+  }
+
   if ('closing' == this.readyState || 'closed' == this.readyState) {
     return;
   }
 
-  var packet = { type: type, data: data };
+  options = options || {};
+  options.compress = false !== options.compress;
+
+  var packet = {
+    type: type,
+    data: data,
+    options: options
+  };
   this.emit('packetCreate', packet);
   this.writeBuffer.push(packet);
-  this.callbackBuffer.push(fn);
+  if (fn) this.once('flush', fn);
   this.flush();
 };
 
@@ -25803,24 +26597,6 @@ Socket.prototype.close = function () {
 
     var self = this;
 
-    function close() {
-      self.onClose('forced close');
-      debug('socket closing - telling transport to close');
-      self.transport.close();
-    }
-
-    function cleanupAndClose() {
-      self.removeListener('upgrade', cleanupAndClose);
-      self.removeListener('upgradeError', cleanupAndClose);
-      close();
-    }
-
-    function waitForUpgrade() {
-      // wait for upgrade to finish since we can't send packets while pausing a transport
-      self.once('upgrade', cleanupAndClose);
-      self.once('upgradeError', cleanupAndClose);
-    }
-
     if (this.writeBuffer.length) {
       this.once('drain', function() {
         if (this.upgrading) {
@@ -25834,6 +26610,24 @@ Socket.prototype.close = function () {
     } else {
       close();
     }
+  }
+
+  function close() {
+    self.onClose('forced close');
+    debug('socket closing - telling transport to close');
+    self.transport.close();
+  }
+
+  function cleanupAndClose() {
+    self.removeListener('upgrade', cleanupAndClose);
+    self.removeListener('upgradeError', cleanupAndClose);
+    close();
+  }
+
+  function waitForUpgrade() {
+    // wait for upgrade to finish since we can't send packets while pausing a transport
+    self.once('upgrade', cleanupAndClose);
+    self.once('upgradeError', cleanupAndClose);
   }
 
   return this;
@@ -25867,14 +26661,6 @@ Socket.prototype.onClose = function (reason, desc) {
     clearTimeout(this.pingIntervalTimer);
     clearTimeout(this.pingTimeoutTimer);
 
-    // clean buffers in next tick, so developers can still
-    // grab the buffers on `close` event
-    setTimeout(function() {
-      self.writeBuffer = [];
-      self.callbackBuffer = [];
-      self.prevBufferLen = 0;
-    }, 0);
-
     // stop event from firing again for transport
     this.transport.removeAllListeners('close');
 
@@ -25892,6 +26678,11 @@ Socket.prototype.onClose = function (reason, desc) {
 
     // emit close event
     this.emit('close', reason, desc);
+
+    // clean buffers after, so users can still
+    // grab the buffers on `close` event
+    self.writeBuffer = [];
+    self.prevBufferLen = 0;
   }
 };
 
@@ -25912,7 +26703,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":74,"./transports":75,"component-emitter":69,"debug":82,"engine.io-parser":85,"indexof":100,"parsejson":94,"parseqs":95,"parseuri":96}],74:[function(require,module,exports){
+},{"./transport":75,"./transports":76,"component-emitter":82,"debug":69,"engine.io-parser":84,"indexof":100,"parsejson":94,"parseqs":95,"parseuri":101}],75:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -25954,6 +26745,9 @@ function Transport (opts) {
   this.ca = opts.ca;
   this.ciphers = opts.ciphers;
   this.rejectUnauthorized = opts.rejectUnauthorized;
+
+  // other options for Node.js client
+  this.extraHeaders = opts.extraHeaders;
 }
 
 /**
@@ -25961,13 +26755,6 @@ function Transport (opts) {
  */
 
 Emitter(Transport.prototype);
-
-/**
- * A counter used to prevent collisions in the timestamps used
- * for cache busting.
- */
-
-Transport.timestamps = 0;
 
 /**
  * Emits an error.
@@ -26073,13 +26860,13 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":69,"engine.io-parser":85}],75:[function(require,module,exports){
+},{"component-emitter":82,"engine.io-parser":84}],76:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
  */
 
-var XMLHttpRequest = require('xmlhttprequest');
+var XMLHttpRequest = require('xmlhttprequest-ssl');
 var XHR = require('./polling-xhr');
 var JSONP = require('./polling-jsonp');
 var websocket = require('./websocket');
@@ -26130,7 +26917,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":76,"./polling-xhr":77,"./websocket":79,"xmlhttprequest":80}],76:[function(require,module,exports){
+},{"./polling-jsonp":77,"./polling-xhr":78,"./websocket":80,"xmlhttprequest-ssl":81}],77:[function(require,module,exports){
 (function (global){
 
 /**
@@ -26367,13 +27154,13 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":78,"component-inherit":81}],77:[function(require,module,exports){
+},{"./polling":79,"component-inherit":83}],78:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
  */
 
-var XMLHttpRequest = require('xmlhttprequest');
+var XMLHttpRequest = require('xmlhttprequest-ssl');
 var Polling = require('./polling');
 var Emitter = require('component-emitter');
 var inherit = require('component-inherit');
@@ -26414,6 +27201,8 @@ function XHR(opts){
     this.xd = opts.hostname != global.location.hostname ||
       port != opts.port;
     this.xs = opts.secure != isSSL;
+  } else {
+    this.extraHeaders = opts.extraHeaders;
   }
 }
 
@@ -26453,6 +27242,9 @@ XHR.prototype.request = function(opts){
   opts.ca = this.ca;
   opts.ciphers = this.ciphers;
   opts.rejectUnauthorized = this.rejectUnauthorized;
+
+  // other options for Node.js client
+  opts.extraHeaders = this.extraHeaders;
 
   return new Request(opts);
 };
@@ -26523,6 +27315,9 @@ function Request(opts){
   this.ciphers = opts.ciphers;
   this.rejectUnauthorized = opts.rejectUnauthorized;
 
+  // other options for Node.js client
+  this.extraHeaders = opts.extraHeaders;
+
   this.create();
 }
 
@@ -26556,6 +27351,16 @@ Request.prototype.create = function(){
   try {
     debug('xhr open %s: %s', this.method, this.uri);
     xhr.open(this.method, this.uri, this.async);
+    try {
+      if (this.extraHeaders) {
+        xhr.setDisableHeaderCheck(true);
+        for (var i in this.extraHeaders) {
+          if (this.extraHeaders.hasOwnProperty(i)) {
+            xhr.setRequestHeader(i, this.extraHeaders[i]);
+          }
+        }
+      }
+    } catch (e) {}
     if (this.supportsBinary) {
       // This has to be done after open because Firefox is stupid
       // http://stackoverflow.com/questions/13216903/get-binary-data-with-xmlhttprequest-in-a-firefox-extension
@@ -26699,7 +27504,17 @@ Request.prototype.onLoad = function(){
       if (!this.supportsBinary) {
         data = this.xhr.responseText;
       } else {
-        data = 'ok';
+        try {
+          data = String.fromCharCode.apply(null, new Uint8Array(this.xhr.response));
+        } catch (e) {
+          var ui8Arr = new Uint8Array(this.xhr.response);
+          var dataArray = [];
+          for (var idx = 0, length = ui8Arr.length; idx < length; idx++) {
+            dataArray.push(ui8Arr[idx]);
+          }
+
+          data = String.fromCharCode.apply(null, dataArray);
+        }
       }
     }
   } catch (e) {
@@ -26755,7 +27570,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":78,"component-emitter":69,"component-inherit":81,"debug":82,"xmlhttprequest":80}],78:[function(require,module,exports){
+},{"./polling":79,"component-emitter":82,"component-inherit":83,"debug":69,"xmlhttprequest-ssl":81}],79:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -26764,6 +27579,7 @@ var Transport = require('../transport');
 var parseqs = require('parseqs');
 var parser = require('engine.io-parser');
 var inherit = require('component-inherit');
+var yeast = require('yeast');
 var debug = require('debug')('engine.io-client:polling');
 
 /**
@@ -26777,7 +27593,7 @@ module.exports = Polling;
  */
 
 var hasXHR2 = (function() {
-  var XMLHttpRequest = require('xmlhttprequest');
+  var XMLHttpRequest = require('xmlhttprequest-ssl');
   var xhr = new XMLHttpRequest({ xdomain: false });
   return null != xhr.responseType;
 })();
@@ -26979,7 +27795,7 @@ Polling.prototype.uri = function(){
 
   // cache busting is forced
   if (false !== this.timestampRequests) {
-    query[this.timestampParam] = +new Date + '-' + Transport.timestamps++;
+    query[this.timestampParam] = yeast();
   }
 
   if (!this.supportsBinary && !query.sid) {
@@ -26999,10 +27815,12 @@ Polling.prototype.uri = function(){
     query = '?' + query;
   }
 
-  return schema + '://' + this.hostname + port + this.path + query;
+  var ipv6 = this.hostname.indexOf(':') !== -1;
+  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":74,"component-inherit":81,"debug":82,"engine.io-parser":85,"parseqs":95,"xmlhttprequest":80}],79:[function(require,module,exports){
+},{"../transport":75,"component-inherit":83,"debug":69,"engine.io-parser":84,"parseqs":95,"xmlhttprequest-ssl":81,"yeast":97}],80:[function(require,module,exports){
+(function (global){
 /**
  * Module dependencies.
  */
@@ -27011,6 +27829,7 @@ var Transport = require('../transport');
 var parser = require('engine.io-parser');
 var parseqs = require('parseqs');
 var inherit = require('component-inherit');
+var yeast = require('yeast');
 var debug = require('debug')('engine.io-client:websocket');
 
 /**
@@ -27039,6 +27858,7 @@ function WS(opts){
   if (forceBase64) {
     this.supportsBinary = false;
   }
+  this.perMessageDeflate = opts.perMessageDeflate;
   Transport.call(this, opts);
 }
 
@@ -27077,7 +27897,10 @@ WS.prototype.doOpen = function(){
   var self = this;
   var uri = this.uri();
   var protocols = void(0);
-  var opts = { agent: this.agent };
+  var opts = {
+    agent: this.agent,
+    perMessageDeflate: this.perMessageDeflate
+  };
 
   // SSL options for Node.js client
   opts.pfx = this.pfx;
@@ -27087,6 +27910,9 @@ WS.prototype.doOpen = function(){
   opts.ca = this.ca;
   opts.ciphers = this.ciphers;
   opts.rejectUnauthorized = this.rejectUnauthorized;
+  if (this.extraHeaders) {
+    opts.headers = this.extraHeaders;
+  }
 
   this.ws = new WebSocket(uri, protocols, opts);
 
@@ -27094,7 +27920,13 @@ WS.prototype.doOpen = function(){
     this.supportsBinary = false;
   }
 
-  this.ws.binaryType = 'arraybuffer';
+  if (this.ws.supports && this.ws.supports.binary) {
+    this.supportsBinary = true;
+    this.ws.binaryType = 'buffer';
+  } else {
+    this.ws.binaryType = 'arraybuffer';
+  }
+
   this.addEventListeners();
 };
 
@@ -27148,28 +27980,59 @@ if ('undefined' != typeof navigator
 WS.prototype.write = function(packets){
   var self = this;
   this.writable = false;
+
+  var isBrowserWebSocket = global.WebSocket && this.ws instanceof global.WebSocket;
+
   // encodePacket efficient as it uses WS framing
   // no need for encodePayload
-  for (var i = 0, l = packets.length; i < l; i++) {
-    parser.encodePacket(packets[i], this.supportsBinary, function(data) {
-      //Sometimes the websocket has already been closed but the browser didn't
-      //have a chance of informing us about it yet, in that case send will
-      //throw an error
-      try {
-        self.ws.send(data);
-      } catch (e){
-        debug('websocket closed before onclose event');
-      }
-    });
+  var total = packets.length;
+  for (var i = 0, l = total; i < l; i++) {
+    (function(packet) {
+      parser.encodePacket(packet, self.supportsBinary, function(data) {
+        if (!isBrowserWebSocket) {
+          // always create a new object (GH-437)
+          var opts = {};
+          if (packet.options) {
+            opts.compress = packet.options.compress;
+          }
+
+          if (self.perMessageDeflate) {
+            var len = 'string' == typeof data ? global.Buffer.byteLength(data) : data.length;
+            if (len < self.perMessageDeflate.threshold) {
+              opts.compress = false;
+            }
+          }
+        }
+
+        //Sometimes the websocket has already been closed but the browser didn't
+        //have a chance of informing us about it yet, in that case send will
+        //throw an error
+        try {
+          if (isBrowserWebSocket) {
+            // TypeError is thrown when passing the second argument on Safari
+            self.ws.send(data);
+          } else {
+            self.ws.send(data, opts);
+          }
+        } catch (e){
+          debug('websocket closed before onclose event');
+        }
+
+        --total || done();
+      });
+    })(packets[i]);
   }
 
-  function ondrain() {
-    self.writable = true;
-    self.emit('drain');
+  function done(){
+    self.emit('flush');
+
+    // fake drain
+    // defer to next tick to allow Socket to clear writeBuffer
+    setTimeout(function(){
+      self.writable = true;
+      self.emit('drain');
+    }, 0);
   }
-  // fake drain
-  // defer to next tick to allow Socket to clear writeBuffer
-  setTimeout(ondrain, 0);
 };
 
 /**
@@ -27213,7 +28076,7 @@ WS.prototype.uri = function(){
 
   // append timestamp to URI
   if (this.timestampRequests) {
-    query[this.timestampParam] = +new Date;
+    query[this.timestampParam] = yeast();
   }
 
   // communicate binary support capabilities
@@ -27228,7 +28091,8 @@ WS.prototype.uri = function(){
     query = '?' + query;
   }
 
-  return schema + '://' + this.hostname + port + this.path + query;
+  var ipv6 = this.hostname.indexOf(':') !== -1;
+  return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
 /**
@@ -27242,7 +28106,8 @@ WS.prototype.check = function(){
   return !!WebSocket && !('__initialize' in WebSocket && this.name === WS.prototype.name);
 };
 
-},{"../transport":74,"component-inherit":81,"debug":82,"engine.io-parser":85,"parseqs":95,"ws":97}],80:[function(require,module,exports){
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../transport":75,"component-inherit":83,"debug":69,"engine.io-parser":84,"parseqs":95,"ws":96,"yeast":97}],81:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -27280,7 +28145,173 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":92}],81:[function(require,module,exports){
+},{"has-cors":93}],82:[function(require,module,exports){
+
+/**
+ * Expose `Emitter`.
+ */
+
+module.exports = Emitter;
+
+/**
+ * Initialize a new `Emitter`.
+ *
+ * @api public
+ */
+
+function Emitter(obj) {
+  if (obj) return mixin(obj);
+};
+
+/**
+ * Mixin the emitter properties.
+ *
+ * @param {Object} obj
+ * @return {Object}
+ * @api private
+ */
+
+function mixin(obj) {
+  for (var key in Emitter.prototype) {
+    obj[key] = Emitter.prototype[key];
+  }
+  return obj;
+}
+
+/**
+ * Listen on the given `event` with `fn`.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.on =
+Emitter.prototype.addEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+  (this._callbacks[event] = this._callbacks[event] || [])
+    .push(fn);
+  return this;
+};
+
+/**
+ * Adds an `event` listener that will be invoked a single
+ * time then automatically removed.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.once = function(event, fn){
+  var self = this;
+  this._callbacks = this._callbacks || {};
+
+  function on() {
+    self.off(event, on);
+    fn.apply(this, arguments);
+  }
+
+  on.fn = fn;
+  this.on(event, on);
+  return this;
+};
+
+/**
+ * Remove the given callback for `event` or all
+ * registered callbacks.
+ *
+ * @param {String} event
+ * @param {Function} fn
+ * @return {Emitter}
+ * @api public
+ */
+
+Emitter.prototype.off =
+Emitter.prototype.removeListener =
+Emitter.prototype.removeAllListeners =
+Emitter.prototype.removeEventListener = function(event, fn){
+  this._callbacks = this._callbacks || {};
+
+  // all
+  if (0 == arguments.length) {
+    this._callbacks = {};
+    return this;
+  }
+
+  // specific event
+  var callbacks = this._callbacks[event];
+  if (!callbacks) return this;
+
+  // remove all handlers
+  if (1 == arguments.length) {
+    delete this._callbacks[event];
+    return this;
+  }
+
+  // remove specific handler
+  var cb;
+  for (var i = 0; i < callbacks.length; i++) {
+    cb = callbacks[i];
+    if (cb === fn || cb.fn === fn) {
+      callbacks.splice(i, 1);
+      break;
+    }
+  }
+  return this;
+};
+
+/**
+ * Emit `event` with the given args.
+ *
+ * @param {String} event
+ * @param {Mixed} ...
+ * @return {Emitter}
+ */
+
+Emitter.prototype.emit = function(event){
+  this._callbacks = this._callbacks || {};
+  var args = [].slice.call(arguments, 1)
+    , callbacks = this._callbacks[event];
+
+  if (callbacks) {
+    callbacks = callbacks.slice(0);
+    for (var i = 0, len = callbacks.length; i < len; ++i) {
+      callbacks[i].apply(this, args);
+    }
+  }
+
+  return this;
+};
+
+/**
+ * Return array of callbacks for `event`.
+ *
+ * @param {String} event
+ * @return {Array}
+ * @api public
+ */
+
+Emitter.prototype.listeners = function(event){
+  this._callbacks = this._callbacks || {};
+  return this._callbacks[event] || [];
+};
+
+/**
+ * Check if this emitter has `event` handlers.
+ *
+ * @param {String} event
+ * @return {Boolean}
+ * @api public
+ */
+
+Emitter.prototype.hasListeners = function(event){
+  return !! this.listeners(event).length;
+};
+
+},{}],83:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -27288,468 +28319,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],82:[function(require,module,exports){
-
-/**
- * This is the web browser implementation of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = require('./debug');
-exports.log = log;
-exports.formatArgs = formatArgs;
-exports.save = save;
-exports.load = load;
-exports.useColors = useColors;
-
-/**
- * Colors.
- */
-
-exports.colors = [
-  'lightseagreen',
-  'forestgreen',
-  'goldenrod',
-  'dodgerblue',
-  'darkorchid',
-  'crimson'
-];
-
-/**
- * Currently only WebKit-based Web Inspectors, Firefox >= v31,
- * and the Firebug extension (any Firefox version) are known
- * to support "%c" CSS customizations.
- *
- * TODO: add a `localStorage` variable to explicitly enable/disable colors
- */
-
-function useColors() {
-  // is webkit? http://stackoverflow.com/a/16459606/376773
-  return ('WebkitAppearance' in document.documentElement.style) ||
-    // is firebug? http://stackoverflow.com/a/398120/376773
-    (window.console && (console.firebug || (console.exception && console.table))) ||
-    // is firefox >= v31?
-    // https://developer.mozilla.org/en-US/docs/Tools/Web_Console#Styling_messages
-    (navigator.userAgent.toLowerCase().match(/firefox\/(\d+)/) && parseInt(RegExp.$1, 10) >= 31);
-}
-
-/**
- * Map %j to `JSON.stringify()`, since no Web Inspectors do that by default.
- */
-
-exports.formatters.j = function(v) {
-  return JSON.stringify(v);
-};
-
-
-/**
- * Colorize log arguments if enabled.
- *
- * @api public
- */
-
-function formatArgs() {
-  var args = arguments;
-  var useColors = this.useColors;
-
-  args[0] = (useColors ? '%c' : '')
-    + this.namespace
-    + (useColors ? ' %c' : ' ')
-    + args[0]
-    + (useColors ? '%c ' : ' ')
-    + '+' + exports.humanize(this.diff);
-
-  if (!useColors) return args;
-
-  var c = 'color: ' + this.color;
-  args = [args[0], c, 'color: inherit'].concat(Array.prototype.slice.call(args, 1));
-
-  // the final "%c" is somewhat tricky, because there could be other
-  // arguments passed either before or after the %c, so we need to
-  // figure out the correct index to insert the CSS into
-  var index = 0;
-  var lastC = 0;
-  args[0].replace(/%[a-z%]/g, function(match) {
-    if ('%%' === match) return;
-    index++;
-    if ('%c' === match) {
-      // we only are interested in the *last* %c
-      // (the user may have provided their own)
-      lastC = index;
-    }
-  });
-
-  args.splice(lastC, 0, c);
-  return args;
-}
-
-/**
- * Invokes `console.log()` when available.
- * No-op when `console.log` is not a "function".
- *
- * @api public
- */
-
-function log() {
-  // This hackery is required for IE8,
-  // where the `console.log` function doesn't have 'apply'
-  return 'object' == typeof console
-    && 'function' == typeof console.log
-    && Function.prototype.apply.call(console.log, console, arguments);
-}
-
-/**
- * Save `namespaces`.
- *
- * @param {String} namespaces
- * @api private
- */
-
-function save(namespaces) {
-  try {
-    if (null == namespaces) {
-      localStorage.removeItem('debug');
-    } else {
-      localStorage.debug = namespaces;
-    }
-  } catch(e) {}
-}
-
-/**
- * Load `namespaces`.
- *
- * @return {String} returns the previously persisted debug modes
- * @api private
- */
-
-function load() {
-  var r;
-  try {
-    r = localStorage.debug;
-  } catch(e) {}
-  return r;
-}
-
-/**
- * Enable namespaces listed in `localStorage.debug` initially.
- */
-
-exports.enable(load());
-
-},{"./debug":83}],83:[function(require,module,exports){
-
-/**
- * This is the common logic for both the Node.js and web browser
- * implementations of `debug()`.
- *
- * Expose `debug()` as the module.
- */
-
-exports = module.exports = debug;
-exports.coerce = coerce;
-exports.disable = disable;
-exports.enable = enable;
-exports.enabled = enabled;
-exports.humanize = require('ms');
-
-/**
- * The currently active debug mode names, and names to skip.
- */
-
-exports.names = [];
-exports.skips = [];
-
-/**
- * Map of special "%n" handling functions, for the debug "format" argument.
- *
- * Valid key names are a single, lowercased letter, i.e. "n".
- */
-
-exports.formatters = {};
-
-/**
- * Previously assigned color.
- */
-
-var prevColor = 0;
-
-/**
- * Previous log timestamp.
- */
-
-var prevTime;
-
-/**
- * Select a color.
- *
- * @return {Number}
- * @api private
- */
-
-function selectColor() {
-  return exports.colors[prevColor++ % exports.colors.length];
-}
-
-/**
- * Create a debugger with the given `namespace`.
- *
- * @param {String} namespace
- * @return {Function}
- * @api public
- */
-
-function debug(namespace) {
-
-  // define the `disabled` version
-  function disabled() {
-  }
-  disabled.enabled = false;
-
-  // define the `enabled` version
-  function enabled() {
-
-    var self = enabled;
-
-    // set `diff` timestamp
-    var curr = +new Date();
-    var ms = curr - (prevTime || curr);
-    self.diff = ms;
-    self.prev = prevTime;
-    self.curr = curr;
-    prevTime = curr;
-
-    // add the `color` if not set
-    if (null == self.useColors) self.useColors = exports.useColors();
-    if (null == self.color && self.useColors) self.color = selectColor();
-
-    var args = Array.prototype.slice.call(arguments);
-
-    args[0] = exports.coerce(args[0]);
-
-    if ('string' !== typeof args[0]) {
-      // anything else let's inspect with %o
-      args = ['%o'].concat(args);
-    }
-
-    // apply any `formatters` transformations
-    var index = 0;
-    args[0] = args[0].replace(/%([a-z%])/g, function(match, format) {
-      // if we encounter an escaped % then don't increase the array index
-      if (match === '%%') return match;
-      index++;
-      var formatter = exports.formatters[format];
-      if ('function' === typeof formatter) {
-        var val = args[index];
-        match = formatter.call(self, val);
-
-        // now we need to remove `args[index]` since it's inlined in the `format`
-        args.splice(index, 1);
-        index--;
-      }
-      return match;
-    });
-
-    if ('function' === typeof exports.formatArgs) {
-      args = exports.formatArgs.apply(self, args);
-    }
-    var logFn = enabled.log || exports.log || console.log.bind(console);
-    logFn.apply(self, args);
-  }
-  enabled.enabled = true;
-
-  var fn = exports.enabled(namespace) ? enabled : disabled;
-
-  fn.namespace = namespace;
-
-  return fn;
-}
-
-/**
- * Enables a debug mode by namespaces. This can include modes
- * separated by a colon and wildcards.
- *
- * @param {String} namespaces
- * @api public
- */
-
-function enable(namespaces) {
-  exports.save(namespaces);
-
-  var split = (namespaces || '').split(/[\s,]+/);
-  var len = split.length;
-
-  for (var i = 0; i < len; i++) {
-    if (!split[i]) continue; // ignore empty strings
-    namespaces = split[i].replace(/\*/g, '.*?');
-    if (namespaces[0] === '-') {
-      exports.skips.push(new RegExp('^' + namespaces.substr(1) + '$'));
-    } else {
-      exports.names.push(new RegExp('^' + namespaces + '$'));
-    }
-  }
-}
-
-/**
- * Disable debug output.
- *
- * @api public
- */
-
-function disable() {
-  exports.enable('');
-}
-
-/**
- * Returns true if the given mode name is enabled, false otherwise.
- *
- * @param {String} name
- * @return {Boolean}
- * @api public
- */
-
-function enabled(name) {
-  var i, len;
-  for (i = 0, len = exports.skips.length; i < len; i++) {
-    if (exports.skips[i].test(name)) {
-      return false;
-    }
-  }
-  for (i = 0, len = exports.names.length; i < len; i++) {
-    if (exports.names[i].test(name)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/**
- * Coerce `val`.
- *
- * @param {Mixed} val
- * @return {Mixed}
- * @api private
- */
-
-function coerce(val) {
-  if (val instanceof Error) return val.stack || val.message;
-  return val;
-}
-
-},{"ms":84}],84:[function(require,module,exports){
-/**
- * Helpers.
- */
-
-var s = 1000;
-var m = s * 60;
-var h = m * 60;
-var d = h * 24;
-var y = d * 365.25;
-
-/**
- * Parse or format the given `val`.
- *
- * Options:
- *
- *  - `long` verbose formatting [false]
- *
- * @param {String|Number} val
- * @param {Object} options
- * @return {String|Number}
- * @api public
- */
-
-module.exports = function(val, options){
-  options = options || {};
-  if ('string' == typeof val) return parse(val);
-  return options.long
-    ? long(val)
-    : short(val);
-};
-
-/**
- * Parse the given `str` and return milliseconds.
- *
- * @param {String} str
- * @return {Number}
- * @api private
- */
-
-function parse(str) {
-  var match = /^((?:\d+)?\.?\d+) *(ms|seconds?|s|minutes?|m|hours?|h|days?|d|years?|y)?$/i.exec(str);
-  if (!match) return;
-  var n = parseFloat(match[1]);
-  var type = (match[2] || 'ms').toLowerCase();
-  switch (type) {
-    case 'years':
-    case 'year':
-    case 'y':
-      return n * y;
-    case 'days':
-    case 'day':
-    case 'd':
-      return n * d;
-    case 'hours':
-    case 'hour':
-    case 'h':
-      return n * h;
-    case 'minutes':
-    case 'minute':
-    case 'm':
-      return n * m;
-    case 'seconds':
-    case 'second':
-    case 's':
-      return n * s;
-    case 'ms':
-      return n;
-  }
-}
-
-/**
- * Short format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function short(ms) {
-  if (ms >= d) return Math.round(ms / d) + 'd';
-  if (ms >= h) return Math.round(ms / h) + 'h';
-  if (ms >= m) return Math.round(ms / m) + 'm';
-  if (ms >= s) return Math.round(ms / s) + 's';
-  return ms + 'ms';
-}
-
-/**
- * Long format for `ms`.
- *
- * @param {Number} ms
- * @return {String}
- * @api private
- */
-
-function long(ms) {
-  return plural(ms, d, 'day')
-    || plural(ms, h, 'hour')
-    || plural(ms, m, 'minute')
-    || plural(ms, s, 'second')
-    || ms + ' ms';
-}
-
-/**
- * Pluralization helper.
- */
-
-function plural(ms, n, name) {
-  if (ms < n) return;
-  if (ms < n * 1.5) return Math.floor(ms / n) + ' ' + name;
-  return Math.ceil(ms / n) + ' ' + name + 's';
-}
-
-},{}],85:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -27938,7 +28508,7 @@ function encodeBlob(packet, supportsBinary, callback) {
 
 exports.encodeBase64Packet = function(packet, callback) {
   var message = 'b' + exports.packets[packet.type];
-  if (Blob && packet.data instanceof Blob) {
+  if (Blob && packet.data instanceof global.Blob) {
     var fr = new FileReader();
     fr.onload = function() {
       var b64 = fr.result.split(',')[1];
@@ -28347,7 +28917,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":86,"after":87,"arraybuffer.slice":88,"base64-arraybuffer":89,"blob":90,"has-binary":98,"utf8":91}],86:[function(require,module,exports){
+},{"./keys":85,"after":86,"arraybuffer.slice":87,"base64-arraybuffer":88,"blob":89,"has-binary":90,"utf8":92}],85:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -28368,7 +28938,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],87:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -28398,7 +28968,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],88:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -28429,7 +28999,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],89:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -28490,7 +29060,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],90:[function(require,module,exports){
+},{}],89:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -28590,7 +29160,74 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],91:[function(require,module,exports){
+},{}],90:[function(require,module,exports){
+(function (global){
+
+/*
+ * Module requirements.
+ */
+
+var isArray = require('isarray');
+
+/**
+ * Module exports.
+ */
+
+module.exports = hasBinary;
+
+/**
+ * Checks for binary data.
+ *
+ * Right now only Buffer and ArrayBuffer are supported..
+ *
+ * @param {Object} anything
+ * @api public
+ */
+
+function hasBinary(data) {
+
+  function _hasBinary(obj) {
+    if (!obj) return false;
+
+    if ( (global.Buffer && global.Buffer.isBuffer(obj)) ||
+         (global.ArrayBuffer && obj instanceof ArrayBuffer) ||
+         (global.Blob && obj instanceof Blob) ||
+         (global.File && obj instanceof File)
+        ) {
+      return true;
+    }
+
+    if (isArray(obj)) {
+      for (var i = 0; i < obj.length; i++) {
+          if (_hasBinary(obj[i])) {
+              return true;
+          }
+      }
+    } else if (obj && 'object' == typeof obj) {
+      if (obj.toJSON) {
+        obj = obj.toJSON();
+      }
+
+      for (var key in obj) {
+        if (Object.prototype.hasOwnProperty.call(obj, key) && _hasBinary(obj[key])) {
+          return true;
+        }
+      }
+    }
+
+    return false;
+  }
+
+  return _hasBinary(data);
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"isarray":91}],91:[function(require,module,exports){
+module.exports = Array.isArray || function (arr) {
+  return Object.prototype.toString.call(arr) == '[object Array]';
+};
+
+},{}],92:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -28838,13 +29475,7 @@ module.exports = (function() {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],92:[function(require,module,exports){
-
-/**
- * Module dependencies.
- */
-
-var global = require('global');
+},{}],93:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -28855,23 +29486,13 @@ var global = require('global');
  */
 
 try {
-  module.exports = 'XMLHttpRequest' in global &&
-    'withCredentials' in new global.XMLHttpRequest();
+  module.exports = typeof XMLHttpRequest !== 'undefined' &&
+    'withCredentials' in new XMLHttpRequest();
 } catch (err) {
   // if XMLHttp support is disabled in IE then it will throw
   // when trying to create
   module.exports = false;
 }
-
-},{"global":93}],93:[function(require,module,exports){
-
-/**
- * Returns `this`. Execute this without a "context" (i.e. without it being
- * attached to an object of the left-hand side), and `this` points to the
- * "global" scope of the current JS execution.
- */
-
-module.exports = (function () { return this; })();
 
 },{}],94:[function(require,module,exports){
 (function (global){
@@ -28948,47 +29569,6 @@ exports.decode = function(qs){
 };
 
 },{}],96:[function(require,module,exports){
-/**
- * Parses an URI
- *
- * @author Steven Levithan <stevenlevithan.com> (MIT license)
- * @api private
- */
-
-var re = /^(?:(?![^:@]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
-
-var parts = [
-    'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
-];
-
-module.exports = function parseuri(str) {
-    var src = str,
-        b = str.indexOf('['),
-        e = str.indexOf(']');
-
-    if (b != -1 && e != -1) {
-        str = str.substring(0, b) + str.substring(b, e).replace(/:/g, ';') + str.substring(e, str.length);
-    }
-
-    var m = re.exec(str || ''),
-        uri = {},
-        i = 14;
-
-    while (i--) {
-        uri[parts[i]] = m[i] || '';
-    }
-
-    if (b != -1 && e != -1) {
-        uri.source = src;
-        uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ':');
-        uri.authority = uri.authority.replace('[', '').replace(']', '').replace(/;/g, ':');
-        uri.ipv6uri = true;
-    }
-
-    return uri;
-};
-
-},{}],97:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -29033,6 +29613,76 @@ function ws(uri, protocols, opts) {
 
 if (WebSocket) ws.prototype = WebSocket.prototype;
 
+},{}],97:[function(require,module,exports){
+'use strict';
+
+var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
+  , length = 64
+  , map = {}
+  , seed = 0
+  , i = 0
+  , prev;
+
+/**
+ * Return a string representing the specified number.
+ *
+ * @param {Number} num The number to convert.
+ * @returns {String} The string representation of the number.
+ * @api public
+ */
+function encode(num) {
+  var encoded = '';
+
+  do {
+    encoded = alphabet[num % length] + encoded;
+    num = Math.floor(num / length);
+  } while (num > 0);
+
+  return encoded;
+}
+
+/**
+ * Return the integer value specified by the given string.
+ *
+ * @param {String} str The string to convert.
+ * @returns {Number} The integer value represented by the string.
+ * @api public
+ */
+function decode(str) {
+  var decoded = 0;
+
+  for (i = 0; i < str.length; i++) {
+    decoded = decoded * length + map[str.charAt(i)];
+  }
+
+  return decoded;
+}
+
+/**
+ * Yeast: A tiny growing id generator.
+ *
+ * @returns {String} A unique id.
+ * @api public
+ */
+function yeast() {
+  var now = encode(+new Date());
+
+  if (now !== prev) return seed = 0, prev = now;
+  return now +'.'+ encode(seed++);
+}
+
+//
+// Map each character to its index.
+//
+for (; i < length; i++) map[alphabet[i]] = i;
+
+//
+// Expose the `yeast`, `encode` and `decode` functions.
+//
+yeast.encode = encode;
+yeast.decode = decode;
+module.exports = yeast;
+
 },{}],98:[function(require,module,exports){
 (function (global){
 
@@ -29062,7 +29712,7 @@ function hasBinary(data) {
   function _hasBinary(obj) {
     if (!obj) return false;
 
-    if ( (global.Buffer && global.Buffer.isBuffer(obj)) ||
+    if ( (global.Buffer && global.Buffer.isBuffer && global.Buffer.isBuffer(obj)) ||
          (global.ArrayBuffer && obj instanceof ArrayBuffer) ||
          (global.Blob && obj instanceof Blob) ||
          (global.File && obj instanceof File)
@@ -29077,7 +29727,8 @@ function hasBinary(data) {
           }
       }
     } else if (obj && 'object' == typeof obj) {
-      if (obj.toJSON) {
+      // see: https://github.com/Automattic/has-binary/pull/4
+      if (obj.toJSON && 'function' == typeof obj.toJSON) {
         obj = obj.toJSON();
       }
 
@@ -29096,11 +29747,8 @@ function hasBinary(data) {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"isarray":99}],99:[function(require,module,exports){
-module.exports = Array.isArray || function (arr) {
-  return Object.prototype.toString.call(arr) == '[object Array]';
-};
-
-},{}],100:[function(require,module,exports){
+arguments[4][91][0].apply(exports,arguments)
+},{"dup":91}],100:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -29112,91 +29760,6 @@ module.exports = function(arr, obj){
   return -1;
 };
 },{}],101:[function(require,module,exports){
-
-/**
- * HOP ref.
- */
-
-var has = Object.prototype.hasOwnProperty;
-
-/**
- * Return own keys in `obj`.
- *
- * @param {Object} obj
- * @return {Array}
- * @api public
- */
-
-exports.keys = Object.keys || function(obj){
-  var keys = [];
-  for (var key in obj) {
-    if (has.call(obj, key)) {
-      keys.push(key);
-    }
-  }
-  return keys;
-};
-
-/**
- * Return own values in `obj`.
- *
- * @param {Object} obj
- * @return {Array}
- * @api public
- */
-
-exports.values = function(obj){
-  var vals = [];
-  for (var key in obj) {
-    if (has.call(obj, key)) {
-      vals.push(obj[key]);
-    }
-  }
-  return vals;
-};
-
-/**
- * Merge `b` into `a`.
- *
- * @param {Object} a
- * @param {Object} b
- * @return {Object} a
- * @api public
- */
-
-exports.merge = function(a, b){
-  for (var key in b) {
-    if (has.call(b, key)) {
-      a[key] = b[key];
-    }
-  }
-  return a;
-};
-
-/**
- * Return length of `obj`.
- *
- * @param {Object} obj
- * @return {Number}
- * @api public
- */
-
-exports.length = function(obj){
-  return exports.keys(obj).length;
-};
-
-/**
- * Check if `obj` is empty.
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api public
- */
-
-exports.isEmpty = function(obj){
-  return 0 == exports.length(obj);
-};
-},{}],102:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -29207,23 +29770,37 @@ exports.isEmpty = function(obj){
 var re = /^(?:(?![^:@]+:[^:@\/]*@)(http|https|ws|wss):\/\/)?((?:(([^:@]*)(?::([^:@]*))?)?@)?((?:[a-f0-9]{0,4}:){2,7}[a-f0-9]{0,4}|[^:\/?#]*)(?::(\d*))?)(((\/(?:[^?#](?![^?#\/]*\.[^?#\/.]+(?:[?#]|$)))*\/?)?([^?#\/]*))(?:\?([^#]*))?(?:#(.*))?)/;
 
 var parts = [
-    'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host'
-  , 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
+    'source', 'protocol', 'authority', 'userInfo', 'user', 'password', 'host', 'port', 'relative', 'path', 'directory', 'file', 'query', 'anchor'
 ];
 
 module.exports = function parseuri(str) {
-  var m = re.exec(str || '')
-    , uri = {}
-    , i = 14;
+    var src = str,
+        b = str.indexOf('['),
+        e = str.indexOf(']');
 
-  while (i--) {
-    uri[parts[i]] = m[i] || '';
-  }
+    if (b != -1 && e != -1) {
+        str = str.substring(0, b) + str.substring(b, e).replace(/:/g, ';') + str.substring(e, str.length);
+    }
 
-  return uri;
+    var m = re.exec(str || ''),
+        uri = {},
+        i = 14;
+
+    while (i--) {
+        uri[parts[i]] = m[i] || '';
+    }
+
+    if (b != -1 && e != -1) {
+        uri.source = src;
+        uri.host = uri.host.substring(1, uri.host.length - 1).replace(/;/g, ':');
+        uri.authority = uri.authority.replace('[', '').replace(']', '').replace(/;/g, ':');
+        uri.ipv6uri = true;
+    }
+
+    return uri;
 };
 
-},{}],103:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -29368,7 +29945,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":105,"isarray":106}],104:[function(require,module,exports){
+},{"./is-buffer":104,"isarray":106}],103:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -29770,7 +30347,7 @@ function error(data){
   };
 }
 
-},{"./binary":103,"./is-buffer":105,"component-emitter":69,"debug":70,"isarray":106,"json3":107}],105:[function(require,module,exports){
+},{"./binary":102,"./is-buffer":104,"component-emitter":105,"debug":69,"isarray":106,"json3":107}],104:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -29787,861 +30364,905 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],106:[function(require,module,exports){
-arguments[4][99][0].apply(exports,arguments)
-},{"dup":99}],107:[function(require,module,exports){
-/*! JSON v3.2.6 | http://bestiejs.github.io/json3 | Copyright 2012-2013, Kit Cambridge | http://kit.mit-license.org */
-;(function (window) {
-  // Convenience aliases.
-  var getClass = {}.toString, isProperty, forEach, undef;
-
+},{}],105:[function(require,module,exports){
+arguments[4][82][0].apply(exports,arguments)
+},{"dup":82}],106:[function(require,module,exports){
+arguments[4][91][0].apply(exports,arguments)
+},{"dup":91}],107:[function(require,module,exports){
+(function (global){
+/*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
+;(function () {
   // Detect the `define` function exposed by asynchronous module loaders. The
   // strict `define` check is necessary for compatibility with `r.js`.
   var isLoader = typeof define === "function" && define.amd;
 
-  // Detect native implementations.
-  var nativeJSON = typeof JSON == "object" && JSON;
+  // A set of types used to distinguish objects from primitives.
+  var objectTypes = {
+    "function": true,
+    "object": true
+  };
 
-  // Set up the JSON 3 namespace, preferring the CommonJS `exports` object if
-  // available.
-  var JSON3 = typeof exports == "object" && exports && !exports.nodeType && exports;
+  // Detect the `exports` object exposed by CommonJS implementations.
+  var freeExports = objectTypes[typeof exports] && exports && !exports.nodeType && exports;
 
-  if (JSON3 && nativeJSON) {
-    // Explicitly delegate to the native `stringify` and `parse`
-    // implementations in CommonJS environments.
-    JSON3.stringify = nativeJSON.stringify;
-    JSON3.parse = nativeJSON.parse;
-  } else {
-    // Export for web browsers, JavaScript engines, and asynchronous module
-    // loaders, using the global `JSON` object if available.
-    JSON3 = window.JSON = nativeJSON || {};
+  // Use the `global` object exposed by Node (including Browserify via
+  // `insert-module-globals`), Narwhal, and Ringo as the default context,
+  // and the `window` object in browsers. Rhino exports a `global` function
+  // instead.
+  var root = objectTypes[typeof window] && window || this,
+      freeGlobal = freeExports && objectTypes[typeof module] && module && !module.nodeType && typeof global == "object" && global;
+
+  if (freeGlobal && (freeGlobal["global"] === freeGlobal || freeGlobal["window"] === freeGlobal || freeGlobal["self"] === freeGlobal)) {
+    root = freeGlobal;
   }
 
-  // Test the `Date#getUTC*` methods. Based on work by @Yaffle.
-  var isExtended = new Date(-3509827334573292);
-  try {
-    // The `getUTCFullYear`, `Month`, and `Date` methods return nonsensical
-    // results for certain dates in Opera >= 10.53.
-    isExtended = isExtended.getUTCFullYear() == -109252 && isExtended.getUTCMonth() === 0 && isExtended.getUTCDate() === 1 &&
-      // Safari < 2.0.2 stores the internal millisecond time value correctly,
-      // but clips the values returned by the date methods to the range of
-      // signed 32-bit integers ([-2 ** 31, 2 ** 31 - 1]).
-      isExtended.getUTCHours() == 10 && isExtended.getUTCMinutes() == 37 && isExtended.getUTCSeconds() == 6 && isExtended.getUTCMilliseconds() == 708;
-  } catch (exception) {}
+  // Public: Initializes JSON 3 using the given `context` object, attaching the
+  // `stringify` and `parse` functions to the specified `exports` object.
+  function runInContext(context, exports) {
+    context || (context = root["Object"]());
+    exports || (exports = root["Object"]());
 
-  // Internal: Determines whether the native `JSON.stringify` and `parse`
-  // implementations are spec-compliant. Based on work by Ken Snyder.
-  function has(name) {
-    if (has[name] !== undef) {
-      // Return cached feature test result.
-      return has[name];
+    // Native constructor aliases.
+    var Number = context["Number"] || root["Number"],
+        String = context["String"] || root["String"],
+        Object = context["Object"] || root["Object"],
+        Date = context["Date"] || root["Date"],
+        SyntaxError = context["SyntaxError"] || root["SyntaxError"],
+        TypeError = context["TypeError"] || root["TypeError"],
+        Math = context["Math"] || root["Math"],
+        nativeJSON = context["JSON"] || root["JSON"];
+
+    // Delegate to the native `stringify` and `parse` implementations.
+    if (typeof nativeJSON == "object" && nativeJSON) {
+      exports.stringify = nativeJSON.stringify;
+      exports.parse = nativeJSON.parse;
     }
 
-    var isSupported;
-    if (name == "bug-string-char-index") {
-      // IE <= 7 doesn't support accessing string characters using square
-      // bracket notation. IE 8 only supports this for primitives.
-      isSupported = "a"[0] != "a";
-    } else if (name == "json") {
-      // Indicates whether both `JSON.stringify` and `JSON.parse` are
-      // supported.
-      isSupported = has("json-stringify") && has("json-parse");
-    } else {
-      var value, serialized = '{"a":[1,true,false,null,"\\u0000\\b\\n\\f\\r\\t"]}';
-      // Test `JSON.stringify`.
-      if (name == "json-stringify") {
-        var stringify = JSON3.stringify, stringifySupported = typeof stringify == "function" && isExtended;
-        if (stringifySupported) {
-          // A test function object with a custom `toJSON` method.
-          (value = function () {
-            return 1;
-          }).toJSON = value;
-          try {
-            stringifySupported =
-              // Firefox 3.1b1 and b2 serialize string, number, and boolean
-              // primitives as object literals.
-              stringify(0) === "0" &&
-              // FF 3.1b1, b2, and JSON 2 serialize wrapped primitives as object
-              // literals.
-              stringify(new Number()) === "0" &&
-              stringify(new String()) == '""' &&
-              // FF 3.1b1, 2 throw an error if the value is `null`, `undefined`, or
-              // does not define a canonical JSON representation (this applies to
-              // objects with `toJSON` properties as well, *unless* they are nested
-              // within an object or array).
-              stringify(getClass) === undef &&
-              // IE 8 serializes `undefined` as `"undefined"`. Safari <= 5.1.7 and
-              // FF 3.1b3 pass this test.
-              stringify(undef) === undef &&
-              // Safari <= 5.1.7 and FF 3.1b3 throw `Error`s and `TypeError`s,
-              // respectively, if the value is omitted entirely.
-              stringify() === undef &&
-              // FF 3.1b1, 2 throw an error if the given value is not a number,
-              // string, array, object, Boolean, or `null` literal. This applies to
-              // objects with custom `toJSON` methods as well, unless they are nested
-              // inside object or array literals. YUI 3.0.0b1 ignores custom `toJSON`
-              // methods entirely.
-              stringify(value) === "1" &&
-              stringify([value]) == "[1]" &&
-              // Prototype <= 1.6.1 serializes `[undefined]` as `"[]"` instead of
-              // `"[null]"`.
-              stringify([undef]) == "[null]" &&
-              // YUI 3.0.0b1 fails to serialize `null` literals.
-              stringify(null) == "null" &&
-              // FF 3.1b1, 2 halts serialization if an array contains a function:
-              // `[1, true, getClass, 1]` serializes as "[1,true,],". FF 3.1b3
-              // elides non-JSON values from objects and arrays, unless they
-              // define custom `toJSON` methods.
-              stringify([undef, getClass, null]) == "[null,null,null]" &&
-              // Simple serialization test. FF 3.1b1 uses Unicode escape sequences
-              // where character escape codes are expected (e.g., `\b` => `\u0008`).
-              stringify({ "a": [value, true, false, null, "\x00\b\n\f\r\t"] }) == serialized &&
-              // FF 3.1b1 and b2 ignore the `filter` and `width` arguments.
-              stringify(null, value) === "1" &&
-              stringify([1, 2], null, 1) == "[\n 1,\n 2\n]" &&
-              // JSON 2, Prototype <= 1.7, and older WebKit builds incorrectly
-              // serialize extended years.
-              stringify(new Date(-8.64e15)) == '"-271821-04-20T00:00:00.000Z"' &&
-              // The milliseconds are optional in ES 5, but required in 5.1.
-              stringify(new Date(8.64e15)) == '"+275760-09-13T00:00:00.000Z"' &&
-              // Firefox <= 11.0 incorrectly serializes years prior to 0 as negative
-              // four-digit years instead of six-digit years. Credits: @Yaffle.
-              stringify(new Date(-621987552e5)) == '"-000001-01-01T00:00:00.000Z"' &&
-              // Safari <= 5.1.5 and Opera >= 10.53 incorrectly serialize millisecond
-              // values less than 1000. Credits: @Yaffle.
-              stringify(new Date(-1)) == '"1969-12-31T23:59:59.999Z"';
-          } catch (exception) {
-            stringifySupported = false;
-          }
-        }
-        isSupported = stringifySupported;
+    // Convenience aliases.
+    var objectProto = Object.prototype,
+        getClass = objectProto.toString,
+        isProperty, forEach, undef;
+
+    // Test the `Date#getUTC*` methods. Based on work by @Yaffle.
+    var isExtended = new Date(-3509827334573292);
+    try {
+      // The `getUTCFullYear`, `Month`, and `Date` methods return nonsensical
+      // results for certain dates in Opera >= 10.53.
+      isExtended = isExtended.getUTCFullYear() == -109252 && isExtended.getUTCMonth() === 0 && isExtended.getUTCDate() === 1 &&
+        // Safari < 2.0.2 stores the internal millisecond time value correctly,
+        // but clips the values returned by the date methods to the range of
+        // signed 32-bit integers ([-2 ** 31, 2 ** 31 - 1]).
+        isExtended.getUTCHours() == 10 && isExtended.getUTCMinutes() == 37 && isExtended.getUTCSeconds() == 6 && isExtended.getUTCMilliseconds() == 708;
+    } catch (exception) {}
+
+    // Internal: Determines whether the native `JSON.stringify` and `parse`
+    // implementations are spec-compliant. Based on work by Ken Snyder.
+    function has(name) {
+      if (has[name] !== undef) {
+        // Return cached feature test result.
+        return has[name];
       }
-      // Test `JSON.parse`.
-      if (name == "json-parse") {
-        var parse = JSON3.parse;
-        if (typeof parse == "function") {
-          try {
-            // FF 3.1b1, b2 will throw an exception if a bare literal is provided.
-            // Conforming implementations should also coerce the initial argument to
-            // a string prior to parsing.
-            if (parse("0") === 0 && !parse(false)) {
-              // Simple parsing test.
-              value = parse(serialized);
-              var parseSupported = value["a"].length == 5 && value["a"][0] === 1;
-              if (parseSupported) {
-                try {
-                  // Safari <= 5.1.2 and FF 3.1b1 allow unescaped tabs in strings.
-                  parseSupported = !parse('"\t"');
-                } catch (exception) {}
+      var isSupported;
+      if (name == "bug-string-char-index") {
+        // IE <= 7 doesn't support accessing string characters using square
+        // bracket notation. IE 8 only supports this for primitives.
+        isSupported = "a"[0] != "a";
+      } else if (name == "json") {
+        // Indicates whether both `JSON.stringify` and `JSON.parse` are
+        // supported.
+        isSupported = has("json-stringify") && has("json-parse");
+      } else {
+        var value, serialized = '{"a":[1,true,false,null,"\\u0000\\b\\n\\f\\r\\t"]}';
+        // Test `JSON.stringify`.
+        if (name == "json-stringify") {
+          var stringify = exports.stringify, stringifySupported = typeof stringify == "function" && isExtended;
+          if (stringifySupported) {
+            // A test function object with a custom `toJSON` method.
+            (value = function () {
+              return 1;
+            }).toJSON = value;
+            try {
+              stringifySupported =
+                // Firefox 3.1b1 and b2 serialize string, number, and boolean
+                // primitives as object literals.
+                stringify(0) === "0" &&
+                // FF 3.1b1, b2, and JSON 2 serialize wrapped primitives as object
+                // literals.
+                stringify(new Number()) === "0" &&
+                stringify(new String()) == '""' &&
+                // FF 3.1b1, 2 throw an error if the value is `null`, `undefined`, or
+                // does not define a canonical JSON representation (this applies to
+                // objects with `toJSON` properties as well, *unless* they are nested
+                // within an object or array).
+                stringify(getClass) === undef &&
+                // IE 8 serializes `undefined` as `"undefined"`. Safari <= 5.1.7 and
+                // FF 3.1b3 pass this test.
+                stringify(undef) === undef &&
+                // Safari <= 5.1.7 and FF 3.1b3 throw `Error`s and `TypeError`s,
+                // respectively, if the value is omitted entirely.
+                stringify() === undef &&
+                // FF 3.1b1, 2 throw an error if the given value is not a number,
+                // string, array, object, Boolean, or `null` literal. This applies to
+                // objects with custom `toJSON` methods as well, unless they are nested
+                // inside object or array literals. YUI 3.0.0b1 ignores custom `toJSON`
+                // methods entirely.
+                stringify(value) === "1" &&
+                stringify([value]) == "[1]" &&
+                // Prototype <= 1.6.1 serializes `[undefined]` as `"[]"` instead of
+                // `"[null]"`.
+                stringify([undef]) == "[null]" &&
+                // YUI 3.0.0b1 fails to serialize `null` literals.
+                stringify(null) == "null" &&
+                // FF 3.1b1, 2 halts serialization if an array contains a function:
+                // `[1, true, getClass, 1]` serializes as "[1,true,],". FF 3.1b3
+                // elides non-JSON values from objects and arrays, unless they
+                // define custom `toJSON` methods.
+                stringify([undef, getClass, null]) == "[null,null,null]" &&
+                // Simple serialization test. FF 3.1b1 uses Unicode escape sequences
+                // where character escape codes are expected (e.g., `\b` => `\u0008`).
+                stringify({ "a": [value, true, false, null, "\x00\b\n\f\r\t"] }) == serialized &&
+                // FF 3.1b1 and b2 ignore the `filter` and `width` arguments.
+                stringify(null, value) === "1" &&
+                stringify([1, 2], null, 1) == "[\n 1,\n 2\n]" &&
+                // JSON 2, Prototype <= 1.7, and older WebKit builds incorrectly
+                // serialize extended years.
+                stringify(new Date(-8.64e15)) == '"-271821-04-20T00:00:00.000Z"' &&
+                // The milliseconds are optional in ES 5, but required in 5.1.
+                stringify(new Date(8.64e15)) == '"+275760-09-13T00:00:00.000Z"' &&
+                // Firefox <= 11.0 incorrectly serializes years prior to 0 as negative
+                // four-digit years instead of six-digit years. Credits: @Yaffle.
+                stringify(new Date(-621987552e5)) == '"-000001-01-01T00:00:00.000Z"' &&
+                // Safari <= 5.1.5 and Opera >= 10.53 incorrectly serialize millisecond
+                // values less than 1000. Credits: @Yaffle.
+                stringify(new Date(-1)) == '"1969-12-31T23:59:59.999Z"';
+            } catch (exception) {
+              stringifySupported = false;
+            }
+          }
+          isSupported = stringifySupported;
+        }
+        // Test `JSON.parse`.
+        if (name == "json-parse") {
+          var parse = exports.parse;
+          if (typeof parse == "function") {
+            try {
+              // FF 3.1b1, b2 will throw an exception if a bare literal is provided.
+              // Conforming implementations should also coerce the initial argument to
+              // a string prior to parsing.
+              if (parse("0") === 0 && !parse(false)) {
+                // Simple parsing test.
+                value = parse(serialized);
+                var parseSupported = value["a"].length == 5 && value["a"][0] === 1;
                 if (parseSupported) {
                   try {
-                    // FF 4.0 and 4.0.1 allow leading `+` signs and leading
-                    // decimal points. FF 4.0, 4.0.1, and IE 9-10 also allow
-                    // certain octal literals.
-                    parseSupported = parse("01") !== 1;
+                    // Safari <= 5.1.2 and FF 3.1b1 allow unescaped tabs in strings.
+                    parseSupported = !parse('"\t"');
                   } catch (exception) {}
-                }
-                if (parseSupported) {
-                  try {
-                    // FF 4.0, 4.0.1, and Rhino 1.7R3-R4 allow trailing decimal
-                    // points. These environments, along with FF 3.1b1 and 2,
-                    // also allow trailing commas in JSON objects and arrays.
-                    parseSupported = parse("1.") !== 1;
-                  } catch (exception) {}
+                  if (parseSupported) {
+                    try {
+                      // FF 4.0 and 4.0.1 allow leading `+` signs and leading
+                      // decimal points. FF 4.0, 4.0.1, and IE 9-10 also allow
+                      // certain octal literals.
+                      parseSupported = parse("01") !== 1;
+                    } catch (exception) {}
+                  }
+                  if (parseSupported) {
+                    try {
+                      // FF 4.0, 4.0.1, and Rhino 1.7R3-R4 allow trailing decimal
+                      // points. These environments, along with FF 3.1b1 and 2,
+                      // also allow trailing commas in JSON objects and arrays.
+                      parseSupported = parse("1.") !== 1;
+                    } catch (exception) {}
+                  }
                 }
               }
+            } catch (exception) {
+              parseSupported = false;
             }
-          } catch (exception) {
-            parseSupported = false;
+          }
+          isSupported = parseSupported;
+        }
+      }
+      return has[name] = !!isSupported;
+    }
+
+    if (!has("json")) {
+      // Common `[[Class]]` name aliases.
+      var functionClass = "[object Function]",
+          dateClass = "[object Date]",
+          numberClass = "[object Number]",
+          stringClass = "[object String]",
+          arrayClass = "[object Array]",
+          booleanClass = "[object Boolean]";
+
+      // Detect incomplete support for accessing string characters by index.
+      var charIndexBuggy = has("bug-string-char-index");
+
+      // Define additional utility methods if the `Date` methods are buggy.
+      if (!isExtended) {
+        var floor = Math.floor;
+        // A mapping between the months of the year and the number of days between
+        // January 1st and the first of the respective month.
+        var Months = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
+        // Internal: Calculates the number of days between the Unix epoch and the
+        // first day of the given month.
+        var getDay = function (year, month) {
+          return Months[month] + 365 * (year - 1970) + floor((year - 1969 + (month = +(month > 1))) / 4) - floor((year - 1901 + month) / 100) + floor((year - 1601 + month) / 400);
+        };
+      }
+
+      // Internal: Determines if a property is a direct property of the given
+      // object. Delegates to the native `Object#hasOwnProperty` method.
+      if (!(isProperty = objectProto.hasOwnProperty)) {
+        isProperty = function (property) {
+          var members = {}, constructor;
+          if ((members.__proto__ = null, members.__proto__ = {
+            // The *proto* property cannot be set multiple times in recent
+            // versions of Firefox and SeaMonkey.
+            "toString": 1
+          }, members).toString != getClass) {
+            // Safari <= 2.0.3 doesn't implement `Object#hasOwnProperty`, but
+            // supports the mutable *proto* property.
+            isProperty = function (property) {
+              // Capture and break the object's prototype chain (see section 8.6.2
+              // of the ES 5.1 spec). The parenthesized expression prevents an
+              // unsafe transformation by the Closure Compiler.
+              var original = this.__proto__, result = property in (this.__proto__ = null, this);
+              // Restore the original prototype chain.
+              this.__proto__ = original;
+              return result;
+            };
+          } else {
+            // Capture a reference to the top-level `Object` constructor.
+            constructor = members.constructor;
+            // Use the `constructor` property to simulate `Object#hasOwnProperty` in
+            // other environments.
+            isProperty = function (property) {
+              var parent = (this.constructor || constructor).prototype;
+              return property in this && !(property in parent && this[property] === parent[property]);
+            };
+          }
+          members = null;
+          return isProperty.call(this, property);
+        };
+      }
+
+      // Internal: Normalizes the `for...in` iteration algorithm across
+      // environments. Each enumerated key is yielded to a `callback` function.
+      forEach = function (object, callback) {
+        var size = 0, Properties, members, property;
+
+        // Tests for bugs in the current environment's `for...in` algorithm. The
+        // `valueOf` property inherits the non-enumerable flag from
+        // `Object.prototype` in older versions of IE, Netscape, and Mozilla.
+        (Properties = function () {
+          this.valueOf = 0;
+        }).prototype.valueOf = 0;
+
+        // Iterate over a new instance of the `Properties` class.
+        members = new Properties();
+        for (property in members) {
+          // Ignore all properties inherited from `Object.prototype`.
+          if (isProperty.call(members, property)) {
+            size++;
           }
         }
-        isSupported = parseSupported;
-      }
-    }
-    return has[name] = !!isSupported;
-  }
+        Properties = members = null;
 
-  if (!has("json")) {
-    // Common `[[Class]]` name aliases.
-    var functionClass = "[object Function]";
-    var dateClass = "[object Date]";
-    var numberClass = "[object Number]";
-    var stringClass = "[object String]";
-    var arrayClass = "[object Array]";
-    var booleanClass = "[object Boolean]";
-
-    // Detect incomplete support for accessing string characters by index.
-    var charIndexBuggy = has("bug-string-char-index");
-
-    // Define additional utility methods if the `Date` methods are buggy.
-    if (!isExtended) {
-      var floor = Math.floor;
-      // A mapping between the months of the year and the number of days between
-      // January 1st and the first of the respective month.
-      var Months = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
-      // Internal: Calculates the number of days between the Unix epoch and the
-      // first day of the given month.
-      var getDay = function (year, month) {
-        return Months[month] + 365 * (year - 1970) + floor((year - 1969 + (month = +(month > 1))) / 4) - floor((year - 1901 + month) / 100) + floor((year - 1601 + month) / 400);
-      };
-    }
-
-    // Internal: Determines if a property is a direct property of the given
-    // object. Delegates to the native `Object#hasOwnProperty` method.
-    if (!(isProperty = {}.hasOwnProperty)) {
-      isProperty = function (property) {
-        var members = {}, constructor;
-        if ((members.__proto__ = null, members.__proto__ = {
-          // The *proto* property cannot be set multiple times in recent
-          // versions of Firefox and SeaMonkey.
-          "toString": 1
-        }, members).toString != getClass) {
-          // Safari <= 2.0.3 doesn't implement `Object#hasOwnProperty`, but
-          // supports the mutable *proto* property.
-          isProperty = function (property) {
-            // Capture and break the object's prototype chain (see section 8.6.2
-            // of the ES 5.1 spec). The parenthesized expression prevents an
-            // unsafe transformation by the Closure Compiler.
-            var original = this.__proto__, result = property in (this.__proto__ = null, this);
-            // Restore the original prototype chain.
-            this.__proto__ = original;
-            return result;
+        // Normalize the iteration algorithm.
+        if (!size) {
+          // A list of non-enumerable properties inherited from `Object.prototype`.
+          members = ["valueOf", "toString", "toLocaleString", "propertyIsEnumerable", "isPrototypeOf", "hasOwnProperty", "constructor"];
+          // IE <= 8, Mozilla 1.0, and Netscape 6.2 ignore shadowed non-enumerable
+          // properties.
+          forEach = function (object, callback) {
+            var isFunction = getClass.call(object) == functionClass, property, length;
+            var hasProperty = !isFunction && typeof object.constructor != "function" && objectTypes[typeof object.hasOwnProperty] && object.hasOwnProperty || isProperty;
+            for (property in object) {
+              // Gecko <= 1.0 enumerates the `prototype` property of functions under
+              // certain conditions; IE does not.
+              if (!(isFunction && property == "prototype") && hasProperty.call(object, property)) {
+                callback(property);
+              }
+            }
+            // Manually invoke the callback for each non-enumerable property.
+            for (length = members.length; property = members[--length]; hasProperty.call(object, property) && callback(property));
+          };
+        } else if (size == 2) {
+          // Safari <= 2.0.4 enumerates shadowed properties twice.
+          forEach = function (object, callback) {
+            // Create a set of iterated properties.
+            var members = {}, isFunction = getClass.call(object) == functionClass, property;
+            for (property in object) {
+              // Store each property name to prevent double enumeration. The
+              // `prototype` property of functions is not enumerated due to cross-
+              // environment inconsistencies.
+              if (!(isFunction && property == "prototype") && !isProperty.call(members, property) && (members[property] = 1) && isProperty.call(object, property)) {
+                callback(property);
+              }
+            }
           };
         } else {
-          // Capture a reference to the top-level `Object` constructor.
-          constructor = members.constructor;
-          // Use the `constructor` property to simulate `Object#hasOwnProperty` in
-          // other environments.
-          isProperty = function (property) {
-            var parent = (this.constructor || constructor).prototype;
-            return property in this && !(property in parent && this[property] === parent[property]);
+          // No bugs detected; use the standard `for...in` algorithm.
+          forEach = function (object, callback) {
+            var isFunction = getClass.call(object) == functionClass, property, isConstructor;
+            for (property in object) {
+              if (!(isFunction && property == "prototype") && isProperty.call(object, property) && !(isConstructor = property === "constructor")) {
+                callback(property);
+              }
+            }
+            // Manually invoke the callback for the `constructor` property due to
+            // cross-environment inconsistencies.
+            if (isConstructor || isProperty.call(object, (property = "constructor"))) {
+              callback(property);
+            }
           };
         }
-        members = null;
-        return isProperty.call(this, property);
-      };
-    }
-
-    // Internal: A set of primitive types used by `isHostType`.
-    var PrimitiveTypes = {
-      'boolean': 1,
-      'number': 1,
-      'string': 1,
-      'undefined': 1
-    };
-
-    // Internal: Determines if the given object `property` value is a
-    // non-primitive.
-    var isHostType = function (object, property) {
-      var type = typeof object[property];
-      return type == 'object' ? !!object[property] : !PrimitiveTypes[type];
-    };
-
-    // Internal: Normalizes the `for...in` iteration algorithm across
-    // environments. Each enumerated key is yielded to a `callback` function.
-    forEach = function (object, callback) {
-      var size = 0, Properties, members, property;
-
-      // Tests for bugs in the current environment's `for...in` algorithm. The
-      // `valueOf` property inherits the non-enumerable flag from
-      // `Object.prototype` in older versions of IE, Netscape, and Mozilla.
-      (Properties = function () {
-        this.valueOf = 0;
-      }).prototype.valueOf = 0;
-
-      // Iterate over a new instance of the `Properties` class.
-      members = new Properties();
-      for (property in members) {
-        // Ignore all properties inherited from `Object.prototype`.
-        if (isProperty.call(members, property)) {
-          size++;
-        }
-      }
-      Properties = members = null;
-
-      // Normalize the iteration algorithm.
-      if (!size) {
-        // A list of non-enumerable properties inherited from `Object.prototype`.
-        members = ["valueOf", "toString", "toLocaleString", "propertyIsEnumerable", "isPrototypeOf", "hasOwnProperty", "constructor"];
-        // IE <= 8, Mozilla 1.0, and Netscape 6.2 ignore shadowed non-enumerable
-        // properties.
-        forEach = function (object, callback) {
-          var isFunction = getClass.call(object) == functionClass, property, length;
-          var hasProperty = !isFunction && typeof object.constructor != 'function' && isHostType(object, 'hasOwnProperty') ? object.hasOwnProperty : isProperty;
-          for (property in object) {
-            // Gecko <= 1.0 enumerates the `prototype` property of functions under
-            // certain conditions; IE does not.
-            if (!(isFunction && property == "prototype") && hasProperty.call(object, property)) {
-              callback(property);
-            }
-          }
-          // Manually invoke the callback for each non-enumerable property.
-          for (length = members.length; property = members[--length]; hasProperty.call(object, property) && callback(property));
-        };
-      } else if (size == 2) {
-        // Safari <= 2.0.4 enumerates shadowed properties twice.
-        forEach = function (object, callback) {
-          // Create a set of iterated properties.
-          var members = {}, isFunction = getClass.call(object) == functionClass, property;
-          for (property in object) {
-            // Store each property name to prevent double enumeration. The
-            // `prototype` property of functions is not enumerated due to cross-
-            // environment inconsistencies.
-            if (!(isFunction && property == "prototype") && !isProperty.call(members, property) && (members[property] = 1) && isProperty.call(object, property)) {
-              callback(property);
-            }
-          }
-        };
-      } else {
-        // No bugs detected; use the standard `for...in` algorithm.
-        forEach = function (object, callback) {
-          var isFunction = getClass.call(object) == functionClass, property, isConstructor;
-          for (property in object) {
-            if (!(isFunction && property == "prototype") && isProperty.call(object, property) && !(isConstructor = property === "constructor")) {
-              callback(property);
-            }
-          }
-          // Manually invoke the callback for the `constructor` property due to
-          // cross-environment inconsistencies.
-          if (isConstructor || isProperty.call(object, (property = "constructor"))) {
-            callback(property);
-          }
-        };
-      }
-      return forEach(object, callback);
-    };
-
-    // Public: Serializes a JavaScript `value` as a JSON string. The optional
-    // `filter` argument may specify either a function that alters how object and
-    // array members are serialized, or an array of strings and numbers that
-    // indicates which properties should be serialized. The optional `width`
-    // argument may be either a string or number that specifies the indentation
-    // level of the output.
-    if (!has("json-stringify")) {
-      // Internal: A map of control characters and their escaped equivalents.
-      var Escapes = {
-        92: "\\\\",
-        34: '\\"',
-        8: "\\b",
-        12: "\\f",
-        10: "\\n",
-        13: "\\r",
-        9: "\\t"
+        return forEach(object, callback);
       };
 
-      // Internal: Converts `value` into a zero-padded string such that its
-      // length is at least equal to `width`. The `width` must be <= 6.
-      var leadingZeroes = "000000";
-      var toPaddedString = function (width, value) {
-        // The `|| 0` expression is necessary to work around a bug in
-        // Opera <= 7.54u2 where `0 == -0`, but `String(-0) !== "0"`.
-        return (leadingZeroes + (value || 0)).slice(-width);
-      };
+      // Public: Serializes a JavaScript `value` as a JSON string. The optional
+      // `filter` argument may specify either a function that alters how object and
+      // array members are serialized, or an array of strings and numbers that
+      // indicates which properties should be serialized. The optional `width`
+      // argument may be either a string or number that specifies the indentation
+      // level of the output.
+      if (!has("json-stringify")) {
+        // Internal: A map of control characters and their escaped equivalents.
+        var Escapes = {
+          92: "\\\\",
+          34: '\\"',
+          8: "\\b",
+          12: "\\f",
+          10: "\\n",
+          13: "\\r",
+          9: "\\t"
+        };
 
-      // Internal: Double-quotes a string `value`, replacing all ASCII control
-      // characters (characters with code unit values between 0 and 31) with
-      // their escaped equivalents. This is an implementation of the
-      // `Quote(value)` operation defined in ES 5.1 section 15.12.3.
-      var unicodePrefix = "\\u00";
-      var quote = function (value) {
-        var result = '"', index = 0, length = value.length, isLarge = length > 10 && charIndexBuggy, symbols;
-        if (isLarge) {
-          symbols = value.split("");
-        }
-        for (; index < length; index++) {
-          var charCode = value.charCodeAt(index);
-          // If the character is a control character, append its Unicode or
-          // shorthand escape sequence; otherwise, append the character as-is.
-          switch (charCode) {
-            case 8: case 9: case 10: case 12: case 13: case 34: case 92:
-              result += Escapes[charCode];
-              break;
-            default:
-              if (charCode < 32) {
-                result += unicodePrefix + toPaddedString(2, charCode.toString(16));
+        // Internal: Converts `value` into a zero-padded string such that its
+        // length is at least equal to `width`. The `width` must be <= 6.
+        var leadingZeroes = "000000";
+        var toPaddedString = function (width, value) {
+          // The `|| 0` expression is necessary to work around a bug in
+          // Opera <= 7.54u2 where `0 == -0`, but `String(-0) !== "0"`.
+          return (leadingZeroes + (value || 0)).slice(-width);
+        };
+
+        // Internal: Double-quotes a string `value`, replacing all ASCII control
+        // characters (characters with code unit values between 0 and 31) with
+        // their escaped equivalents. This is an implementation of the
+        // `Quote(value)` operation defined in ES 5.1 section 15.12.3.
+        var unicodePrefix = "\\u00";
+        var quote = function (value) {
+          var result = '"', index = 0, length = value.length, useCharIndex = !charIndexBuggy || length > 10;
+          var symbols = useCharIndex && (charIndexBuggy ? value.split("") : value);
+          for (; index < length; index++) {
+            var charCode = value.charCodeAt(index);
+            // If the character is a control character, append its Unicode or
+            // shorthand escape sequence; otherwise, append the character as-is.
+            switch (charCode) {
+              case 8: case 9: case 10: case 12: case 13: case 34: case 92:
+                result += Escapes[charCode];
                 break;
-              }
-              result += isLarge ? symbols[index] : charIndexBuggy ? value.charAt(index) : value[index];
-          }
-        }
-        return result + '"';
-      };
-
-      // Internal: Recursively serializes an object. Implements the
-      // `Str(key, holder)`, `JO(value)`, and `JA(value)` operations.
-      var serialize = function (property, object, callback, properties, whitespace, indentation, stack) {
-        var value, className, year, month, date, time, hours, minutes, seconds, milliseconds, results, element, index, length, prefix, result;
-        try {
-          // Necessary for host object support.
-          value = object[property];
-        } catch (exception) {}
-        if (typeof value == "object" && value) {
-          className = getClass.call(value);
-          if (className == dateClass && !isProperty.call(value, "toJSON")) {
-            if (value > -1 / 0 && value < 1 / 0) {
-              // Dates are serialized according to the `Date#toJSON` method
-              // specified in ES 5.1 section 15.9.5.44. See section 15.9.1.15
-              // for the ISO 8601 date time string format.
-              if (getDay) {
-                // Manually compute the year, month, date, hours, minutes,
-                // seconds, and milliseconds if the `getUTC*` methods are
-                // buggy. Adapted from @Yaffle's `date-shim` project.
-                date = floor(value / 864e5);
-                for (year = floor(date / 365.2425) + 1970 - 1; getDay(year + 1, 0) <= date; year++);
-                for (month = floor((date - getDay(year, 0)) / 30.42); getDay(year, month + 1) <= date; month++);
-                date = 1 + date - getDay(year, month);
-                // The `time` value specifies the time within the day (see ES
-                // 5.1 section 15.9.1.2). The formula `(A % B + B) % B` is used
-                // to compute `A modulo B`, as the `%` operator does not
-                // correspond to the `modulo` operation for negative numbers.
-                time = (value % 864e5 + 864e5) % 864e5;
-                // The hours, minutes, seconds, and milliseconds are obtained by
-                // decomposing the time within the day. See section 15.9.1.10.
-                hours = floor(time / 36e5) % 24;
-                minutes = floor(time / 6e4) % 60;
-                seconds = floor(time / 1e3) % 60;
-                milliseconds = time % 1e3;
-              } else {
-                year = value.getUTCFullYear();
-                month = value.getUTCMonth();
-                date = value.getUTCDate();
-                hours = value.getUTCHours();
-                minutes = value.getUTCMinutes();
-                seconds = value.getUTCSeconds();
-                milliseconds = value.getUTCMilliseconds();
-              }
-              // Serialize extended years correctly.
-              value = (year <= 0 || year >= 1e4 ? (year < 0 ? "-" : "+") + toPaddedString(6, year < 0 ? -year : year) : toPaddedString(4, year)) +
-                "-" + toPaddedString(2, month + 1) + "-" + toPaddedString(2, date) +
-                // Months, dates, hours, minutes, and seconds should have two
-                // digits; milliseconds should have three.
-                "T" + toPaddedString(2, hours) + ":" + toPaddedString(2, minutes) + ":" + toPaddedString(2, seconds) +
-                // Milliseconds are optional in ES 5.0, but required in 5.1.
-                "." + toPaddedString(3, milliseconds) + "Z";
-            } else {
-              value = null;
-            }
-          } else if (typeof value.toJSON == "function" && ((className != numberClass && className != stringClass && className != arrayClass) || isProperty.call(value, "toJSON"))) {
-            // Prototype <= 1.6.1 adds non-standard `toJSON` methods to the
-            // `Number`, `String`, `Date`, and `Array` prototypes. JSON 3
-            // ignores all `toJSON` methods on these objects unless they are
-            // defined directly on an instance.
-            value = value.toJSON(property);
-          }
-        }
-        if (callback) {
-          // If a replacement function was provided, call it to obtain the value
-          // for serialization.
-          value = callback.call(object, property, value);
-        }
-        if (value === null) {
-          return "null";
-        }
-        className = getClass.call(value);
-        if (className == booleanClass) {
-          // Booleans are represented literally.
-          return "" + value;
-        } else if (className == numberClass) {
-          // JSON numbers must be finite. `Infinity` and `NaN` are serialized as
-          // `"null"`.
-          return value > -1 / 0 && value < 1 / 0 ? "" + value : "null";
-        } else if (className == stringClass) {
-          // Strings are double-quoted and escaped.
-          return quote("" + value);
-        }
-        // Recursively serialize objects and arrays.
-        if (typeof value == "object") {
-          // Check for cyclic structures. This is a linear search; performance
-          // is inversely proportional to the number of unique nested objects.
-          for (length = stack.length; length--;) {
-            if (stack[length] === value) {
-              // Cyclic structures cannot be serialized by `JSON.stringify`.
-              throw TypeError();
-            }
-          }
-          // Add the object to the stack of traversed objects.
-          stack.push(value);
-          results = [];
-          // Save the current indentation level and indent one additional level.
-          prefix = indentation;
-          indentation += whitespace;
-          if (className == arrayClass) {
-            // Recursively serialize array elements.
-            for (index = 0, length = value.length; index < length; index++) {
-              element = serialize(index, value, callback, properties, whitespace, indentation, stack);
-              results.push(element === undef ? "null" : element);
-            }
-            result = results.length ? (whitespace ? "[\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "]" : ("[" + results.join(",") + "]")) : "[]";
-          } else {
-            // Recursively serialize object members. Members are selected from
-            // either a user-specified list of property names, or the object
-            // itself.
-            forEach(properties || value, function (property) {
-              var element = serialize(property, value, callback, properties, whitespace, indentation, stack);
-              if (element !== undef) {
-                // According to ES 5.1 section 15.12.3: "If `gap` {whitespace}
-                // is not the empty string, let `member` {quote(property) + ":"}
-                // be the concatenation of `member` and the `space` character."
-                // The "`space` character" refers to the literal space
-                // character, not the `space` {width} argument provided to
-                // `JSON.stringify`.
-                results.push(quote(property) + ":" + (whitespace ? " " : "") + element);
-              }
-            });
-            result = results.length ? (whitespace ? "{\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "}" : ("{" + results.join(",") + "}")) : "{}";
-          }
-          // Remove the object from the traversed object stack.
-          stack.pop();
-          return result;
-        }
-      };
-
-      // Public: `JSON.stringify`. See ES 5.1 section 15.12.3.
-      JSON3.stringify = function (source, filter, width) {
-        var whitespace, callback, properties, className;
-        if (typeof filter == "function" || typeof filter == "object" && filter) {
-          if ((className = getClass.call(filter)) == functionClass) {
-            callback = filter;
-          } else if (className == arrayClass) {
-            // Convert the property names array into a makeshift set.
-            properties = {};
-            for (var index = 0, length = filter.length, value; index < length; value = filter[index++], ((className = getClass.call(value)), className == stringClass || className == numberClass) && (properties[value] = 1));
-          }
-        }
-        if (width) {
-          if ((className = getClass.call(width)) == numberClass) {
-            // Convert the `width` to an integer and create a string containing
-            // `width` number of space characters.
-            if ((width -= width % 1) > 0) {
-              for (whitespace = "", width > 10 && (width = 10); whitespace.length < width; whitespace += " ");
-            }
-          } else if (className == stringClass) {
-            whitespace = width.length <= 10 ? width : width.slice(0, 10);
-          }
-        }
-        // Opera <= 7.54u2 discards the values associated with empty string keys
-        // (`""`) only if they are used directly within an object member list
-        // (e.g., `!("" in { "": 1})`).
-        return serialize("", (value = {}, value[""] = source, value), callback, properties, whitespace, "", []);
-      };
-    }
-
-    // Public: Parses a JSON source string.
-    if (!has("json-parse")) {
-      var fromCharCode = String.fromCharCode;
-
-      // Internal: A map of escaped control characters and their unescaped
-      // equivalents.
-      var Unescapes = {
-        92: "\\",
-        34: '"',
-        47: "/",
-        98: "\b",
-        116: "\t",
-        110: "\n",
-        102: "\f",
-        114: "\r"
-      };
-
-      // Internal: Stores the parser state.
-      var Index, Source;
-
-      // Internal: Resets the parser state and throws a `SyntaxError`.
-      var abort = function() {
-        Index = Source = null;
-        throw SyntaxError();
-      };
-
-      // Internal: Returns the next token, or `"$"` if the parser has reached
-      // the end of the source string. A token may be a string, number, `null`
-      // literal, or Boolean literal.
-      var lex = function () {
-        var source = Source, length = source.length, value, begin, position, isSigned, charCode;
-        while (Index < length) {
-          charCode = source.charCodeAt(Index);
-          switch (charCode) {
-            case 9: case 10: case 13: case 32:
-              // Skip whitespace tokens, including tabs, carriage returns, line
-              // feeds, and space characters.
-              Index++;
-              break;
-            case 123: case 125: case 91: case 93: case 58: case 44:
-              // Parse a punctuator token (`{`, `}`, `[`, `]`, `:`, or `,`) at
-              // the current position.
-              value = charIndexBuggy ? source.charAt(Index) : source[Index];
-              Index++;
-              return value;
-            case 34:
-              // `"` delimits a JSON string; advance to the next character and
-              // begin parsing the string. String tokens are prefixed with the
-              // sentinel `@` character to distinguish them from punctuators and
-              // end-of-string tokens.
-              for (value = "@", Index++; Index < length;) {
-                charCode = source.charCodeAt(Index);
+              default:
                 if (charCode < 32) {
-                  // Unescaped ASCII control characters (those with a code unit
-                  // less than the space character) are not permitted.
-                  abort();
-                } else if (charCode == 92) {
-                  // A reverse solidus (`\`) marks the beginning of an escaped
-                  // control character (including `"`, `\`, and `/`) or Unicode
-                  // escape sequence.
-                  charCode = source.charCodeAt(++Index);
-                  switch (charCode) {
-                    case 92: case 34: case 47: case 98: case 116: case 110: case 102: case 114:
-                      // Revive escaped control characters.
-                      value += Unescapes[charCode];
-                      Index++;
-                      break;
-                    case 117:
-                      // `\u` marks the beginning of a Unicode escape sequence.
-                      // Advance to the first character and validate the
-                      // four-digit code point.
-                      begin = ++Index;
-                      for (position = Index + 4; Index < position; Index++) {
-                        charCode = source.charCodeAt(Index);
-                        // A valid sequence comprises four hexdigits (case-
-                        // insensitive) that form a single hexadecimal value.
-                        if (!(charCode >= 48 && charCode <= 57 || charCode >= 97 && charCode <= 102 || charCode >= 65 && charCode <= 70)) {
-                          // Invalid Unicode escape sequence.
-                          abort();
-                        }
-                      }
-                      // Revive the escaped character.
-                      value += fromCharCode("0x" + source.slice(begin, Index));
-                      break;
-                    default:
-                      // Invalid escape sequence.
-                      abort();
-                  }
-                } else {
-                  if (charCode == 34) {
-                    // An unescaped double-quote character marks the end of the
-                    // string.
-                    break;
-                  }
-                  charCode = source.charCodeAt(Index);
-                  begin = Index;
-                  // Optimize for the common case where a string is valid.
-                  while (charCode >= 32 && charCode != 92 && charCode != 34) {
-                    charCode = source.charCodeAt(++Index);
-                  }
-                  // Append the string as-is.
-                  value += source.slice(begin, Index);
+                  result += unicodePrefix + toPaddedString(2, charCode.toString(16));
+                  break;
                 }
+                result += useCharIndex ? symbols[index] : value.charAt(index);
+            }
+          }
+          return result + '"';
+        };
+
+        // Internal: Recursively serializes an object. Implements the
+        // `Str(key, holder)`, `JO(value)`, and `JA(value)` operations.
+        var serialize = function (property, object, callback, properties, whitespace, indentation, stack) {
+          var value, className, year, month, date, time, hours, minutes, seconds, milliseconds, results, element, index, length, prefix, result;
+          try {
+            // Necessary for host object support.
+            value = object[property];
+          } catch (exception) {}
+          if (typeof value == "object" && value) {
+            className = getClass.call(value);
+            if (className == dateClass && !isProperty.call(value, "toJSON")) {
+              if (value > -1 / 0 && value < 1 / 0) {
+                // Dates are serialized according to the `Date#toJSON` method
+                // specified in ES 5.1 section 15.9.5.44. See section 15.9.1.15
+                // for the ISO 8601 date time string format.
+                if (getDay) {
+                  // Manually compute the year, month, date, hours, minutes,
+                  // seconds, and milliseconds if the `getUTC*` methods are
+                  // buggy. Adapted from @Yaffle's `date-shim` project.
+                  date = floor(value / 864e5);
+                  for (year = floor(date / 365.2425) + 1970 - 1; getDay(year + 1, 0) <= date; year++);
+                  for (month = floor((date - getDay(year, 0)) / 30.42); getDay(year, month + 1) <= date; month++);
+                  date = 1 + date - getDay(year, month);
+                  // The `time` value specifies the time within the day (see ES
+                  // 5.1 section 15.9.1.2). The formula `(A % B + B) % B` is used
+                  // to compute `A modulo B`, as the `%` operator does not
+                  // correspond to the `modulo` operation for negative numbers.
+                  time = (value % 864e5 + 864e5) % 864e5;
+                  // The hours, minutes, seconds, and milliseconds are obtained by
+                  // decomposing the time within the day. See section 15.9.1.10.
+                  hours = floor(time / 36e5) % 24;
+                  minutes = floor(time / 6e4) % 60;
+                  seconds = floor(time / 1e3) % 60;
+                  milliseconds = time % 1e3;
+                } else {
+                  year = value.getUTCFullYear();
+                  month = value.getUTCMonth();
+                  date = value.getUTCDate();
+                  hours = value.getUTCHours();
+                  minutes = value.getUTCMinutes();
+                  seconds = value.getUTCSeconds();
+                  milliseconds = value.getUTCMilliseconds();
+                }
+                // Serialize extended years correctly.
+                value = (year <= 0 || year >= 1e4 ? (year < 0 ? "-" : "+") + toPaddedString(6, year < 0 ? -year : year) : toPaddedString(4, year)) +
+                  "-" + toPaddedString(2, month + 1) + "-" + toPaddedString(2, date) +
+                  // Months, dates, hours, minutes, and seconds should have two
+                  // digits; milliseconds should have three.
+                  "T" + toPaddedString(2, hours) + ":" + toPaddedString(2, minutes) + ":" + toPaddedString(2, seconds) +
+                  // Milliseconds are optional in ES 5.0, but required in 5.1.
+                  "." + toPaddedString(3, milliseconds) + "Z";
+              } else {
+                value = null;
               }
-              if (source.charCodeAt(Index) == 34) {
-                // Advance to the next character and return the revived string.
+            } else if (typeof value.toJSON == "function" && ((className != numberClass && className != stringClass && className != arrayClass) || isProperty.call(value, "toJSON"))) {
+              // Prototype <= 1.6.1 adds non-standard `toJSON` methods to the
+              // `Number`, `String`, `Date`, and `Array` prototypes. JSON 3
+              // ignores all `toJSON` methods on these objects unless they are
+              // defined directly on an instance.
+              value = value.toJSON(property);
+            }
+          }
+          if (callback) {
+            // If a replacement function was provided, call it to obtain the value
+            // for serialization.
+            value = callback.call(object, property, value);
+          }
+          if (value === null) {
+            return "null";
+          }
+          className = getClass.call(value);
+          if (className == booleanClass) {
+            // Booleans are represented literally.
+            return "" + value;
+          } else if (className == numberClass) {
+            // JSON numbers must be finite. `Infinity` and `NaN` are serialized as
+            // `"null"`.
+            return value > -1 / 0 && value < 1 / 0 ? "" + value : "null";
+          } else if (className == stringClass) {
+            // Strings are double-quoted and escaped.
+            return quote("" + value);
+          }
+          // Recursively serialize objects and arrays.
+          if (typeof value == "object") {
+            // Check for cyclic structures. This is a linear search; performance
+            // is inversely proportional to the number of unique nested objects.
+            for (length = stack.length; length--;) {
+              if (stack[length] === value) {
+                // Cyclic structures cannot be serialized by `JSON.stringify`.
+                throw TypeError();
+              }
+            }
+            // Add the object to the stack of traversed objects.
+            stack.push(value);
+            results = [];
+            // Save the current indentation level and indent one additional level.
+            prefix = indentation;
+            indentation += whitespace;
+            if (className == arrayClass) {
+              // Recursively serialize array elements.
+              for (index = 0, length = value.length; index < length; index++) {
+                element = serialize(index, value, callback, properties, whitespace, indentation, stack);
+                results.push(element === undef ? "null" : element);
+              }
+              result = results.length ? (whitespace ? "[\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "]" : ("[" + results.join(",") + "]")) : "[]";
+            } else {
+              // Recursively serialize object members. Members are selected from
+              // either a user-specified list of property names, or the object
+              // itself.
+              forEach(properties || value, function (property) {
+                var element = serialize(property, value, callback, properties, whitespace, indentation, stack);
+                if (element !== undef) {
+                  // According to ES 5.1 section 15.12.3: "If `gap` {whitespace}
+                  // is not the empty string, let `member` {quote(property) + ":"}
+                  // be the concatenation of `member` and the `space` character."
+                  // The "`space` character" refers to the literal space
+                  // character, not the `space` {width} argument provided to
+                  // `JSON.stringify`.
+                  results.push(quote(property) + ":" + (whitespace ? " " : "") + element);
+                }
+              });
+              result = results.length ? (whitespace ? "{\n" + indentation + results.join(",\n" + indentation) + "\n" + prefix + "}" : ("{" + results.join(",") + "}")) : "{}";
+            }
+            // Remove the object from the traversed object stack.
+            stack.pop();
+            return result;
+          }
+        };
+
+        // Public: `JSON.stringify`. See ES 5.1 section 15.12.3.
+        exports.stringify = function (source, filter, width) {
+          var whitespace, callback, properties, className;
+          if (objectTypes[typeof filter] && filter) {
+            if ((className = getClass.call(filter)) == functionClass) {
+              callback = filter;
+            } else if (className == arrayClass) {
+              // Convert the property names array into a makeshift set.
+              properties = {};
+              for (var index = 0, length = filter.length, value; index < length; value = filter[index++], ((className = getClass.call(value)), className == stringClass || className == numberClass) && (properties[value] = 1));
+            }
+          }
+          if (width) {
+            if ((className = getClass.call(width)) == numberClass) {
+              // Convert the `width` to an integer and create a string containing
+              // `width` number of space characters.
+              if ((width -= width % 1) > 0) {
+                for (whitespace = "", width > 10 && (width = 10); whitespace.length < width; whitespace += " ");
+              }
+            } else if (className == stringClass) {
+              whitespace = width.length <= 10 ? width : width.slice(0, 10);
+            }
+          }
+          // Opera <= 7.54u2 discards the values associated with empty string keys
+          // (`""`) only if they are used directly within an object member list
+          // (e.g., `!("" in { "": 1})`).
+          return serialize("", (value = {}, value[""] = source, value), callback, properties, whitespace, "", []);
+        };
+      }
+
+      // Public: Parses a JSON source string.
+      if (!has("json-parse")) {
+        var fromCharCode = String.fromCharCode;
+
+        // Internal: A map of escaped control characters and their unescaped
+        // equivalents.
+        var Unescapes = {
+          92: "\\",
+          34: '"',
+          47: "/",
+          98: "\b",
+          116: "\t",
+          110: "\n",
+          102: "\f",
+          114: "\r"
+        };
+
+        // Internal: Stores the parser state.
+        var Index, Source;
+
+        // Internal: Resets the parser state and throws a `SyntaxError`.
+        var abort = function () {
+          Index = Source = null;
+          throw SyntaxError();
+        };
+
+        // Internal: Returns the next token, or `"$"` if the parser has reached
+        // the end of the source string. A token may be a string, number, `null`
+        // literal, or Boolean literal.
+        var lex = function () {
+          var source = Source, length = source.length, value, begin, position, isSigned, charCode;
+          while (Index < length) {
+            charCode = source.charCodeAt(Index);
+            switch (charCode) {
+              case 9: case 10: case 13: case 32:
+                // Skip whitespace tokens, including tabs, carriage returns, line
+                // feeds, and space characters.
+                Index++;
+                break;
+              case 123: case 125: case 91: case 93: case 58: case 44:
+                // Parse a punctuator token (`{`, `}`, `[`, `]`, `:`, or `,`) at
+                // the current position.
+                value = charIndexBuggy ? source.charAt(Index) : source[Index];
                 Index++;
                 return value;
-              }
-              // Unterminated string.
-              abort();
-            default:
-              // Parse numbers and literals.
-              begin = Index;
-              // Advance past the negative sign, if one is specified.
-              if (charCode == 45) {
-                isSigned = true;
-                charCode = source.charCodeAt(++Index);
-              }
-              // Parse an integer or floating-point value.
-              if (charCode >= 48 && charCode <= 57) {
-                // Leading zeroes are interpreted as octal literals.
-                if (charCode == 48 && ((charCode = source.charCodeAt(Index + 1)), charCode >= 48 && charCode <= 57)) {
-                  // Illegal octal literal.
-                  abort();
-                }
-                isSigned = false;
-                // Parse the integer component.
-                for (; Index < length && ((charCode = source.charCodeAt(Index)), charCode >= 48 && charCode <= 57); Index++);
-                // Floats cannot contain a leading decimal point; however, this
-                // case is already accounted for by the parser.
-                if (source.charCodeAt(Index) == 46) {
-                  position = ++Index;
-                  // Parse the decimal component.
-                  for (; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
-                  if (position == Index) {
-                    // Illegal trailing decimal.
+              case 34:
+                // `"` delimits a JSON string; advance to the next character and
+                // begin parsing the string. String tokens are prefixed with the
+                // sentinel `@` character to distinguish them from punctuators and
+                // end-of-string tokens.
+                for (value = "@", Index++; Index < length;) {
+                  charCode = source.charCodeAt(Index);
+                  if (charCode < 32) {
+                    // Unescaped ASCII control characters (those with a code unit
+                    // less than the space character) are not permitted.
                     abort();
+                  } else if (charCode == 92) {
+                    // A reverse solidus (`\`) marks the beginning of an escaped
+                    // control character (including `"`, `\`, and `/`) or Unicode
+                    // escape sequence.
+                    charCode = source.charCodeAt(++Index);
+                    switch (charCode) {
+                      case 92: case 34: case 47: case 98: case 116: case 110: case 102: case 114:
+                        // Revive escaped control characters.
+                        value += Unescapes[charCode];
+                        Index++;
+                        break;
+                      case 117:
+                        // `\u` marks the beginning of a Unicode escape sequence.
+                        // Advance to the first character and validate the
+                        // four-digit code point.
+                        begin = ++Index;
+                        for (position = Index + 4; Index < position; Index++) {
+                          charCode = source.charCodeAt(Index);
+                          // A valid sequence comprises four hexdigits (case-
+                          // insensitive) that form a single hexadecimal value.
+                          if (!(charCode >= 48 && charCode <= 57 || charCode >= 97 && charCode <= 102 || charCode >= 65 && charCode <= 70)) {
+                            // Invalid Unicode escape sequence.
+                            abort();
+                          }
+                        }
+                        // Revive the escaped character.
+                        value += fromCharCode("0x" + source.slice(begin, Index));
+                        break;
+                      default:
+                        // Invalid escape sequence.
+                        abort();
+                    }
+                  } else {
+                    if (charCode == 34) {
+                      // An unescaped double-quote character marks the end of the
+                      // string.
+                      break;
+                    }
+                    charCode = source.charCodeAt(Index);
+                    begin = Index;
+                    // Optimize for the common case where a string is valid.
+                    while (charCode >= 32 && charCode != 92 && charCode != 34) {
+                      charCode = source.charCodeAt(++Index);
+                    }
+                    // Append the string as-is.
+                    value += source.slice(begin, Index);
                   }
-                  Index = position;
                 }
-                // Parse exponents. The `e` denoting the exponent is
-                // case-insensitive.
-                charCode = source.charCodeAt(Index);
-                if (charCode == 101 || charCode == 69) {
+                if (source.charCodeAt(Index) == 34) {
+                  // Advance to the next character and return the revived string.
+                  Index++;
+                  return value;
+                }
+                // Unterminated string.
+                abort();
+              default:
+                // Parse numbers and literals.
+                begin = Index;
+                // Advance past the negative sign, if one is specified.
+                if (charCode == 45) {
+                  isSigned = true;
                   charCode = source.charCodeAt(++Index);
-                  // Skip past the sign following the exponent, if one is
-                  // specified.
-                  if (charCode == 43 || charCode == 45) {
-                    Index++;
-                  }
-                  // Parse the exponential component.
-                  for (position = Index; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
-                  if (position == Index) {
-                    // Illegal empty exponent.
-                    abort();
-                  }
-                  Index = position;
                 }
-                // Coerce the parsed value to a JavaScript number.
-                return +source.slice(begin, Index);
-              }
-              // A negative sign may only precede numbers.
-              if (isSigned) {
-                abort();
-              }
-              // `true`, `false`, and `null` literals.
-              if (source.slice(Index, Index + 4) == "true") {
-                Index += 4;
-                return true;
-              } else if (source.slice(Index, Index + 5) == "false") {
-                Index += 5;
-                return false;
-              } else if (source.slice(Index, Index + 4) == "null") {
-                Index += 4;
-                return null;
-              }
-              // Unrecognized token.
-              abort();
-          }
-        }
-        // Return the sentinel `$` character if the parser has reached the end
-        // of the source string.
-        return "$";
-      };
-
-      // Internal: Parses a JSON `value` token.
-      var get = function (value) {
-        var results, hasMembers;
-        if (value == "$") {
-          // Unexpected end of input.
-          abort();
-        }
-        if (typeof value == "string") {
-          if ((charIndexBuggy ? value.charAt(0) : value[0]) == "@") {
-            // Remove the sentinel `@` character.
-            return value.slice(1);
-          }
-          // Parse object and array literals.
-          if (value == "[") {
-            // Parses a JSON array, returning a new JavaScript array.
-            results = [];
-            for (;; hasMembers || (hasMembers = true)) {
-              value = lex();
-              // A closing square bracket marks the end of the array literal.
-              if (value == "]") {
-                break;
-              }
-              // If the array literal contains elements, the current token
-              // should be a comma separating the previous element from the
-              // next.
-              if (hasMembers) {
-                if (value == ",") {
-                  value = lex();
-                  if (value == "]") {
-                    // Unexpected trailing `,` in array literal.
+                // Parse an integer or floating-point value.
+                if (charCode >= 48 && charCode <= 57) {
+                  // Leading zeroes are interpreted as octal literals.
+                  if (charCode == 48 && ((charCode = source.charCodeAt(Index + 1)), charCode >= 48 && charCode <= 57)) {
+                    // Illegal octal literal.
                     abort();
                   }
-                } else {
-                  // A `,` must separate each array element.
+                  isSigned = false;
+                  // Parse the integer component.
+                  for (; Index < length && ((charCode = source.charCodeAt(Index)), charCode >= 48 && charCode <= 57); Index++);
+                  // Floats cannot contain a leading decimal point; however, this
+                  // case is already accounted for by the parser.
+                  if (source.charCodeAt(Index) == 46) {
+                    position = ++Index;
+                    // Parse the decimal component.
+                    for (; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
+                    if (position == Index) {
+                      // Illegal trailing decimal.
+                      abort();
+                    }
+                    Index = position;
+                  }
+                  // Parse exponents. The `e` denoting the exponent is
+                  // case-insensitive.
+                  charCode = source.charCodeAt(Index);
+                  if (charCode == 101 || charCode == 69) {
+                    charCode = source.charCodeAt(++Index);
+                    // Skip past the sign following the exponent, if one is
+                    // specified.
+                    if (charCode == 43 || charCode == 45) {
+                      Index++;
+                    }
+                    // Parse the exponential component.
+                    for (position = Index; position < length && ((charCode = source.charCodeAt(position)), charCode >= 48 && charCode <= 57); position++);
+                    if (position == Index) {
+                      // Illegal empty exponent.
+                      abort();
+                    }
+                    Index = position;
+                  }
+                  // Coerce the parsed value to a JavaScript number.
+                  return +source.slice(begin, Index);
+                }
+                // A negative sign may only precede numbers.
+                if (isSigned) {
                   abort();
                 }
-              }
-              // Elisions and leading commas are not permitted.
-              if (value == ",") {
+                // `true`, `false`, and `null` literals.
+                if (source.slice(Index, Index + 4) == "true") {
+                  Index += 4;
+                  return true;
+                } else if (source.slice(Index, Index + 5) == "false") {
+                  Index += 5;
+                  return false;
+                } else if (source.slice(Index, Index + 4) == "null") {
+                  Index += 4;
+                  return null;
+                }
+                // Unrecognized token.
                 abort();
-              }
-              results.push(get(value));
             }
-            return results;
-          } else if (value == "{") {
-            // Parses a JSON object, returning a new JavaScript object.
-            results = {};
-            for (;; hasMembers || (hasMembers = true)) {
-              value = lex();
-              // A closing curly brace marks the end of the object literal.
-              if (value == "}") {
-                break;
-              }
-              // If the object literal contains members, the current token
-              // should be a comma separator.
-              if (hasMembers) {
-                if (value == ",") {
-                  value = lex();
-                  if (value == "}") {
-                    // Unexpected trailing `,` in object literal.
+          }
+          // Return the sentinel `$` character if the parser has reached the end
+          // of the source string.
+          return "$";
+        };
+
+        // Internal: Parses a JSON `value` token.
+        var get = function (value) {
+          var results, hasMembers;
+          if (value == "$") {
+            // Unexpected end of input.
+            abort();
+          }
+          if (typeof value == "string") {
+            if ((charIndexBuggy ? value.charAt(0) : value[0]) == "@") {
+              // Remove the sentinel `@` character.
+              return value.slice(1);
+            }
+            // Parse object and array literals.
+            if (value == "[") {
+              // Parses a JSON array, returning a new JavaScript array.
+              results = [];
+              for (;; hasMembers || (hasMembers = true)) {
+                value = lex();
+                // A closing square bracket marks the end of the array literal.
+                if (value == "]") {
+                  break;
+                }
+                // If the array literal contains elements, the current token
+                // should be a comma separating the previous element from the
+                // next.
+                if (hasMembers) {
+                  if (value == ",") {
+                    value = lex();
+                    if (value == "]") {
+                      // Unexpected trailing `,` in array literal.
+                      abort();
+                    }
+                  } else {
+                    // A `,` must separate each array element.
                     abort();
                   }
-                } else {
-                  // A `,` must separate each object member.
+                }
+                // Elisions and leading commas are not permitted.
+                if (value == ",") {
                   abort();
                 }
+                results.push(get(value));
               }
-              // Leading commas are not permitted, object property names must be
-              // double-quoted strings, and a `:` must separate each property
-              // name and value.
-              if (value == "," || typeof value != "string" || (charIndexBuggy ? value.charAt(0) : value[0]) != "@" || lex() != ":") {
-                abort();
+              return results;
+            } else if (value == "{") {
+              // Parses a JSON object, returning a new JavaScript object.
+              results = {};
+              for (;; hasMembers || (hasMembers = true)) {
+                value = lex();
+                // A closing curly brace marks the end of the object literal.
+                if (value == "}") {
+                  break;
+                }
+                // If the object literal contains members, the current token
+                // should be a comma separator.
+                if (hasMembers) {
+                  if (value == ",") {
+                    value = lex();
+                    if (value == "}") {
+                      // Unexpected trailing `,` in object literal.
+                      abort();
+                    }
+                  } else {
+                    // A `,` must separate each object member.
+                    abort();
+                  }
+                }
+                // Leading commas are not permitted, object property names must be
+                // double-quoted strings, and a `:` must separate each property
+                // name and value.
+                if (value == "," || typeof value != "string" || (charIndexBuggy ? value.charAt(0) : value[0]) != "@" || lex() != ":") {
+                  abort();
+                }
+                results[value.slice(1)] = get(lex());
               }
-              results[value.slice(1)] = get(lex());
+              return results;
             }
-            return results;
+            // Unexpected token encountered.
+            abort();
           }
-          // Unexpected token encountered.
-          abort();
-        }
-        return value;
-      };
+          return value;
+        };
 
-      // Internal: Updates a traversed object member.
-      var update = function(source, property, callback) {
-        var element = walk(source, property, callback);
-        if (element === undef) {
-          delete source[property];
-        } else {
-          source[property] = element;
-        }
-      };
-
-      // Internal: Recursively traverses a parsed JSON object, invoking the
-      // `callback` function for each value. This is an implementation of the
-      // `Walk(holder, name)` operation defined in ES 5.1 section 15.12.2.
-      var walk = function (source, property, callback) {
-        var value = source[property], length;
-        if (typeof value == "object" && value) {
-          // `forEach` can't be used to traverse an array in Opera <= 8.54
-          // because its `Object#hasOwnProperty` implementation returns `false`
-          // for array indices (e.g., `![1, 2, 3].hasOwnProperty("0")`).
-          if (getClass.call(value) == arrayClass) {
-            for (length = value.length; length--;) {
-              update(value, length, callback);
-            }
+        // Internal: Updates a traversed object member.
+        var update = function (source, property, callback) {
+          var element = walk(source, property, callback);
+          if (element === undef) {
+            delete source[property];
           } else {
-            forEach(value, function (property) {
-              update(value, property, callback);
-            });
+            source[property] = element;
           }
-        }
-        return callback.call(source, property, value);
-      };
+        };
 
-      // Public: `JSON.parse`. See ES 5.1 section 15.12.2.
-      JSON3.parse = function (source, callback) {
-        var result, value;
-        Index = 0;
-        Source = "" + source;
-        result = get(lex());
-        // If a JSON string contains multiple tokens, it is invalid.
-        if (lex() != "$") {
-          abort();
-        }
-        // Reset the parser state.
-        Index = Source = null;
-        return callback && getClass.call(callback) == functionClass ? walk((value = {}, value[""] = result, value), "", callback) : result;
-      };
+        // Internal: Recursively traverses a parsed JSON object, invoking the
+        // `callback` function for each value. This is an implementation of the
+        // `Walk(holder, name)` operation defined in ES 5.1 section 15.12.2.
+        var walk = function (source, property, callback) {
+          var value = source[property], length;
+          if (typeof value == "object" && value) {
+            // `forEach` can't be used to traverse an array in Opera <= 8.54
+            // because its `Object#hasOwnProperty` implementation returns `false`
+            // for array indices (e.g., `![1, 2, 3].hasOwnProperty("0")`).
+            if (getClass.call(value) == arrayClass) {
+              for (length = value.length; length--;) {
+                update(value, length, callback);
+              }
+            } else {
+              forEach(value, function (property) {
+                update(value, property, callback);
+              });
+            }
+          }
+          return callback.call(source, property, value);
+        };
+
+        // Public: `JSON.parse`. See ES 5.1 section 15.12.2.
+        exports.parse = function (source, callback) {
+          var result, value;
+          Index = 0;
+          Source = "" + source;
+          result = get(lex());
+          // If a JSON string contains multiple tokens, it is invalid.
+          if (lex() != "$") {
+            abort();
+          }
+          // Reset the parser state.
+          Index = Source = null;
+          return callback && getClass.call(callback) == functionClass ? walk((value = {}, value[""] = result, value), "", callback) : result;
+        };
+      }
     }
+
+    exports["runInContext"] = runInContext;
+    return exports;
+  }
+
+  if (freeExports && !isLoader) {
+    // Export for CommonJS environments.
+    runInContext(root, freeExports);
+  } else {
+    // Export for web browsers and JavaScript engines.
+    var nativeJSON = root.JSON,
+        previousJSON = root["JSON3"],
+        isRestored = false;
+
+    var JSON3 = runInContext(root, (root["JSON3"] = {
+      // Public: Restores the original value of the global `JSON` object and
+      // returns a reference to the `JSON3` object.
+      "noConflict": function () {
+        if (!isRestored) {
+          isRestored = true;
+          root.JSON = nativeJSON;
+          root["JSON3"] = previousJSON;
+          nativeJSON = previousJSON = null;
+        }
+        return JSON3;
+      }
+    }));
+
+    root.JSON = {
+      "parse": JSON3.parse,
+      "stringify": JSON3.stringify
+    };
   }
 
   // Export for asynchronous module loaders.
@@ -30650,8 +31271,9 @@ arguments[4][99][0].apply(exports,arguments)
       return JSON3;
     });
   }
-}(this));
+}).call(this);
 
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}],108:[function(require,module,exports){
 module.exports = toArray
 
@@ -31240,15 +31862,23 @@ var isMobileNavOpen = function () {
 // 	return classie.has(search_menu_content, 'fadeOutUp') || classie.has(search_menu_content, 'initialState');
 // };
 
+var controlSearchNav = function () {
+	classie.remove(search_menu_content, 'initialState');
+	classie.remove(search_menu_content, 'fadeOutUp');
+	classie.add(search_menu_content, 'fadeInDown');
+};
+
+var closeSearchNav = function () {
+	setTimeout(function () {
+		classie.add(search_menu_content, 'fadeOutUp');
+		classie.remove(search_menu_content, 'fadeInDown');
+	}, 200);
+};
+
 var closeMobileNav = function () {
 	classie.add(mobile_nav_menu_overlay, 'hide');
 	classie.add(mobile_nav_menu, 'fadeOutLeft');
 	classie.remove(mobile_nav_menu, 'fadeInLeft');
-};
-
-var closeSearchNav = function () {
-	classie.add(search_menu_content, 'fadeOutUp');
-	classie.remove(search_menu_content, 'fadeInDown');
 };
 
 var controlMobileNav = function () {
@@ -31264,21 +31894,11 @@ var controlMobileNav = function () {
 	}
 };
 
-var controlSearchNav = function () {
-	// if (isSearchNavOpen()) {
-	classie.remove(search_menu_content, 'initialState');
-	classie.remove(search_menu_content, 'fadeOutUp');
-	classie.add(search_menu_content, 'fadeInDown');
-	// }
-	// else {
-	// 	closeSearchNav();
-	// }
-};
-
 var search_menu_callback = function () {
 	try {
 		search_menu_content.innerHTML = 'Searching...';
-		var searchhtml = '';
+		var searchhtml = ''; //,
+		// update_main_div;
 		request
 			.get('/p-admin/content/search')
 			.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
@@ -31295,7 +31915,11 @@ var search_menu_callback = function () {
 				responsedata.body.data_tables = data_tables;
 				searchhtml = ejs.render(search_result_template, responsedata.body);
 				search_menu_content.innerHTML = searchhtml;
-				// console.log('searchhtml', searchhtml);
+				// update_main_div = document.querySelector('#ts-main-div');
+				// update_main_div.addEventListener('click', function () {
+				// 	console.log('searchhtml', 'clicking');
+				// }, false);
+				// update_main_div.addEventListener('click', async_admin_ajax_link_handler, false);
 				// 
 			});
 	}
@@ -31308,6 +31932,7 @@ var search_menu_callback = function () {
 var initAdminSearch = function () {
 	search_menu_input = document.querySelector('#searchall-input');
 	search_menu_content = document.querySelector('#ts-search-content');
+
 	if (document.querySelector('#searchall-input')) {
 		document.querySelector('#searchall-input').addEventListener('keydown', debounce(search_menu_callback, 200), false);
 		// search_menu_input.addEventListener('change', debounce(search_menu_callback, 200), false);
@@ -31569,7 +32194,7 @@ var handle_ajax_button_response = function (e) {
 };
 
 var async_admin_ajax_link_handler = function (e) {
-	// console.log('e.target', e.target);
+	// console.log('async_admin_ajax_link_handler e.target', e.target);
 	var etarget = e.target,
 		etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
@@ -36028,8 +36653,8 @@ request.put = function(url, data, fn){
 module.exports = request;
 
 },{"emitter":137,"reduce":138}],137:[function(require,module,exports){
-arguments[4][69][0].apply(exports,arguments)
-},{"dup":69}],138:[function(require,module,exports){
+arguments[4][82][0].apply(exports,arguments)
+},{"dup":82}],138:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
