@@ -52,6 +52,7 @@ var ajaxlinks,
 	flashMessageArray = [],
 	asyncFlashFunctions = [],
 	request = require('superagent'),
+	session_timeout_interval,
 	isClearingConsole = false,
 	mtpms,
 	search_result_template,
@@ -753,6 +754,8 @@ var loadAjaxPage = function (options) {
 			.set('Accept', 'text/html')
 			.end(function (error, res) {
 				window.document.body.scrollTop = 0;
+				startSessionTimeoutCountner();
+
 				// console.log('error', error);
 				// console.log('res', res);
 				if (error) {
@@ -972,12 +975,43 @@ var addStyleSheetToChildWindow = function () {
 	childWindowReference.window.addEventListener('resize', adminConsoleWindowResizeEventHandler, false);
 };
 
+var refresh_session_check = function () {
+	try {
+		request
+			.get('/healthcheck')
+			.set('Accept', 'application/json')
+			.end(function (error, res) {
+				if (error) {
+					window.showErrorNotificaton({
+						message: error.message
+					});
+				}
+				else if (res.error) {
+					endPreloader();
+					window.showErrorNotificaton({
+						message: 'Status [' + res.error.status + ']: ' + res.error.message
+					});
+				}
+				else {
+					clearInterval(session_timeout_interval);
+					startSessionTimeoutCountner();
+				}
+			});
+	}
+	catch (ajaxPageError) {
+		handleUncaughtError(ajaxPageError);
+	}
+};
+
 var asyncAdminContentElementClick = function (e) {
 	var etarget = e.target; //,
 	//	etargethref = etarget.href || etarget.getAttribute('data-ajax-href');
 
 	if (!classie.has(etarget, 'ts-open-admin-console')) {
 		consolePlatter.hidePlatterPane();
+	}
+	if (classie.has(etarget, 'ts-continue-session-button')) {
+		refresh_session_check();
 	}
 	// if (classie.has(etarget, 'async-admin-ajax-link')) {
 	// 	e.preventDefault();
@@ -1135,6 +1169,45 @@ var adminConsolePlatterConfig = function () {
 
 	initServerSocketCallback();
 };
+
+var startSessionCountdown = function () {
+	var secondsLeft = 120;
+	var countdownelement = document.querySelector('#ts-timeout-counter');
+	session_timeout_interval = setInterval(function () {
+		if (secondsLeft === 0) {
+			clearInterval(session_timeout_interval);
+			window.adminRefresh();
+		}
+		else {
+			secondsLeft--;
+			if (countdownelement) {
+				countdownelement.innerHTML = secondsLeft;
+			}
+		}
+	}, 1000);
+};
+
+var startSessionTimeoutCountner = function () {
+	var session_ttl = window.session_ttl;
+	var sessionTimeout = (session_ttl && session_ttl > 120) ? session_ttl : 120;
+	var timeoutdelay = (sessionTimeout - 119) * 1000;
+	var secondsLeft = 120;
+	var timeoutWarning = setTimeout(function () {
+		window.showServerModal('<div id="servermodal-content"><div class="ts-bg-accent-color ts-text-text-primary-color ts-padding-sm "><span>Logout Warning</span></div>' +
+			'Your session is about to expire, do you wish to continue?' +
+			'<div class="ts-text-center">' +
+			' <span class="ts-button ts-continue-session-button ts-modal-close">Continue</span> ' +
+			' <a href="/auth/logout" class="ts-button ts-button-divider-text-color">Log out (<span id="ts-timeout-counter">' + secondsLeft + '</span>)</i></a>' +
+			'</div>' +
+			'</div>');
+		// session_timeout_interval
+		startSessionCountdown();
+		clearTimeout(timeoutWarning);
+	}, timeoutdelay);
+	// console.log('timeoutdelay', timeoutdelay);
+};
+
+window.startSessionTimeoutCountner = startSessionTimeoutCountner;
 
 window.showDefaultDataResponseModal = function (ajaxFormResponse) {
 	// console.log(ajaxFormResponse.body.data);
@@ -1404,6 +1477,7 @@ window.addEventListener('load', function () {
 	initMedialists();
 	initFilterlists();
 	initAdminSearch();
+	startSessionTimeoutCountner();
 
 	window.adminConsoleElementContent = adminConsoleElementContent;
 	window.servermodalElement = servermodalElement;

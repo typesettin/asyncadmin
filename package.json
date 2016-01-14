@@ -1,25 +1,45 @@
 {
-  "name": "periodicjs.ext.asyncadmin",
-  "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
-  "version": "6.9.0",
-  "main": "index.js",
-  "engines": {
-    "node": ">=4.2.4"
-  },
-  "author": {
-    "name": "Yaw Joseph Etse",
+  "_args": [
+    [
+      "periodicjs.ext.asyncadmin@6.9.0",
+      "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ]
+  ],
+  "_from": "periodicjs.ext.asyncadmin@6.9.0",
+  "_id": "periodicjs.ext.asyncadmin@6.9.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/periodicjs.ext.asyncadmin",
+  "_nodeVersion": "0.12.6",
+  "_npmUser": {
     "email": "yaw.etse@gmail.com",
+    "name": "yawetse"
+  },
+  "_npmVersion": "2.11.2",
+  "_phantomChildren": {},
+  "_requested": {
+    "name": "periodicjs.ext.asyncadmin",
+    "raw": "periodicjs.ext.asyncadmin@6.9.0",
+    "rawSpec": "6.9.0",
+    "scope": null,
+    "spec": "6.9.0",
+    "type": "version"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.2.5.tgz",
+  "_shasum": "23f6c7e4631afeeff5052a3e945f27ffb10f7b68",
+  "_shrinkwrap": null,
+  "_spec": "periodicjs.ext.asyncadmin@6.9.0",
+  "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
+  "author": {
+    "email": "yaw.etse@gmail.com",
+    "name": "Yaw Joseph Etse",
     "url": "http://about.me/yawjosephetse"
   },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"
-  },
-  "scripts": {
-    "postinstall": "node install.js",
-    "postuninstall": "node uninstall.js",
-    "test": "mocha"
+  "bugs": {
+    "url": "https://github.com/typesettin/periodicjs.ext.asyncadmin/issues"
   },
   "dependencies": {
     "bindie": "^2.1.0",
@@ -41,6 +61,7 @@
     "stylie.treeview": "^1.0.1",
     "validate-js": "^1.5.1"
   },
+  "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
   "devDependencies": {
     "browserify": "^10.2.4",
     "chai": "^3.0.0",
@@ -61,40 +82,44 @@
     "uglify-js": "^2.4.15",
     "uglifyify": "^3.0.1"
   },
-  "keywords": [
-    "periodicjs",
-    "passport",
-    "authentication",
-    "express",
-    "cms",
-    "wordpress",
-    "drupal"
-  ],
-  "bugs": {
-    "url": "https://github.com/typesettin/periodicjs.ext.asyncadmin/issues"
+  "directories": {},
+  "dist": {
+    "shasum": "23f6c7e4631afeeff5052a3e945f27ffb10f7b68",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.0.tgz"
   },
+  "engines": {
+    "node": ">=4.2.4"
+  },
+  "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
   "homepage": "https://github.com/typesettin/periodicjs.ext.asyncadmin",
+  "keywords": [
+    "authentication",
+    "cms",
+    "drupal",
+    "express",
+    "passport",
+    "periodicjs",
+    "wordpress"
+  ],
+  "license": "MIT",
+  "main": "index.js",
   "maintainers": [
     {
       "name": "yawetse",
       "email": "yaw.etse@gmail.com"
     }
   ],
-  "directories": {},
-  "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
-  "_id": "periodicjs.ext.asyncadmin@6.2.5",
-  "_shasum": "226be91bb7d3a0a572fcefaa7d10e6c4b93c1a48",
-  "_from": "periodicjs.ext.asyncadmin@6.2.5",
-  "_npmVersion": "2.11.2",
-  "_nodeVersion": "0.12.6",
-  "_npmUser": {
-    "name": "yawetse",
-    "email": "yaw.etse@gmail.com"
+  "name": "periodicjs.ext.asyncadmin",
+  "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"
   },
-  "dist": {
-    "shasum": "226be91bb7d3a0a572fcefaa7d10e6c4b93c1a48",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.2.5.tgz"
+  "scripts": {
+    "postinstall": "node install.js",
+    "postuninstall": "node uninstall.js",
+    "test": "mocha"
   },
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.2.5.tgz",
-  "readme": "ERROR: No README data found!"
+  "version": "6.9.1"
 }

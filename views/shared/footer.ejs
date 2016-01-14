@@ -54,6 +54,7 @@
 
 		</div>
 	</div>
+	<!-- periodic.app.locals.session_ttl:<%- locals.session_ttl %> -->
 	<% if(locals.appenvironment==='production'){%>
 	<style type="text/css">
 	.ts-hide-production{
@@ -63,6 +64,7 @@
 	<%}%>
 	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
 	<script type="text/javascript">
+		window.session_ttl = <%-locals.session_ttl%>;
 	  <%- locals.viewhelper.passObjToClient(periodic,"periodic") %>
 	  <%if(typeof user!=='undefined' && user && user._id && user.apikey){%>
 			  <%- locals.viewhelper.passObjToClient({_id:user._id,apikey:user.apikey,email:user.email,username:user.username},"admin_user") %>
