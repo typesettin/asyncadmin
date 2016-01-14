@@ -32582,6 +32582,7 @@ var ajaxlinks,
 	asyncFlashFunctions = [],
 	request = require('superagent'),
 	session_timeout_interval,
+	timeoutWarning,
 	isClearingConsole = false,
 	mtpms,
 	search_result_template,
@@ -33716,12 +33717,17 @@ var startSessionCountdown = function () {
 	}, 1000);
 };
 
+window.timeoutWarning = timeoutWarning;
+window.session_timeout_interval = session_timeout_interval;
+
 var startSessionTimeoutCountner = function () {
+	clearTimeout(timeoutWarning);
+	clearInterval(session_timeout_interval);
 	var session_ttl = window.session_ttl;
 	var sessionTimeout = (session_ttl && session_ttl > 120) ? session_ttl : 120;
 	var timeoutdelay = (sessionTimeout - 119) * 1000;
 	var secondsLeft = 120;
-	var timeoutWarning = setTimeout(function () {
+	timeoutWarning = setTimeout(function () {
 		window.showServerModal('<div id="servermodal-content"><div class="ts-bg-accent-color ts-text-text-primary-color ts-padding-sm "><span>Logout Warning</span></div>' +
 			'Your session is about to expire, do you wish to continue?' +
 			'<div class="ts-text-center">' +
