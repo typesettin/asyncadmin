@@ -24,6 +24,13 @@ var async = require('async'),
 	adminExtSettings,
 	loginSettings;
 
+var healthcheck = function (req, res) {
+	res.send({
+		status: 'okay'
+	});
+};
+
+
 var admin_index = function (req, res) {
 	// console.log('req._parsedUrl.pathname === \'/\'',)
 	// console.log('adminExtSettings',adminExtSettings);
@@ -679,6 +686,7 @@ var controller = function (resources) {
 	controllerOptions = resources.app.controller.native.ControllerSettings;
 
 	return {
+		healthcheck: healthcheck,
 		get_entity_modifications: get_entity_modifications,
 		get_revision_page: get_revision_page,
 		user_revisions: get_revision_page({

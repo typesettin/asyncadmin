@@ -33281,6 +33281,7 @@ var loadAjaxPage = function (options) {
 
 		request
 			.get(options.datahref)
+			.withCredentials()
 			.set('Accept', 'text/html')
 			.end(function (error, res) {
 				window.document.body.scrollTop = 0;

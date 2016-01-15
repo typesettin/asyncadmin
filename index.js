@@ -259,6 +259,8 @@ module.exports = function (periodic) {
 
 	//searching
 	periodic.app.get('/' + periodic.app.locals.adminPath + '/content/search', adminController.admin_search);
+	periodic.app.get('/healthcheck', adminController.healthcheck);
+
 
 	//mail settings
 	periodic.app.get('/' + periodic.app.locals.adminPath + '/mailer/test', mailController.testemail);

@@ -5,8 +5,8 @@
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@6.9.2",
-  "_id": "periodicjs.ext.asyncadmin@6.9.2",
+  "_from": "periodicjs.ext.asyncadmin@6.9.21",
+  "_id": "periodicjs.ext.asyncadmin@6.9.21",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
@@ -28,8 +28,8 @@
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.2.tgz",
-  "_shasum": "d6c625764e0ebe7dcc6925c35f2912dd13a686d0",
+  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.21.tgz",
+  "_shasum": "52429ba93f189b61bc356daff756430e24b6ad87",
   "_shrinkwrap": null,
   "_spec": "periodicjs.ext.asyncadmin@6.9.0",
   "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
@@ -84,8 +84,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "d6c625764e0ebe7dcc6925c35f2912dd13a686d0",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.2.tgz"
+    "shasum": "52429ba93f189b61bc356daff756430e24b6ad87",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.21.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -120,5 +120,6 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "6.9.21"
+  "version": "6.9.3",
+  "readme": "ERROR: No README data found!"
 }
