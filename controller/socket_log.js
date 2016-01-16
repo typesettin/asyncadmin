@@ -277,7 +277,9 @@ var get_replie_stats = function (req, res) {
 var controller = function (resources) {
 	periodicResources = resources;
 	logger = resources.logger;
-	useSocketIOLogger();
+	if(io){
+		useSocketIOLogger();
+	}
 	return {
 		get_replie_stats: get_replie_stats,
 		// create_repl: create_repl

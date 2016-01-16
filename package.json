@@ -120,6 +120,6 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "6.9.3",
+  "version": "6.9.4",
   "readme": "ERROR: No README data found!"
 }
