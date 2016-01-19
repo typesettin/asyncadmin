@@ -574,6 +574,9 @@ var get_revision_page = function (options) {
 var admin_search = function (resources) {
 	var periodic = resources;
 	return function (req, res) {
+		req.body = req.body || {};
+		req.query = req.query || {};
+		req.controllerData = req.controllerData || {};
 		var search_entities = req.body.search_entities || req.query.search_entities || req.controllerData.search_entities || Object.keys(periodic.app.controller.extension.asyncadmin.search);
 		if (!Array.isArray(search_entities)) {
 			search_entities = search_entities.split(',');
@@ -643,6 +646,9 @@ var get_entity_search = function (options) {
 	var entityname = options.entity;
 
 	return function (options, callback) {
+		if (entityname === 'userrole' || entityname === 'userprivilege') {
+			controllerOptions[entityname].searchfields = ['title', 'name'];
+		}
 		CoreController.controller_model_search_query({
 			req: options.req,
 			res: options.res,
@@ -718,6 +724,13 @@ var controller = function (resources) {
 		extcmd: extcmd,
 		user_search: get_entity_search({
 			entity: 'user'
+		}),
+		userrole_search: get_entity_search({
+			entity: 'userrole'
+		}),
+
+		userprivilege_search: get_entity_search({
+			entity: 'userprivilege'
 		}),
 		admin_search: admin_search(resources)
 	};

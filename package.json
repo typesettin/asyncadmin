@@ -3,39 +3,41 @@
     [
       "periodicjs.ext.asyncadmin@6.9.0",
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ],
+    [
+      "periodicjs.ext.asyncadmin@6.9.4",
+      "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@6.9.21",
-  "_id": "periodicjs.ext.asyncadmin@6.9.21",
+  "_from": "periodicjs.ext.asyncadmin@6.9.4",
+  "_id": "periodicjs.ext.asyncadmin@6.9.4",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
   "_nodeVersion": "4.2.4",
   "_npmUser": {
-    "name": "yawetse",
-    "email": "yaw.etse@gmail.com"
+    "email": "yaw.etse@gmail.com",
+    "name": "yawetse"
   },
   "_npmVersion": "2.14.12",
   "_phantomChildren": {},
   "_requested": {
     "name": "periodicjs.ext.asyncadmin",
-    "raw": "periodicjs.ext.asyncadmin@6.9.0",
-    "rawSpec": "6.9.0",
+    "raw": "periodicjs.ext.asyncadmin@6.9.4",
+    "rawSpec": "6.9.4",
     "scope": null,
-    "spec": "6.9.0",
+    "spec": "6.9.4",
     "type": "version"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_resolved": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.21.tgz",
-  "_shasum": "52429ba93f189b61bc356daff756430e24b6ad87",
   "_shrinkwrap": null,
-  "_spec": "periodicjs.ext.asyncadmin@6.9.0",
+  "_spec": "periodicjs.ext.asyncadmin@6.9.4",
   "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
   "author": {
-    "name": "Yaw Joseph Etse",
     "email": "yaw.etse@gmail.com",
+    "name": "Yaw Joseph Etse",
     "url": "http://about.me/yawjosephetse"
   },
   "bugs": {
@@ -84,8 +86,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "52429ba93f189b61bc356daff756430e24b6ad87",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.21.tgz"
+    "shasum": "33eaf929877f4b93433c082748549370956f20ba",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.4.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -111,6 +113,7 @@
   ],
   "name": "periodicjs.ext.asyncadmin",
   "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"
@@ -120,6 +123,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "6.9.3",
-  "readme": "ERROR: No README data found!"
+  "version": "6.9.5"
 }

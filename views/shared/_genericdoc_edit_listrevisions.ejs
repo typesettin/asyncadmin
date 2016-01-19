@@ -1,6 +1,6 @@
 <details class="ts-text-sm" 
 		<%if(genericdoc && genericdoc.changes && genericdoc.changes.length>1){%>open<%}%> >
-	<summary>Track Changes</summary>
+	<summary>Track Changes <%if(genericdoc && genericdoc.changes && genericdoc.changes.length>1){%>(<%-genericdoc.changes.length%>)<%}%></summary>
 	<aside>
 		<%if(genericdoc && genericdoc.changes && genericdoc.changes.length>0){
 			genericdoc.changes.reverse();

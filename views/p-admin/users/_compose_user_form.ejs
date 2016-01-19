@@ -1,3 +1,11 @@
+<% genericdoctaxfields = "assets:array:asset:media:createable,primaryasset:single:asset:media:createable,tags:array:tag:doc:createable,categories:array:category:doc:createable,contenttypes:array:contenttype:doc:createable" 
+
+	if(user.privileges['750'] || user.accounttype==='admin'){
+		genericdoctaxfields+=',userroles:array:userrole:doc:createable';
+	}
+
+%>
+
 <input type="hidden" name="_csrf" value=<%- locals.token %> >
 <% genericdoc = (userprofile)? userprofile : {}; 
 	if(genericdoc){%>
@@ -56,20 +64,10 @@
 				</aside>
 			</details>
 			<!-- END: Account Information -->
+		<% include ../../shared/genericdoc_compose_taxonomy_manager %>
 		<% include ../../shared/genericdoc_compose_content_attributes %>
 			<!-- START: Account Information -->
-			<details open="open" class="ts-text-sm">
-				<summary>
-					Account Images
-				</summary>
-				<aside>
-					<div class="ts-row ts-form-row">
-						<label class="ts-label">Account Image</label>
-				  	<% include _compose_user_assets %>
-					</div>
-					
-				</aside>
-			</details>
+
 			<!-- END: Account Information -->
 		</div>
 
@@ -112,21 +110,10 @@
 					Account Details
 					</summary>
 					<aside>
-					  <% if(user.privileges['760'] || user.accounttype==='admin'){%>
+					  <% 
+					  console.log(user)
+					  if(user.privileges['750'] || user.accounttype==='admin'){%>
 							<div class="ts-row ts-form-row">
-								<div class="ts-col-span12" >
-									<label class="ts-label">User Roles</label>
-									<input type="text" 
-										id="padmin-userroles" 
-										data-ajax-prop="userroles" 
-										data-ajax-source="/<%- locals.adminPath %>/userrole/new" 
-										data-ajax-setdata-variable="genericdoc_userroles" 
-	        					data-ajax-formie="edit-user-form" 
-										class="ts-col-span12 ts-datalist-tagged" 
-										placeholder="User Roles" 
-										name="userroles-ts-datalist-tagged" 
-	      					  />
-								</div>
 								<% 
 								if(genericdoc && genericdoc.userroles){%>
 								<script type="text/javascript">
@@ -187,33 +174,10 @@
 									<input type="text" disabled="disabled" value="<%- genericdoc.activated %>" class="ts-input"/>
 								</div>
 							</div>
-							<div class="ts-row ts-form-row">
-								<div class="ts-col-span12" >
-									<label class="ts-label">User Roles</label>
-									<%
-									var userroletextvalue ="";
-									if(genericdoc.userroles && genericdoc.userroles.length >0){
-										genericdoc.userroles.forEach(function(userrole){ 
-											userroletextvalue+="#"+userrole.title+" ";
-										});
-									}%>
-
-									<input type="text" disabled="disabled" value="<%- userroletextvalue %>" class="ts-input"/>
-								</div>
-							</div>
 						<%} %>
 
-					  <% if(typeof genericdoctypename === "string" && genericdoc){%>
-							<div class="ts-row  ts-text-center ts-text-sm ts-padding-lg">
-					      <% if(genericdoc){%> 
-									
-					      <%}%>
-							</div>
-					  <%}%>
 					</aside>
 			</details>
-			<% include ../../shared/genericdoc_compose_taxonomy %>
-
 		</div>
 	</div>
 </div>

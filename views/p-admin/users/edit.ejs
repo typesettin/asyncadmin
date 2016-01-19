@@ -16,7 +16,9 @@
           <nav>
             <ul class="ts-col-span12 ts-text-center">
               <li class="ts-col-span3 ts-no-margin">Basic</li>
+              <% if(user.privileges['760'] || user.accounttype==='admin'){%>
               <li class="ts-col-span3 ts-no-margin">Advanced</li>
+              <%}%>
             </ul>
           </nav>
           <div class="ts-tabs-content">
@@ -26,22 +28,23 @@
 								<% include _compose_user_form %>
               </form>
             </section>
+            <% if(user.privileges['760'] || user.accounttype==='admin'){%>
             <section class="ts-no-padding">
               <% include ../../shared/genericdoc_show_doc %>
             </section>
+            <%}%>
           </div>
         </div>
       </div>
     </div>
-
-
-
-
-
-
-
-
-
 	</div>
 </div>
+  <% generictaxnomy = 'tag' %>
+  <% include ../../shared/_new_generic_taxonomy_modal %>
+  <% generictaxnomy = 'category' %>
+  <% include ../../shared/_new_generic_taxonomy_modal %>
+  <% generictaxnomy = 'contenttype' %>
+  <% include ../../shared/_new_generic_taxonomy_modal %>
+  <% generictaxnomy = 'asset' %>
+  <% include ../../shared/_new_generic_asset_modal %>
 <% include ../../shared/footer %>

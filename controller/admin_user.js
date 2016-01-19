@@ -65,23 +65,34 @@ var users_show = function (req, res) {
 		logger.silly('asyncadmin - users_show: no access');
 	}
 
-	var viewtemplate = {
-			viewname: 'p-admin/users/show',
-			themefileext: appSettings.templatefileextension,
-			extname: 'periodicjs.ext.asyncadmin'
-		},
-		viewdata = {
-			pagedata: {
-				title: 'User profile (' + username_display + ')',
-				toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
-				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
-				extensions: CoreUtilities.getAdminMenu()
+	if (allow_edit) {
+		var viewtemplate = {
+				viewname: 'p-admin/users/show',
+				themefileext: appSettings.templatefileextension,
+				extname: 'periodicjs.ext.asyncadmin'
 			},
-			userprofile: req.controllerData.user,
-			allow_edit: allow_edit,
-			user: req.user
-		};
-	CoreController.renderView(req, res, viewtemplate, viewdata);
+			viewdata = {
+				pagedata: {
+					title: 'User profile (' + username_display + ')',
+					toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
+					// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				userprofile: req.controllerData.user,
+				allow_edit: allow_edit,
+				user: req.user
+			};
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	}
+	else {
+		res.status(401);
+		CoreController.handleDocumentQueryErrorResponse({
+			err: new Error('EXT-UAC760: You don\'t have access to modify content'),
+			res: res,
+			req: req
+		});
+	}
+
 };
 
 /**
@@ -91,6 +102,7 @@ var users_show = function (req, res) {
  * @return {object} reponds with an error page or sends user to authenicated in resource
  */
 var users_new = function (req, res) {
+
 	var allow_edit = false,
 		viewtemplate = {
 			viewname: 'p-admin/users/new',
@@ -108,7 +120,30 @@ var users_new = function (req, res) {
 			allow_edit: allow_edit,
 			user: req.user
 		};
-	CoreController.renderView(req, res, viewtemplate, viewdata);
+
+	if (req.user.usertype === 'admin') {
+		logger.silly('asyncadmin - users_show: user is admin');
+		allow_edit = true;
+	}
+	else if (User.hasPrivilege(req.user, 750)) {
+		logger.silly('asyncadmin - users_show: has edit user privilege');
+		allow_edit = true;
+	}
+	else {
+		logger.silly('asyncadmin - users_show: no access');
+	}
+
+	if (allow_edit) {
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	}
+	else {
+		res.status(401);
+		CoreController.handleDocumentQueryErrorResponse({
+			err: new Error('EXT-UAC750: You don\'t have access to create content'),
+			res: res,
+			req: req
+		});
+	}
 };
 
 /**
@@ -138,23 +173,34 @@ var users_edit = function (req, res) {
 		logger.silly('asyncadmin - users_show: no access');
 	}
 
-	var viewtemplate = {
-			viewname: 'p-admin/users/edit',
-			themefileext: appSettings.templatefileextension,
-			extname: 'periodicjs.ext.asyncadmin'
-		},
-		viewdata = {
-			pagedata: {
-				title: 'Edit ' + username_display,
-				toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
-				// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
-				extensions: CoreUtilities.getAdminMenu()
+	if (allow_edit) {
+		var viewtemplate = {
+				viewname: 'p-admin/users/edit',
+				themefileext: appSettings.templatefileextension,
+				extname: 'periodicjs.ext.asyncadmin'
 			},
-			userprofile: req.controllerData.user,
-			allow_edit: allow_edit,
-			user: req.user
-		};
-	CoreController.renderView(req, res, viewtemplate, viewdata);
+			viewdata = {
+				pagedata: {
+					title: 'Edit ' + username_display,
+					toplink: '&raquo; <a href="/' + adminPath + '/users" class="async-admin-ajax-link">Users</a> &raquo; ' + username_display,
+					// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				userprofile: req.controllerData.user,
+				allow_edit: allow_edit,
+				user: req.user
+			};
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	}
+	else {
+		res.status(401);
+		CoreController.handleDocumentQueryErrorResponse({
+			err: new Error('EXT-UAC760: You don\'t have access to modify content'),
+			res: res,
+			req: req
+		});
+	}
+
 };
 
 // 

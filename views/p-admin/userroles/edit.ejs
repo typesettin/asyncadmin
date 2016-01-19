@@ -1,15 +1,15 @@
 <% genericdoc = userrole %>
 <% genericdoctype = "Userrole" %>
 <% genericdoctypelink = "userrole" %>
+<% genericdoctypename = "userrole" %>
 <% genericdoctypeplurallink = "userroles" %>
 <% include ../../shared/header %>
+<% genericdoctaxfields = "privileges:array:userprivilege:doc:createable" %>
 <div class="ts-container">
 	<section class="ts-text-container ts-genericdoc">
 		<% include ../../shared/_html_inject_precontent %>
     <% include ../../shared/genericdoc_compose_title %>
-		<script type="text/javascript">
-		<%- locals.viewhelper.passObjToClient(userrole.privileges,"userproleuseprivileges") %>
-		</script>
+	
 		<form class="ts-form async-admin-ajax-forms" id="edit-userrole-form" name="edit-userrole-form" method="post" action="/<%- locals.adminPath %>/userrole/edit"  onsubmit="return false;" >
 			<input type="hidden" name="_csrf" value=<%- locals.token %> >
 			<input type="hidden" name="docid" value=<%- userrole._id %> >
@@ -23,6 +23,12 @@
 		              <label class="ts-label">Title</label>
 		            </div>
 		            <input type="text" placeholder="title" class="ts-input" name="title" value="<%- userrole.title %>">
+		          </div>
+		          <div class="ts-row ts-form-row">
+		            <div>
+		              <label class="ts-label">Name</label>
+		            </div>
+		            <input type="text" placeholder="name" class="ts-input" disabled="disabled" value="<%- userrole.name %>">
 		          </div>
 		          <div class="ts-row ts-form-row">
 		            <div>
@@ -40,21 +46,8 @@
 		            <div>
 		              <label class="ts-label">Privileges</label>
 		            </div>
-		            <% 
-								if(userrole.privileges){%>
-								<script type="text/javascript">
-								  <%- locals.viewhelper.passObjToClient(userrole.privileges,"genericdoc_privileges") %>
-								</script>
-								<%}%>
-		            <input type="text" 
-		                  id="padmin-privileges" 
-		                  data-ajax-prop="privileges" 
-		                  data-ajax-source="/<%- locals.adminPath %>/userprivilege/new" 
-		                  data-ajax-setdata-variable="genericdoc_privileges" 
-		                  class="ts-col-span12 ts-datalist-tagged" 
-		                  placeholder="User Privileges" 
-		                  name="privileges-ts-datalist-tagged" 
-		                  />
+		            		<% include ../../shared/genericdoc_compose_taxonomy_manager %>
+
 		          </div>
 		          <div class="ts-row ts-form-row ts-text-center">
 		          	<div class="ts-col-span12 ts-padding-lg">
@@ -66,7 +59,7 @@
 					<div class=" ts-col-span5 ts-screensm-col-span12 ts-screenxs-col-span12">
 						<h4>All Privileges</h4>
 						<% userprivileges.forEach(function(userprivilege){%>
-							<span class="ts-button ts-text-xs">#<%- userprivilege.name %> (<%- userprivilege.userprivilegeid %>)</span>
+							<a class="ts-button ts-text-xs async-admin-ajax-link" href="/<%-locals.adminPath %>/content/userprivilege/<%- userprivilege.name %>">#<%- userprivilege.name %> (<%- userprivilege.userprivilegeid %>)</a>
 						<%} );%>
 					</div>
 				</div>
@@ -75,6 +68,7 @@
 		<% include ../../shared/_html_inject_postcontent %>
 	</section>
 </div>
-<% include ../../shared/_template_compose_taxonomies %>
 
+  <% generictaxnomy = 'userprivilege' %>
+  <% include ../../shared/_new_generic_taxonomy_modal %>
 <% include ../../shared/footer %>

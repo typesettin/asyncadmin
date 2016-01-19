@@ -69,6 +69,17 @@
 </details>
 <% 
 if(genericdoc ){
+    genericdoc.parent = genericdoc.parent ||false;
+    genericdoc.tags = genericdoc.tags ||false;
+    genericdoc.authors = genericdoc.authors ||false;
+    genericdoc.contenttypes = genericdoc.contenttypes ||false;
+    genericdoc.categories = genericdoc.categories ||false;
+    genericdoc.assets = genericdoc.assets ||false;
+    genericdoc.userroles = genericdoc.userroles ||false;
+    genericdoc.userprivileges = genericdoc.userprivileges ||false;
+    genericdoc.privileges = genericdoc.privileges ||false;
+    genericdoc.primaryasset = genericdoc.primaryasset ||false;
+    genericdoc.primaryauthor = genericdoc.primaryauthor ||false;
   if(genericdoc.parent){%>
   <script type="text/javascript">
     <%- locals.viewhelper.passObjToClient(genericdoc.parent,"genericdoc_parent") %>
@@ -77,6 +88,21 @@ if(genericdoc ){
   if(genericdoc.tags){%>
   <script type="text/javascript">
     <%- locals.viewhelper.passObjToClient(genericdoc.tags,"genericdoc_tags") %>
+  </script>
+  <%}
+  if(genericdoc.userroles){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.userroles,"genericdoc_userroles") %>
+  </script>
+  <%}
+  if(genericdoc.userprivileges){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.userprivileges,"genericdoc_userprivileges") %>
+  </script>
+  <%}
+  if(genericdoc.privileges){%>
+  <script type="text/javascript">
+    <%- locals.viewhelper.passObjToClient(genericdoc.privileges,"genericdoc_privileges") %>
   </script>
   <%}
   if(genericdoc.categories){%>
@@ -116,6 +142,9 @@ else{%>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_tags") %>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_categories") %>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_assets") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_userroles") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_userprivileges") %>
+    <%- locals.viewhelper.passObjToClient(false,"genericdoc_privileges") %>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_primaryasset") %>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_primaryauthor") %>
     <%- locals.viewhelper.passObjToClient(false,"genericdoc_authors") %>

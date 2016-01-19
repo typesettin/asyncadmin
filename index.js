@@ -45,7 +45,7 @@ module.exports = function (periodic) {
 		}
 	}
 	catch (e) {
-		console.log(new errorie({
+		periodic.logger.info('Current Theme does not use a custom cms interface', new errorie({
 			name: 'Async Admin',
 			message: 'Config error - ' + e.message
 		}));
@@ -98,6 +98,8 @@ module.exports = function (periodic) {
 		cmd: {}
 	};
 	periodic.app.controller.extension.asyncadmin.search.user = periodic.app.controller.extension.asyncadmin.admin.user_search;
+	periodic.app.controller.extension.asyncadmin.search.userrole = periodic.app.controller.extension.asyncadmin.admin.userrole_search;
+	periodic.app.controller.extension.asyncadmin.search.userprivilege = periodic.app.controller.extension.asyncadmin.admin.userprivilege_search;
 	periodic.app.controller.extension.asyncadmin.search.theme = periodic.app.controller.extension.asyncadmin.admin.themesearch;
 	periodic.app.controller.extension.asyncadmin.search.extension = periodic.app.controller.extension.asyncadmin.admin.extensionsearch;
 
@@ -196,8 +198,17 @@ module.exports = function (periodic) {
 		userroleController.loadUserrolesWithDefaultLimit,
 		userroleController.loadUserroles,
 		UACAdminController.index);
+	adminRouter.get('/content/userroles',
+		userroleController.loadUserrolesWithCount,
+		userroleController.loadUserrolesWithDefaultLimit,
+		userroleController.loadUserroles,
+		UACAdminController.index);
 	adminRouter.get('/userrole/new', UACAdminController.userrole_new);
 	adminRouter.get('/userrole/:id/edit',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		UACAdminController.show);
+	adminRouter.get('/content/userrole/:id',
 		userprivilegeController.loadUserprivileges,
 		userroleController.loadUserrole,
 		UACAdminController.show);
@@ -212,12 +223,19 @@ module.exports = function (periodic) {
 		userroleController.create); //new from tag list
 	adminRouter.post('/userrole/new',
 		userroleController.create); //new from modal
+	adminRouter.post('/content/userrole/new',
+		userroleController.create); //new from modal
 	adminRouter.post('/userrole/edit',
 		userroleController.update);
 	adminRouter.post('/userrole/:id/delete', userroleController.loadUserrole,
 		userroleController.remove);
 	// user privileges
 	adminRouter.get('/userprivileges',
+		userprivilegeController.loadUserprivilegesWithCount,
+		userprivilegeController.loadUserprivilegesWithDefaultLimit,
+		userprivilegeController.loadUserprivileges,
+		UACAdminController.userprivilege_index);
+	adminRouter.get('/content/userprivileges',
 		userprivilegeController.loadUserprivilegesWithCount,
 		userprivilegeController.loadUserprivilegesWithDefaultLimit,
 		userprivilegeController.loadUserprivileges,
@@ -229,7 +247,17 @@ module.exports = function (periodic) {
 		userprivilegeController.create); //new from tag list
 	adminRouter.post('/userprivilege/new',
 		userprivilegeController.create); //new from modal
+	adminRouter.post('/content/userprivilege/new',
+		userprivilegeController.create); //new from modal
 	adminRouter.get('/userprivilege/:id/edit',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.get('/content/userprivilege/:id',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.get('/content/userprivilege/:id',
 		userprivilegeController.loadUserprivileges,
 		userprivilegeController.loadUserprivilege,
 		UACAdminController.userprivilege_show);
