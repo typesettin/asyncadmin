@@ -7,10 +7,14 @@
     [
       "periodicjs.ext.asyncadmin@6.9.4",
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ],
+    [
+      "periodicjs.ext.asyncadmin@6.9.5",
+      "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@6.9.4",
-  "_id": "periodicjs.ext.asyncadmin@6.9.4",
+  "_from": "periodicjs.ext.asyncadmin@6.9.5",
+  "_id": "periodicjs.ext.asyncadmin@6.9.5",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
@@ -23,17 +27,17 @@
   "_phantomChildren": {},
   "_requested": {
     "name": "periodicjs.ext.asyncadmin",
-    "raw": "periodicjs.ext.asyncadmin@6.9.4",
-    "rawSpec": "6.9.4",
+    "raw": "periodicjs.ext.asyncadmin@6.9.5",
+    "rawSpec": "6.9.5",
     "scope": null,
-    "spec": "6.9.4",
+    "spec": "6.9.5",
     "type": "version"
   },
   "_requiredBy": [
     "#USER"
   ],
   "_shrinkwrap": null,
-  "_spec": "periodicjs.ext.asyncadmin@6.9.4",
+  "_spec": "periodicjs.ext.asyncadmin@6.9.5",
   "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
   "author": {
     "email": "yaw.etse@gmail.com",
@@ -86,8 +90,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "33eaf929877f4b93433c082748549370956f20ba",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.4.tgz"
+    "shasum": "933109a49bad845900d51424551899753e755593",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.5.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -123,5 +127,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "6.9.5"
+  "version": "6.9.51"
 }

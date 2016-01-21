@@ -91,8 +91,6 @@ tsmedialist.prototype.__addValueToDataList = function () {
  */
 tsmedialist.prototype.__init = function () {
 	var medialistcontainer = document.createElement('div'),
-		medialistelement = document.createElement('datalist'),
-		selectelement = document.createElement('select'),
 		checkboxcontainerelement = document.createElement('div'),
 		inputelementcontainer = document.createElement('div'),
 		inputelement = document.createElement('input'),
@@ -164,8 +162,6 @@ tsmedialist.prototype.__init = function () {
 
 	inputelementcontainer.appendChild(inputelement);
 	// inputelementcontainer.appendChild(submitbuttonelement);
-	medialistelement.appendChild(selectelement);
-	medialistcontainer.appendChild(medialistelement);
 	medialistcontainer.appendChild(inputelementcontainer);
 	medialistcontainer.appendChild(checkboxcontainerelement);
 	this.options.parentElement.appendChild(medialistcontainer);

@@ -7,7 +7,7 @@
 %>
 
 <input type="hidden" name="_csrf" value=<%- locals.token %> >
-<% genericdoc = (userprofile)? userprofile : {}; 
+<% genericdoc = (userprofile)? userprofile : genericdoc; 
 	if(genericdoc){%>
 	<input type="hidden" name="docid" value="<%- genericdoc._id %>">
 <%}%>

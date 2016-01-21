@@ -1267,7 +1267,7 @@
 }());
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":57}],2:[function(require,module,exports){
+},{"_process":60}],2:[function(require,module,exports){
 module.exports = function (string) {
   return string.charAt(0).toUpperCase() + string.substring(1);
 }
@@ -1279,6 +1279,344 @@ module.exports.words = function (string) {
 }
 
 },{}],3:[function(require,module,exports){
+/*
+ * classie
+ * http://github.amexpub.com/modules/classie
+ *
+ * Copyright (c) 2013 AmexPub. All rights reserved.
+ */
+
+module.exports = require('./lib/classie');
+
+},{"./lib/classie":5}],4:[function(require,module,exports){
+/* 
+ * classList.js: Cross-browser full element.classList implementation.
+ * 2014-07-23
+ *
+ * By Eli Grey, http://eligrey.com
+ * Public Domain.
+ * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
+ */
+
+/*global self, document, DOMException, DOMTokenList */
+
+/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
+
+if ("document" in self) {
+
+    // Full polyfill for browsers with no classList support
+    if (!("classList" in document.createElement("_")) || document.createElementNS && !("classList" in document.createElementNS("http://www.w3.org/2000/svg", "g"))) {
+
+        (function(view) {
+
+            "use strict";
+
+            if (!('Element' in view)) {
+                return;
+            }
+
+            var classListProp = "classList",
+                protoProp = "prototype",
+                elemCtrProto = view.Element[protoProp],
+                objCtr = Object,
+                strTrim = String[protoProp].trim || function() {
+                    return this.replace(/^\s+|\s+$/g, "");
+                }, arrIndexOf = Array[protoProp].indexOf || function(item) {
+                    var
+                    i = 0,
+                        len = this.length;
+                    for (; i < len; i++) {
+                        if (i in this && this[i] === item) {
+                            return i;
+                        }
+                    }
+                    return -1;
+                },
+                // Vendors: please allow content code to instantiate DOMExceptions
+                DOMEx = function(type, message) {
+                    this.name = type;
+                    this.code = DOMException[type];
+                    this.message = message;
+                }, checkTokenAndGetIndex = function(classList, token) {
+                    if (token === "") {
+                        throw new DOMEx(
+                            "SYNTAX_ERR", "An invalid or illegal string was specified");
+                    }
+                    if (/\s/.test(token)) {
+                        throw new DOMEx(
+                            "INVALID_CHARACTER_ERR", "String contains an invalid character");
+                    }
+                    return arrIndexOf.call(classList, token);
+                }, ClassList = function(elem) {
+                    var
+                    trimmedClasses = strTrim.call(elem.getAttribute("class") || ""),
+                        classes = trimmedClasses ? trimmedClasses.split(/\s+/) : [],
+                        i = 0,
+                        len = classes.length;
+                    for (; i < len; i++) {
+                        this.push(classes[i]);
+                    }
+                    this._updateClassName = function() {
+                        elem.setAttribute("class", this.toString());
+                    };
+                }, classListProto = ClassList[protoProp] = [],
+                classListGetter = function() {
+                    return new ClassList(this);
+                };
+            // Most DOMException implementations don't allow calling DOMException's toString()
+            // on non-DOMExceptions. Error's toString() is sufficient here.
+            DOMEx[protoProp] = Error[protoProp];
+            classListProto.item = function(i) {
+                return this[i] || null;
+            };
+            classListProto.contains = function(token) {
+                token += "";
+                return checkTokenAndGetIndex(this, token) !== -1;
+            };
+            classListProto.add = function() {
+                var
+                tokens = arguments,
+                    i = 0,
+                    l = tokens.length,
+                    token, updated = false;
+                do {
+                    token = tokens[i] + "";
+                    if (checkTokenAndGetIndex(this, token) === -1) {
+                        this.push(token);
+                        updated = true;
+                    }
+                }
+                while (++i < l);
+
+                if (updated) {
+                    this._updateClassName();
+                }
+            };
+            classListProto.remove = function() {
+                var
+                tokens = arguments,
+                    i = 0,
+                    l = tokens.length,
+                    token, updated = false,
+                    index;
+                do {
+                    token = tokens[i] + "";
+                    index = checkTokenAndGetIndex(this, token);
+                    while (index !== -1) {
+                        this.splice(index, 1);
+                        updated = true;
+                        index = checkTokenAndGetIndex(this, token);
+                    }
+                }
+                while (++i < l);
+
+                if (updated) {
+                    this._updateClassName();
+                }
+            };
+            classListProto.toggle = function(token, force) {
+                token += "";
+
+                var
+                result = this.contains(token),
+                    method = result ?
+                        force !== true && "remove" :
+                        force !== false && "add";
+
+                if (method) {
+                    this[method](token);
+                }
+
+                if (force === true || force === false) {
+                    return force;
+                } else {
+                    return !result;
+                }
+            };
+            classListProto.toString = function() {
+                return this.join(" ");
+            };
+
+            if (objCtr.defineProperty) {
+                var classListPropDesc = {
+                    get: classListGetter,
+                    enumerable: true,
+                    configurable: true
+                };
+                try {
+                    objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
+                } catch (ex) { // IE 8 doesn't support enumerable:true
+                    if (ex.number === -0x7FF5EC54) {
+                        classListPropDesc.enumerable = false;
+                        objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
+                    }
+                }
+            } else if (objCtr[protoProp].__defineGetter__) {
+                elemCtrProto.__defineGetter__(classListProp, classListGetter);
+            }
+
+        }(self));
+
+    } else {
+        // There is full or partial native classList support, so just check if we need
+        // to normalize the add/remove and toggle APIs.
+
+        (function() {
+            "use strict";
+
+            var testElement = document.createElement("_");
+
+            testElement.classList.add("c1", "c2");
+
+            // Polyfill for IE 10/11 and Firefox <26, where classList.add and
+            // classList.remove exist but support only one argument at a time.
+            if (!testElement.classList.contains("c2")) {
+                var createMethod = function(method) {
+                    var original = DOMTokenList.prototype[method];
+
+                    DOMTokenList.prototype[method] = function(token) {
+                        var i, len = arguments.length;
+
+                        for (i = 0; i < len; i++) {
+                            token = arguments[i];
+                            original.call(this, token);
+                        }
+                    };
+                };
+                createMethod('add');
+                createMethod('remove');
+            }
+
+            testElement.classList.toggle("c3", false);
+
+            // Polyfill for IE 10 and Firefox <24, where classList.toggle does not
+            // support the second argument.
+            if (testElement.classList.contains("c3")) {
+                var _toggle = DOMTokenList.prototype.toggle;
+
+                DOMTokenList.prototype.toggle = function(token, force) {
+                    if (1 in arguments && !this.contains(token) === !force) {
+                        return force;
+                    } else {
+                        return _toggle.call(this, token);
+                    }
+                };
+
+            }
+
+            testElement = null;
+        }());
+    }
+
+}
+
+},{}],5:[function(require,module,exports){
+/*!
+ * classie - class helper functions
+ * from bonzo https://github.com/ded/bonzo
+ * 
+ * classie.has( elem, 'my-class' ) -> true/false
+ * classie.add( elem, 'my-new-class' )
+ * classie.remove( elem, 'my-unwanted-class' )
+ * classie.toggle( elem, 'my-class' )
+ */
+
+/*jshint browser: true, strict: true, undef: true */
+/*global define: false */
+'use strict';
+
+// class helper functions from bonzo https://github.com/ded/bonzo
+var classList = require('./class_list_ployfill'),
+    classie;
+
+function classReg(className) {
+    return new RegExp("(^|\\s+)" + className + "(\\s+|$)");
+}
+
+function noop() {}
+
+function isArr(classes) {
+    if (Array.isArray(classes)) {
+        return true;
+    } else if (Object.prototype.toString.call(classes) === '[object Array]') {
+        return true;
+    } else {
+        return false;
+    }
+}
+
+function removeMultiple() {
+    var c = arguments[1],
+        elem = arguments[0];
+    c.forEach(function(value) {
+        if (classie.has(elem, value)) {
+            noop();
+        }
+        classie.removeClass(elem, value);
+    });
+}
+
+
+function addMultiple() {
+    var c = arguments[1],
+        elem = arguments[0];
+    c.forEach(function(value) {
+        if (classie.has(elem, value)) {
+            noop();
+        }
+        classie.addClass(elem, value);
+    });
+}
+
+function hasClass(elem, c) {
+    return elem.classList.contains(c);
+}
+
+function addClass(elem, c) {
+    if (isArr(c)) {
+        addMultiple.apply(this, arguments);
+    } else {
+        elem.classList.add(c);
+    }
+}
+
+function removeClass(elem, c) {
+    if (isArr(c)) {
+        removeMultiple.apply(this, arguments);
+    } else {
+        elem.classList.remove(c);
+    }
+}
+
+function toggleClass(elem, c) {
+    var fn = hasClass(elem, c) ? removeClass : addClass;
+    fn(elem, c);
+}
+
+var classie = {
+    // full names
+    hasClass: hasClass,
+    addClass: addClass,
+    removeClass: removeClass,
+    toggleClass: toggleClass,
+    // short names
+    has: hasClass,
+    add: addClass,
+    remove: removeClass,
+    toggle: toggleClass
+};
+
+// transport
+
+if (typeof module === "object" && module && typeof module.exports === "object") {
+    // commonjs / browserify
+    module.exports = classie;
+} else {
+    // AMD
+    define(classie);
+}
+
+},{"./class_list_ployfill":4}],6:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -2003,7 +2341,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"../package.json":5,"./utils":4,"fs":52,"path":56}],4:[function(require,module,exports){
+},{"../package.json":8,"./utils":7,"fs":55,"path":59}],7:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -2146,7 +2484,7 @@ exports.cache = {
 };
 
 
-},{}],5:[function(require,module,exports){
+},{}],8:[function(require,module,exports){
 module.exports={
   "name": "ejs",
   "description": "Embedded JavaScript templates",
@@ -2226,7 +2564,7 @@ module.exports={
   "readme": "ERROR: No README data found!"
 }
 
-},{}],6:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 //! moment.js
 //! version : 2.11.1
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -5833,7 +6171,7 @@ module.exports={
     return _moment;
 
 }));
-},{}],7:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 'use strict';
 
 var json2html,
@@ -6037,7 +6375,7 @@ exports.default_thead = default_thead;
 exports.default_custom_tfoot = default_custom_tfoot;
 exports.get_data_table_html = get_data_table_html;
 
-},{"./json2html":8,"moment":6,"util-extend":148}],8:[function(require,module,exports){
+},{"./json2html":11,"moment":9,"util-extend":142}],11:[function(require,module,exports){
 'use strict';
 //Copyright (c) 2013 Crystalline Technologies
 //
@@ -6430,7 +6768,7 @@ var json2html = {
 
 module.exports = json2html;
 
-},{}],9:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 /*
  * bindie
  * http://github.amexpub.com/modules/bindie
@@ -6442,7 +6780,7 @@ module.exports = json2html;
 
 module.exports = require('./lib/bindie');
 
-},{"./lib/bindie":10}],10:[function(require,module,exports){
+},{"./lib/bindie":13}],13:[function(require,module,exports){
 /*
  * bindie
  * http://github.com/yawetse/bindie
@@ -6576,7 +6914,7 @@ bindie.prototype._render = function (options) {
 };
 module.exports = bindie;
 
-},{"ejs":11,"events":54,"util":62,"util-extend":13}],11:[function(require,module,exports){
+},{"ejs":14,"events":57,"util":65,"util-extend":16}],14:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -7108,7 +7446,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"./utils":12,"fs":52,"path":56}],12:[function(require,module,exports){
+},{"./utils":15,"fs":55,"path":59}],15:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -7163,7 +7501,7 @@ exports.shallowCopy = function (to, from) {
 };
 
 
-},{}],13:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -7198,345 +7536,13 @@ function extend(origin, add) {
   return origin;
 }
 
-},{}],14:[function(require,module,exports){
-/*
- * classie
- * http://github.amexpub.com/modules/classie
- *
- * Copyright (c) 2013 AmexPub. All rights reserved.
- */
-
-module.exports = require('./lib/classie');
-
-},{"./lib/classie":16}],15:[function(require,module,exports){
-/* 
- * classList.js: Cross-browser full element.classList implementation.
- * 2014-07-23
- *
- * By Eli Grey, http://eligrey.com
- * Public Domain.
- * NO WARRANTY EXPRESSED OR IMPLIED. USE AT YOUR OWN RISK.
- */
-
-/*global self, document, DOMException, DOMTokenList */
-
-/*! @source http://purl.eligrey.com/github/classList.js/blob/master/classList.js*/
-
-if ("document" in self) {
-
-    // Full polyfill for browsers with no classList support
-    if (!("classList" in document.createElement("_")) || document.createElementNS && !("classList" in document.createElementNS("http://www.w3.org/2000/svg", "g"))) {
-
-        (function(view) {
-
-            "use strict";
-
-            if (!('Element' in view)) {
-                return;
-            }
-
-            var classListProp = "classList",
-                protoProp = "prototype",
-                elemCtrProto = view.Element[protoProp],
-                objCtr = Object,
-                strTrim = String[protoProp].trim || function() {
-                    return this.replace(/^\s+|\s+$/g, "");
-                }, arrIndexOf = Array[protoProp].indexOf || function(item) {
-                    var
-                    i = 0,
-                        len = this.length;
-                    for (; i < len; i++) {
-                        if (i in this && this[i] === item) {
-                            return i;
-                        }
-                    }
-                    return -1;
-                },
-                // Vendors: please allow content code to instantiate DOMExceptions
-                DOMEx = function(type, message) {
-                    this.name = type;
-                    this.code = DOMException[type];
-                    this.message = message;
-                }, checkTokenAndGetIndex = function(classList, token) {
-                    if (token === "") {
-                        throw new DOMEx(
-                            "SYNTAX_ERR", "An invalid or illegal string was specified");
-                    }
-                    if (/\s/.test(token)) {
-                        throw new DOMEx(
-                            "INVALID_CHARACTER_ERR", "String contains an invalid character");
-                    }
-                    return arrIndexOf.call(classList, token);
-                }, ClassList = function(elem) {
-                    var
-                    trimmedClasses = strTrim.call(elem.getAttribute("class") || ""),
-                        classes = trimmedClasses ? trimmedClasses.split(/\s+/) : [],
-                        i = 0,
-                        len = classes.length;
-                    for (; i < len; i++) {
-                        this.push(classes[i]);
-                    }
-                    this._updateClassName = function() {
-                        elem.setAttribute("class", this.toString());
-                    };
-                }, classListProto = ClassList[protoProp] = [],
-                classListGetter = function() {
-                    return new ClassList(this);
-                };
-            // Most DOMException implementations don't allow calling DOMException's toString()
-            // on non-DOMExceptions. Error's toString() is sufficient here.
-            DOMEx[protoProp] = Error[protoProp];
-            classListProto.item = function(i) {
-                return this[i] || null;
-            };
-            classListProto.contains = function(token) {
-                token += "";
-                return checkTokenAndGetIndex(this, token) !== -1;
-            };
-            classListProto.add = function() {
-                var
-                tokens = arguments,
-                    i = 0,
-                    l = tokens.length,
-                    token, updated = false;
-                do {
-                    token = tokens[i] + "";
-                    if (checkTokenAndGetIndex(this, token) === -1) {
-                        this.push(token);
-                        updated = true;
-                    }
-                }
-                while (++i < l);
-
-                if (updated) {
-                    this._updateClassName();
-                }
-            };
-            classListProto.remove = function() {
-                var
-                tokens = arguments,
-                    i = 0,
-                    l = tokens.length,
-                    token, updated = false,
-                    index;
-                do {
-                    token = tokens[i] + "";
-                    index = checkTokenAndGetIndex(this, token);
-                    while (index !== -1) {
-                        this.splice(index, 1);
-                        updated = true;
-                        index = checkTokenAndGetIndex(this, token);
-                    }
-                }
-                while (++i < l);
-
-                if (updated) {
-                    this._updateClassName();
-                }
-            };
-            classListProto.toggle = function(token, force) {
-                token += "";
-
-                var
-                result = this.contains(token),
-                    method = result ?
-                        force !== true && "remove" :
-                        force !== false && "add";
-
-                if (method) {
-                    this[method](token);
-                }
-
-                if (force === true || force === false) {
-                    return force;
-                } else {
-                    return !result;
-                }
-            };
-            classListProto.toString = function() {
-                return this.join(" ");
-            };
-
-            if (objCtr.defineProperty) {
-                var classListPropDesc = {
-                    get: classListGetter,
-                    enumerable: true,
-                    configurable: true
-                };
-                try {
-                    objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
-                } catch (ex) { // IE 8 doesn't support enumerable:true
-                    if (ex.number === -0x7FF5EC54) {
-                        classListPropDesc.enumerable = false;
-                        objCtr.defineProperty(elemCtrProto, classListProp, classListPropDesc);
-                    }
-                }
-            } else if (objCtr[protoProp].__defineGetter__) {
-                elemCtrProto.__defineGetter__(classListProp, classListGetter);
-            }
-
-        }(self));
-
-    } else {
-        // There is full or partial native classList support, so just check if we need
-        // to normalize the add/remove and toggle APIs.
-
-        (function() {
-            "use strict";
-
-            var testElement = document.createElement("_");
-
-            testElement.classList.add("c1", "c2");
-
-            // Polyfill for IE 10/11 and Firefox <26, where classList.add and
-            // classList.remove exist but support only one argument at a time.
-            if (!testElement.classList.contains("c2")) {
-                var createMethod = function(method) {
-                    var original = DOMTokenList.prototype[method];
-
-                    DOMTokenList.prototype[method] = function(token) {
-                        var i, len = arguments.length;
-
-                        for (i = 0; i < len; i++) {
-                            token = arguments[i];
-                            original.call(this, token);
-                        }
-                    };
-                };
-                createMethod('add');
-                createMethod('remove');
-            }
-
-            testElement.classList.toggle("c3", false);
-
-            // Polyfill for IE 10 and Firefox <24, where classList.toggle does not
-            // support the second argument.
-            if (testElement.classList.contains("c3")) {
-                var _toggle = DOMTokenList.prototype.toggle;
-
-                DOMTokenList.prototype.toggle = function(token, force) {
-                    if (1 in arguments && !this.contains(token) === !force) {
-                        return force;
-                    } else {
-                        return _toggle.call(this, token);
-                    }
-                };
-
-            }
-
-            testElement = null;
-        }());
-    }
-
-}
-
-},{}],16:[function(require,module,exports){
-/*!
- * classie - class helper functions
- * from bonzo https://github.com/ded/bonzo
- * 
- * classie.has( elem, 'my-class' ) -> true/false
- * classie.add( elem, 'my-new-class' )
- * classie.remove( elem, 'my-unwanted-class' )
- * classie.toggle( elem, 'my-class' )
- */
-
-/*jshint browser: true, strict: true, undef: true */
-/*global define: false */
-'use strict';
-
-// class helper functions from bonzo https://github.com/ded/bonzo
-var classList = require('./class_list_ployfill'),
-    classie;
-
-function classReg(className) {
-    return new RegExp("(^|\\s+)" + className + "(\\s+|$)");
-}
-
-function noop() {}
-
-function isArr(classes) {
-    if (Array.isArray(classes)) {
-        return true;
-    } else if (Object.prototype.toString.call(classes) === '[object Array]') {
-        return true;
-    } else {
-        return false;
-    }
-}
-
-function removeMultiple() {
-    var c = arguments[1],
-        elem = arguments[0];
-    c.forEach(function(value) {
-        if (classie.has(elem, value)) {
-            noop();
-        }
-        classie.removeClass(elem, value);
-    });
-}
-
-
-function addMultiple() {
-    var c = arguments[1],
-        elem = arguments[0];
-    c.forEach(function(value) {
-        if (classie.has(elem, value)) {
-            noop();
-        }
-        classie.addClass(elem, value);
-    });
-}
-
-function hasClass(elem, c) {
-    return elem.classList.contains(c);
-}
-
-function addClass(elem, c) {
-    if (isArr(c)) {
-        addMultiple.apply(this, arguments);
-    } else {
-        elem.classList.add(c);
-    }
-}
-
-function removeClass(elem, c) {
-    if (isArr(c)) {
-        removeMultiple.apply(this, arguments);
-    } else {
-        elem.classList.remove(c);
-    }
-}
-
-function toggleClass(elem, c) {
-    var fn = hasClass(elem, c) ? removeClass : addClass;
-    fn(elem, c);
-}
-
-var classie = {
-    // full names
-    hasClass: hasClass,
-    addClass: addClass,
-    removeClass: removeClass,
-    toggleClass: toggleClass,
-    // short names
-    has: hasClass,
-    add: addClass,
-    remove: removeClass,
-    toggle: toggleClass
-};
-
-// transport
-
-if (typeof module === "object" && module && typeof module.exports === "object") {
-    // commonjs / browserify
-    module.exports = classie;
-} else {
-    // AMD
-    define(classie);
-}
-
-},{"./class_list_ployfill":15}],17:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
+arguments[4][3][0].apply(exports,arguments)
+},{"./lib/classie":19,"dup":3}],18:[function(require,module,exports){
+arguments[4][4][0].apply(exports,arguments)
+},{"dup":4}],19:[function(require,module,exports){
+arguments[4][5][0].apply(exports,arguments)
+},{"./class_list_ployfill":18,"dup":5}],20:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7734,7 +7740,7 @@ if (typeof module === "object" && module && typeof module.exports === "object") 
   });
 });
 
-},{"../../lib/codemirror":34}],18:[function(require,module,exports){
+},{"../../lib/codemirror":37}],21:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7821,7 +7827,7 @@ if (typeof module === "object" && module && typeof module.exports === "object") 
   });
 });
 
-},{"../../lib/codemirror":34}],19:[function(require,module,exports){
+},{"../../lib/codemirror":37}],22:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -7943,7 +7949,7 @@ if (typeof module === "object" && module && typeof module.exports === "object") 
   });
 });
 
-},{"../../lib/codemirror":34}],20:[function(require,module,exports){
+},{"../../lib/codemirror":37}],23:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8050,7 +8056,7 @@ CodeMirror.registerHelper("fold", "include", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":34}],21:[function(require,module,exports){
+},{"../../lib/codemirror":37}],24:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8111,7 +8117,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
 
 });
 
-},{"../../lib/codemirror":34}],22:[function(require,module,exports){
+},{"../../lib/codemirror":37}],25:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8262,7 +8268,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   });
 });
 
-},{"../../lib/codemirror":34}],23:[function(require,module,exports){
+},{"../../lib/codemirror":37}],26:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8285,7 +8291,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
       cm.off("viewportChange", onViewportChange);
       cm.off("fold", onFold);
       cm.off("unfold", onFold);
-      cm.off("swapDoc", updateInViewport);
+      cm.off("swapDoc", onChange);
     }
     if (val) {
       cm.state.foldGutter = new State(parseOptions(val));
@@ -8295,7 +8301,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
       cm.on("viewportChange", onViewportChange);
       cm.on("fold", onFold);
       cm.on("unfold", onFold);
-      cm.on("swapDoc", updateInViewport);
+      cm.on("swapDoc", onChange);
     }
   });
 
@@ -8410,7 +8416,7 @@ CodeMirror.registerGlobalHelper("fold", "comment", function(mode) {
   }
 });
 
-},{"../../lib/codemirror":34,"./foldcode":22}],24:[function(require,module,exports){
+},{"../../lib/codemirror":37,"./foldcode":25}],27:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8456,7 +8462,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
 
 });
 
-},{"../../lib/codemirror":34}],25:[function(require,module,exports){
+},{"../../lib/codemirror":37}],28:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8518,7 +8524,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
   });
 });
 
-},{"../../lib/codemirror":34,"../../mode/css/css":35}],26:[function(require,module,exports){
+},{"../../lib/codemirror":37,"../../mode/css/css":38}],29:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -8868,7 +8874,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
   CodeMirror.registerHelper("hint", "html", htmlHint);
 });
 
-},{"../../lib/codemirror":34,"./xml-hint":29}],27:[function(require,module,exports){
+},{"../../lib/codemirror":37,"./xml-hint":32}],30:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9016,7 +9022,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
   }
 });
 
-},{"../../lib/codemirror":34}],28:[function(require,module,exports){
+},{"../../lib/codemirror":37}],31:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9458,7 +9464,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
   CodeMirror.defineOption("hintOptions", null);
 });
 
-},{"../../lib/codemirror":34}],29:[function(require,module,exports){
+},{"../../lib/codemirror":37}],32:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9570,7 +9576,7 @@ CodeMirror.registerHelper("fold", "indent", function(cm, start) {
   CodeMirror.registerHelper("hint", "xml", getHints);
 });
 
-},{"../../lib/codemirror":34}],30:[function(require,module,exports){
+},{"../../lib/codemirror":37}],33:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9607,7 +9613,7 @@ CodeMirror.registerHelper("lint", "css", function(text) {
 
 });
 
-},{"../../lib/codemirror":34}],31:[function(require,module,exports){
+},{"../../lib/codemirror":37}],34:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9745,7 +9751,7 @@ CodeMirror.registerHelper("lint", "css", function(text) {
   }
 });
 
-},{"../../lib/codemirror":34}],32:[function(require,module,exports){
+},{"../../lib/codemirror":37}],35:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -9978,7 +9984,7 @@ CodeMirror.registerHelper("lint", "css", function(text) {
   });
 });
 
-},{"../../lib/codemirror":34}],33:[function(require,module,exports){
+},{"../../lib/codemirror":37}],36:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -10103,7 +10109,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
 });
 
-},{"../../lib/codemirror":34}],34:[function(require,module,exports){
+},{"../../lib/codemirror":37}],37:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -11364,6 +11370,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       });
 
       function prepareCopyCut(e) {
+        if (signalDOMEvent(cm, e)) return
         if (cm.somethingSelected()) {
           lastCopied = cm.getSelections();
           if (input.inaccurateSelection) {
@@ -11721,6 +11728,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       });
 
       function onCopyCut(e) {
+        if (signalDOMEvent(cm, e)) return
         if (cm.somethingSelected()) {
           lastCopied = cm.getSelections();
           if (e.type == "cut") cm.replaceSelection("", null, "cut");
@@ -13539,7 +13547,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       return dx * dx + dy * dy > 20 * 20;
     }
     on(d.scroller, "touchstart", function(e) {
-      if (!isMouseLikeTouchEvent(e)) {
+      if (!signalDOMEvent(cm, e) && !isMouseLikeTouchEvent(e)) {
         clearTimeout(touchFinished);
         var now = +new Date;
         d.activeTouch = {start: now, moved: false,
@@ -13668,7 +13676,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   // not interfere with, such as a scrollbar or widget.
   function onMouseDown(e) {
     var cm = this, display = cm.display;
-    if (display.activeTouch && display.input.supportsTouch() || signalDOMEvent(cm, e)) return;
+    if (signalDOMEvent(cm, e) || display.activeTouch && display.input.supportsTouch()) return;
     display.shift = e.shiftKey;
 
     if (eventInWidget(display, e)) {
@@ -14920,10 +14928,9 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
   function findPosH(doc, pos, dir, unit, visually) {
     var line = pos.line, ch = pos.ch, origDir = dir;
     var lineObj = getLine(doc, line);
-    var possible = true;
     function findNextLine() {
       var l = line + dir;
-      if (l < doc.first || l >= doc.first + doc.size) return (possible = false);
+      if (l < doc.first || l >= doc.first + doc.size) return false
       line = l;
       return lineObj = getLine(doc, l);
     }
@@ -14933,14 +14940,16 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         if (!boundToLine && findNextLine()) {
           if (visually) ch = (dir < 0 ? lineRight : lineLeft)(lineObj);
           else ch = dir < 0 ? lineObj.text.length : 0;
-        } else return (possible = false);
+        } else return false
       } else ch = next;
       return true;
     }
 
-    if (unit == "char") moveOnce();
-    else if (unit == "column") moveOnce(true);
-    else if (unit == "word" || unit == "group") {
+    if (unit == "char") {
+      moveOnce()
+    } else if (unit == "column") {
+      moveOnce(true)
+    } else if (unit == "word" || unit == "group") {
       var sawType = null, group = unit == "group";
       var helper = doc.cm && doc.cm.getHelper(pos, "wordChars");
       for (var first = true;; first = false) {
@@ -14961,7 +14970,7 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
       }
     }
     var result = skipAtomic(doc, Pos(line, ch), pos, origDir, true);
-    if (!possible) result.hitSide = true;
+    if (!cmp(pos, result)) result.hitSide = true;
     return result;
   }
 
@@ -17219,14 +17228,14 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
         if (endStyles) for (var j = 0; j < endStyles.length; j += 2)
           if (endStyles[j + 1] == nextChange) spanEndStyle += " " + endStyles[j]
 
+        if (!collapsed || collapsed.from == pos) for (var j = 0; j < foundBookmarks.length; ++j)
+          buildCollapsedSpan(builder, 0, foundBookmarks[j]);
         if (collapsed && (collapsed.from || 0) == pos) {
           buildCollapsedSpan(builder, (collapsed.to == null ? len + 1 : collapsed.to) - pos,
                              collapsed.marker, collapsed.from == null);
           if (collapsed.to == null) return;
           if (collapsed.to == pos) collapsed = false;
         }
-        if (!collapsed && foundBookmarks.length) for (var j = 0; j < foundBookmarks.length; ++j)
-          buildCollapsedSpan(builder, 0, foundBookmarks[j]);
       }
       if (pos >= len) break;
 
@@ -18987,12 +18996,12 @@ CodeMirror.multiplexingMode = function(outer /*, others */) {
 
   // THE END
 
-  CodeMirror.version = "5.10.0";
+  CodeMirror.version = "5.11.0";
 
   return CodeMirror;
 });
 
-},{}],35:[function(require,module,exports){
+},{}],38:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -19447,8 +19456,8 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "animation-direction", "animation-duration", "animation-fill-mode",
     "animation-iteration-count", "animation-name", "animation-play-state",
     "animation-timing-function", "appearance", "azimuth", "backface-visibility",
-    "background", "background-attachment", "background-clip", "background-color",
-    "background-image", "background-origin", "background-position",
+    "background", "background-attachment", "background-blend-mode", "background-clip",
+    "background-color", "background-image", "background-origin", "background-position",
     "background-repeat", "background-size", "baseline-shift", "binding",
     "bleed", "bookmark-label", "bookmark-level", "bookmark-state",
     "bookmark-target", "border", "border-bottom", "border-bottom-color",
@@ -19592,11 +19601,12 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "capitalize", "caps-lock-indicator", "caption", "captiontext", "caret",
     "cell", "center", "checkbox", "circle", "cjk-decimal", "cjk-earthly-branch",
     "cjk-heavenly-stem", "cjk-ideographic", "clear", "clip", "close-quote",
-    "col-resize", "collapse", "column", "column-reverse", "compact", "condensed", "contain", "content",
+    "col-resize", "collapse", "color", "color-burn", "color-dodge", "column", "column-reverse",
+    "compact", "condensed", "contain", "content",
     "content-box", "context-menu", "continuous", "copy", "counter", "counters", "cover", "crop",
-    "cross", "crosshair", "currentcolor", "cursive", "cyclic", "dashed", "decimal",
+    "cross", "crosshair", "currentcolor", "cursive", "cyclic", "darken", "dashed", "decimal",
     "decimal-leading-zero", "default", "default-button", "destination-atop",
-    "destination-in", "destination-out", "destination-over", "devanagari",
+    "destination-in", "destination-out", "destination-over", "devanagari", "difference",
     "disc", "discard", "disclosure-closed", "disclosure-open", "document",
     "dot-dash", "dot-dot-dash",
     "dotted", "double", "down", "e-resize", "ease", "ease-in", "ease-in-out", "ease-out",
@@ -19607,23 +19617,23 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "ethiopic-halehame-gez", "ethiopic-halehame-om-et",
     "ethiopic-halehame-sid-et", "ethiopic-halehame-so-et",
     "ethiopic-halehame-ti-er", "ethiopic-halehame-ti-et", "ethiopic-halehame-tig",
-    "ethiopic-numeric", "ew-resize", "expanded", "extends", "extra-condensed",
+    "ethiopic-numeric", "ew-resize", "exclusion", "expanded", "extends", "extra-condensed",
     "extra-expanded", "fantasy", "fast", "fill", "fixed", "flat", "flex", "flex-end", "flex-start", "footnotes",
     "forwards", "from", "geometricPrecision", "georgian", "graytext", "groove",
-    "gujarati", "gurmukhi", "hand", "hangul", "hangul-consonant", "hebrew",
+    "gujarati", "gurmukhi", "hand", "hangul", "hangul-consonant", "hard-light", "hebrew",
     "help", "hidden", "hide", "higher", "highlight", "highlighttext",
-    "hiragana", "hiragana-iroha", "horizontal", "hsl", "hsla", "icon", "ignore",
+    "hiragana", "hiragana-iroha", "horizontal", "hsl", "hsla", "hue", "icon", "ignore",
     "inactiveborder", "inactivecaption", "inactivecaptiontext", "infinite",
     "infobackground", "infotext", "inherit", "initial", "inline", "inline-axis",
     "inline-block", "inline-flex", "inline-table", "inset", "inside", "intrinsic", "invert",
     "italic", "japanese-formal", "japanese-informal", "justify", "kannada",
     "katakana", "katakana-iroha", "keep-all", "khmer",
     "korean-hangul-formal", "korean-hanja-formal", "korean-hanja-informal",
-    "landscape", "lao", "large", "larger", "left", "level", "lighter",
+    "landscape", "lao", "large", "larger", "left", "level", "lighter", "lighten",
     "line-through", "linear", "linear-gradient", "lines", "list-item", "listbox", "listitem",
     "local", "logical", "loud", "lower", "lower-alpha", "lower-armenian",
     "lower-greek", "lower-hexadecimal", "lower-latin", "lower-norwegian",
-    "lower-roman", "lowercase", "ltr", "malayalam", "match", "matrix", "matrix3d",
+    "lower-roman", "lowercase", "ltr", "luminosity", "malayalam", "match", "matrix", "matrix3d",
     "media-controls-background", "media-current-time-display",
     "media-fullscreen-button", "media-mute-button", "media-play-button",
     "media-return-to-realtime-button", "media-rewind-button",
@@ -19632,7 +19642,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "media-volume-slider-container", "media-volume-sliderthumb", "medium",
     "menu", "menulist", "menulist-button", "menulist-text",
     "menulist-textfield", "menutext", "message-box", "middle", "min-intrinsic",
-    "mix", "mongolian", "monospace", "move", "multiple", "myanmar", "n-resize",
+    "mix", "mongolian", "monospace", "move", "multiple", "multiply", "myanmar", "n-resize",
     "narrower", "ne-resize", "nesw-resize", "no-close-quote", "no-drop",
     "no-open-quote", "no-repeat", "none", "normal", "not-allowed", "nowrap",
     "ns-resize", "numbers", "numeric", "nw-resize", "nwse-resize", "oblique", "octal", "open-quote",
@@ -19646,7 +19656,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "repeating-radial-gradient", "repeat-x", "repeat-y", "reset", "reverse",
     "rgb", "rgba", "ridge", "right", "rotate", "rotate3d", "rotateX", "rotateY",
     "rotateZ", "round", "row", "row-resize", "row-reverse", "rtl", "run-in", "running",
-    "s-resize", "sans-serif", "scale", "scale3d", "scaleX", "scaleY", "scaleZ",
+    "s-resize", "sans-serif", "saturation", "scale", "scale3d", "scaleX", "scaleY", "scaleZ", "screen",
     "scroll", "scrollbar", "se-resize", "searchfield",
     "searchfield-cancel-button", "searchfield-decoration",
     "searchfield-results-button", "searchfield-results-decoration",
@@ -19654,7 +19664,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     "simp-chinese-formal", "simp-chinese-informal", "single",
     "skew", "skewX", "skewY", "skip-white-space", "slide", "slider-horizontal",
     "slider-vertical", "sliderthumb-horizontal", "sliderthumb-vertical", "slow",
-    "small", "small-caps", "small-caption", "smaller", "solid", "somali",
+    "small", "small-caps", "small-caption", "smaller", "soft-light", "solid", "somali",
     "source-atop", "source-in", "source-out", "source-over", "space", "space-around", "space-between", "spell-out", "square",
     "square-button", "start", "static", "status-bar", "stretch", "stroke", "sub",
     "subpixel-antialiased", "super", "sw-resize", "symbolic", "symbols", "table",
@@ -19818,7 +19828,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
 
 });
 
-},{"../../lib/codemirror":34}],36:[function(require,module,exports){
+},{"../../lib/codemirror":37}],39:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -19848,7 +19858,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
   CodeMirror.defineMIME("application/x-erb", {name: "htmlembedded", scriptingModeSpec:"ruby"});
 });
 
-},{"../../addon/mode/multiplex":33,"../../lib/codemirror":34,"../htmlmixed/htmlmixed":37}],37:[function(require,module,exports){
+},{"../../addon/mode/multiplex":36,"../../lib/codemirror":37,"../htmlmixed/htmlmixed":40}],40:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -20000,7 +20010,7 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
   CodeMirror.defineMIME("text/html", "htmlmixed");
 });
 
-},{"../../lib/codemirror":34,"../css/css":35,"../javascript/javascript":38,"../xml/xml":39}],38:[function(require,module,exports){
+},{"../../lib/codemirror":37,"../css/css":38,"../javascript/javascript":41,"../xml/xml":42}],41:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -20015,6 +20025,11 @@ CodeMirror.defineMode("css", function(config, parserConfig) {
     mod(CodeMirror);
 })(function(CodeMirror) {
 "use strict";
+
+function expressionAllowed(stream, state, backUp) {
+  return /^(?:operator|sof|keyword c|case|new|[\[{}\(,;:]|=>)$/.test(state.lastType) ||
+    (state.lastType == "quasi" && /\{\s*$/.test(stream.string.slice(0, stream.pos - (backUp || 0))))
+}
 
 CodeMirror.defineMode("javascript", function(config, parserConfig) {
   var indentUnit = config.indentUnit;
@@ -20129,8 +20144,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
       } else if (stream.eat("/")) {
         stream.skipToEnd();
         return ret("comment", "comment");
-      } else if (/^(?:operator|sof|keyword c|case|new|[\[{}\(,;:])$/.test(state.lastType) ||
-                 (state.lastType == "quasi" && /\{\s*$/.test(stream.string.slice(0, stream.pos - 1)))) {
+      } else if (expressionAllowed(stream, state, 1)) {
         readRegexp(stream);
         stream.match(/^\b(([gimyu])(?![gimyu]*\2))+\b/);
         return ret("regexp", "string-2");
@@ -20536,6 +20550,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
     }
     if (type == "variable") cx.marked = "property";
     if (type == "spread") return cont(pattern);
+    if (type == "}") return pass();
     return cont(expect(":"), pattern, maybeAssign);
   }
   function maybeAssign(_type, value) {
@@ -20658,7 +20673,7 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
         lexical: new JSLexical((basecolumn || 0) - indentUnit, 0, "block", false),
         localVars: parserConfig.localVars,
         context: parserConfig.localVars && {vars: parserConfig.localVars},
-        indented: 0
+        indented: basecolumn || 0
       };
       if (parserConfig.globalVars && typeof parserConfig.globalVars == "object")
         state.globalVars = parserConfig.globalVars;
@@ -20714,7 +20729,13 @@ CodeMirror.defineMode("javascript", function(config, parserConfig) {
 
     helperType: jsonMode ? "json" : "javascript",
     jsonldMode: jsonldMode,
-    jsonMode: jsonMode
+    jsonMode: jsonMode,
+
+    expressionAllowed: expressionAllowed,
+    skipExpression: function(state) {
+      var top = state.cc[state.cc.length - 1]
+      if (top == expression || top == expressionNoComma) state.cc.pop()
+    }
   };
 });
 
@@ -20733,7 +20754,7 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 
 });
 
-},{"../../lib/codemirror":34}],39:[function(require,module,exports){
+},{"../../lib/codemirror":37}],42:[function(require,module,exports){
 // CodeMirror, copyright (c) by Marijn Haverbeke and others
 // Distributed under an MIT license: http://codemirror.net/LICENSE
 
@@ -20747,54 +20768,56 @@ CodeMirror.defineMIME("application/typescript", { name: "javascript", typescript
 })(function(CodeMirror) {
 "use strict";
 
-CodeMirror.defineMode("xml", function(config, parserConfig) {
-  var indentUnit = config.indentUnit;
-  var multilineTagIndentFactor = parserConfig.multilineTagIndentFactor || 1;
-  var multilineTagIndentPastTag = parserConfig.multilineTagIndentPastTag;
-  if (multilineTagIndentPastTag == null) multilineTagIndentPastTag = true;
+var htmlConfig = {
+  autoSelfClosers: {'area': true, 'base': true, 'br': true, 'col': true, 'command': true,
+                    'embed': true, 'frame': true, 'hr': true, 'img': true, 'input': true,
+                    'keygen': true, 'link': true, 'meta': true, 'param': true, 'source': true,
+                    'track': true, 'wbr': true, 'menuitem': true},
+  implicitlyClosed: {'dd': true, 'li': true, 'optgroup': true, 'option': true, 'p': true,
+                     'rp': true, 'rt': true, 'tbody': true, 'td': true, 'tfoot': true,
+                     'th': true, 'tr': true},
+  contextGrabbers: {
+    'dd': {'dd': true, 'dt': true},
+    'dt': {'dd': true, 'dt': true},
+    'li': {'li': true},
+    'option': {'option': true, 'optgroup': true},
+    'optgroup': {'optgroup': true},
+    'p': {'address': true, 'article': true, 'aside': true, 'blockquote': true, 'dir': true,
+          'div': true, 'dl': true, 'fieldset': true, 'footer': true, 'form': true,
+          'h1': true, 'h2': true, 'h3': true, 'h4': true, 'h5': true, 'h6': true,
+          'header': true, 'hgroup': true, 'hr': true, 'menu': true, 'nav': true, 'ol': true,
+          'p': true, 'pre': true, 'section': true, 'table': true, 'ul': true},
+    'rp': {'rp': true, 'rt': true},
+    'rt': {'rp': true, 'rt': true},
+    'tbody': {'tbody': true, 'tfoot': true},
+    'td': {'td': true, 'th': true},
+    'tfoot': {'tbody': true},
+    'th': {'td': true, 'th': true},
+    'thead': {'tbody': true, 'tfoot': true},
+    'tr': {'tr': true}
+  },
+  doNotIndent: {"pre": true},
+  allowUnquoted: true,
+  allowMissing: true,
+  caseFold: true
+}
 
-  var Kludges = parserConfig.htmlMode ? {
-    autoSelfClosers: {'area': true, 'base': true, 'br': true, 'col': true, 'command': true,
-                      'embed': true, 'frame': true, 'hr': true, 'img': true, 'input': true,
-                      'keygen': true, 'link': true, 'meta': true, 'param': true, 'source': true,
-                      'track': true, 'wbr': true, 'menuitem': true},
-    implicitlyClosed: {'dd': true, 'li': true, 'optgroup': true, 'option': true, 'p': true,
-                       'rp': true, 'rt': true, 'tbody': true, 'td': true, 'tfoot': true,
-                       'th': true, 'tr': true},
-    contextGrabbers: {
-      'dd': {'dd': true, 'dt': true},
-      'dt': {'dd': true, 'dt': true},
-      'li': {'li': true},
-      'option': {'option': true, 'optgroup': true},
-      'optgroup': {'optgroup': true},
-      'p': {'address': true, 'article': true, 'aside': true, 'blockquote': true, 'dir': true,
-            'div': true, 'dl': true, 'fieldset': true, 'footer': true, 'form': true,
-            'h1': true, 'h2': true, 'h3': true, 'h4': true, 'h5': true, 'h6': true,
-            'header': true, 'hgroup': true, 'hr': true, 'menu': true, 'nav': true, 'ol': true,
-            'p': true, 'pre': true, 'section': true, 'table': true, 'ul': true},
-      'rp': {'rp': true, 'rt': true},
-      'rt': {'rp': true, 'rt': true},
-      'tbody': {'tbody': true, 'tfoot': true},
-      'td': {'td': true, 'th': true},
-      'tfoot': {'tbody': true},
-      'th': {'td': true, 'th': true},
-      'thead': {'tbody': true, 'tfoot': true},
-      'tr': {'tr': true}
-    },
-    doNotIndent: {"pre": true},
-    allowUnquoted: true,
-    allowMissing: true,
-    caseFold: true
-  } : {
-    autoSelfClosers: {},
-    implicitlyClosed: {},
-    contextGrabbers: {},
-    doNotIndent: {},
-    allowUnquoted: false,
-    allowMissing: false,
-    caseFold: false
-  };
-  var alignCDATA = parserConfig.alignCDATA;
+var xmlConfig = {
+  autoSelfClosers: {},
+  implicitlyClosed: {},
+  contextGrabbers: {},
+  doNotIndent: {},
+  allowUnquoted: false,
+  allowMissing: false,
+  caseFold: false
+}
+
+CodeMirror.defineMode("xml", function(editorConf, config_) {
+  var indentUnit = editorConf.indentUnit
+  var config = {}
+  var defaults = config_.htmlMode ? htmlConfig : xmlConfig
+  for (var prop in defaults) config[prop] = defaults[prop]
+  for (var prop in config_) config[prop] = config_[prop]
 
   // Return variables for tokenizers
   var type, setStyle;
@@ -20924,7 +20947,7 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
     this.tagName = tagName;
     this.indent = state.indented;
     this.startOfLine = startOfLine;
-    if (Kludges.doNotIndent.hasOwnProperty(tagName) || (state.context && state.context.noIndent))
+    if (config.doNotIndent.hasOwnProperty(tagName) || (state.context && state.context.noIndent))
       this.noIndent = true;
   }
   function popContext(state) {
@@ -20937,8 +20960,8 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
         return;
       }
       parentTagName = state.context.tagName;
-      if (!Kludges.contextGrabbers.hasOwnProperty(parentTagName) ||
-          !Kludges.contextGrabbers[parentTagName].hasOwnProperty(nextTagName)) {
+      if (!config.contextGrabbers.hasOwnProperty(parentTagName) ||
+          !config.contextGrabbers[parentTagName].hasOwnProperty(nextTagName)) {
         return;
       }
       popContext(state);
@@ -20969,7 +20992,7 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
     if (type == "word") {
       var tagName = stream.current();
       if (state.context && state.context.tagName != tagName &&
-          Kludges.implicitlyClosed.hasOwnProperty(state.context.tagName))
+          config.implicitlyClosed.hasOwnProperty(state.context.tagName))
         popContext(state);
       if (state.context && state.context.tagName == tagName) {
         setStyle = "tag";
@@ -21005,7 +21028,7 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
       var tagName = state.tagName, tagStart = state.tagStart;
       state.tagName = state.tagStart = null;
       if (type == "selfcloseTag" ||
-          Kludges.autoSelfClosers.hasOwnProperty(tagName)) {
+          config.autoSelfClosers.hasOwnProperty(tagName)) {
         maybePopContext(state, tagName);
       } else {
         maybePopContext(state, tagName);
@@ -21018,12 +21041,12 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
   }
   function attrEqState(type, stream, state) {
     if (type == "equals") return attrValueState;
-    if (!Kludges.allowMissing) setStyle = "error";
+    if (!config.allowMissing) setStyle = "error";
     return attrState(type, stream, state);
   }
   function attrValueState(type, stream, state) {
     if (type == "string") return attrContinuedState;
-    if (type == "word" && Kludges.allowUnquoted) {setStyle = "string"; return attrState;}
+    if (type == "word" && config.allowUnquoted) {setStyle = "string"; return attrState;}
     setStyle = "error";
     return attrState(type, stream, state);
   }
@@ -21033,12 +21056,14 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
   }
 
   return {
-    startState: function() {
-      return {tokenize: inText,
-              state: baseState,
-              indented: 0,
-              tagName: null, tagStart: null,
-              context: null};
+    startState: function(baseIndent) {
+      var state = {tokenize: inText,
+                   state: baseState,
+                   indented: baseIndent || 0,
+                   tagName: null, tagStart: null,
+                   context: null}
+      if (baseIndent != null) state.baseIndent = baseIndent
+      return state
     },
 
     token: function(stream, state) {
@@ -21071,19 +21096,19 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
         return fullLine ? fullLine.match(/^(\s*)/)[0].length : 0;
       // Indent the starts of attribute names.
       if (state.tagName) {
-        if (multilineTagIndentPastTag)
+        if (config.multilineTagIndentPastTag !== false)
           return state.tagStart + state.tagName.length + 2;
         else
-          return state.tagStart + indentUnit * multilineTagIndentFactor;
+          return state.tagStart + indentUnit * (config.multilineTagIndentFactor || 1);
       }
-      if (alignCDATA && /<!\[CDATA\[/.test(textAfter)) return 0;
+      if (config.alignCDATA && /<!\[CDATA\[/.test(textAfter)) return 0;
       var tagAfter = textAfter && /^<(\/)?([\w_:\.-]*)/.exec(textAfter);
       if (tagAfter && tagAfter[1]) { // Closing tag spotted
         while (context) {
           if (context.tagName == tagAfter[2]) {
             context = context.prev;
             break;
-          } else if (Kludges.implicitlyClosed.hasOwnProperty(context.tagName)) {
+          } else if (config.implicitlyClosed.hasOwnProperty(context.tagName)) {
             context = context.prev;
           } else {
             break;
@@ -21091,25 +21116,30 @@ CodeMirror.defineMode("xml", function(config, parserConfig) {
         }
       } else if (tagAfter) { // Opening tag spotted
         while (context) {
-          var grabbers = Kludges.contextGrabbers[context.tagName];
+          var grabbers = config.contextGrabbers[context.tagName];
           if (grabbers && grabbers.hasOwnProperty(tagAfter[2]))
             context = context.prev;
           else
             break;
         }
       }
-      while (context && !context.startOfLine)
+      while (context && context.prev && !context.startOfLine)
         context = context.prev;
       if (context) return context.indent + indentUnit;
-      else return 0;
+      else return state.baseIndent || 0;
     },
 
     electricInput: /<\/[\s\w:]+>$/,
     blockCommentStart: "<!--",
     blockCommentEnd: "-->",
 
-    configuration: parserConfig.htmlMode ? "html" : "xml",
-    helperType: parserConfig.htmlMode ? "html" : "xml"
+    configuration: config.htmlMode ? "html" : "xml",
+    helperType: config.htmlMode ? "html" : "xml",
+
+    skipAttribute: function(state) {
+      if (state.state == attrValueState)
+        state.state = attrState
+    }
   };
 });
 
@@ -21120,7 +21150,7 @@ if (!CodeMirror.mimeModes.hasOwnProperty("text/html"))
 
 });
 
-},{"../../lib/codemirror":34}],40:[function(require,module,exports){
+},{"../../lib/codemirror":37}],43:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -21175,14 +21205,14 @@ module.exports = function debounce(func, wait, immediate){
   };
 };
 
-},{"date-now":41}],41:[function(require,module,exports){
+},{"date-now":44}],44:[function(require,module,exports){
 module.exports = Date.now || now
 
 function now() {
     return new Date().getTime()
 }
 
-},{}],42:[function(require,module,exports){
+},{}],45:[function(require,module,exports){
 /*
  * forbject
  * http://github.amexpub.com/modules/forbject
@@ -21194,7 +21224,7 @@ function now() {
 
 module.exports = require('./lib/forbject');
 
-},{"./lib/forbject":43}],43:[function(require,module,exports){
+},{"./lib/forbject":46}],46:[function(require,module,exports){
 /*
  * forbject
  * http://github.com/yawetse/forbject
@@ -21447,9 +21477,9 @@ forbject.prototype.setFormObj = function () {
 };
 module.exports = forbject;
 
-},{"events":54,"util":62,"util-extend":44}],44:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],45:[function(require,module,exports){
+},{"events":57,"util":65,"util-extend":47}],47:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],48:[function(require,module,exports){
 /*
  * formie
  * http://github.amexpub.com/modules/formie
@@ -21461,7 +21491,7 @@ arguments[4][13][0].apply(exports,arguments)
 
 module.exports = require('./lib/formie');
 
-},{"./lib/formie":46}],46:[function(require,module,exports){
+},{"./lib/formie":49}],49:[function(require,module,exports){
 /*
  * formie
  * http://github.com/yawetse/formie
@@ -21858,9 +21888,9 @@ formie.prototype._init = function () {
 };
 module.exports = formie;
 
-},{"async":47,"events":54,"forbject":42,"querystring":60,"superagent":48,"util":62,"util-extend":51}],47:[function(require,module,exports){
+},{"async":50,"events":57,"forbject":45,"querystring":63,"superagent":51,"util":65,"util-extend":54}],50:[function(require,module,exports){
 arguments[4][1][0].apply(exports,arguments)
-},{"_process":57,"dup":1}],48:[function(require,module,exports){
+},{"_process":60,"dup":1}],51:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -23053,7 +23083,7 @@ request.put = function(url, data, fn){
 
 module.exports = request;
 
-},{"emitter":49,"reduce":50}],49:[function(require,module,exports){
+},{"emitter":52,"reduce":53}],52:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -23216,7 +23246,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],50:[function(require,module,exports){
+},{}],53:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -23241,13 +23271,13 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}],51:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],52:[function(require,module,exports){
+},{}],54:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],55:[function(require,module,exports){
 
-},{}],53:[function(require,module,exports){
-arguments[4][52][0].apply(exports,arguments)
-},{"dup":52}],54:[function(require,module,exports){
+},{}],56:[function(require,module,exports){
+arguments[4][55][0].apply(exports,arguments)
+},{"dup":55}],57:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -23550,7 +23580,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],55:[function(require,module,exports){
+},{}],58:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -23575,7 +23605,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],56:[function(require,module,exports){
+},{}],59:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -23803,7 +23833,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":57}],57:[function(require,module,exports){
+},{"_process":60}],60:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
@@ -23896,7 +23926,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],58:[function(require,module,exports){
+},{}],61:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -23982,7 +24012,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],59:[function(require,module,exports){
+},{}],62:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -24069,20 +24099,20 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],60:[function(require,module,exports){
+},{}],63:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":58,"./encode":59}],61:[function(require,module,exports){
+},{"./decode":61,"./encode":62}],64:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],62:[function(require,module,exports){
+},{}],65:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -24672,7 +24702,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":61,"_process":57,"inherits":55}],63:[function(require,module,exports){
+},{"./support/isBuffer":64,"_process":60,"inherits":58}],66:[function(require,module,exports){
 /*
  * platter
  * http://github.com/typesettin/platter
@@ -24682,7 +24712,7 @@ function hasOwnProperty(obj, prop) {
 
 module.exports = require('./lib/platter');
 
-},{"./lib/platter":64}],64:[function(require,module,exports){
+},{"./lib/platter":67}],67:[function(require,module,exports){
 /*
  * manuscript
  * http://github.com/typesettin/platter
@@ -24989,7 +25019,7 @@ module.exports = platter;
 if ( typeof window === 'object' && typeof window.document === 'object' ) {
 	window.platter = platter;
 }
-},{"classie":14,"domhelper":65,"events":54,"util":62,"util-extend":67}],65:[function(require,module,exports){
+},{"classie":17,"domhelper":68,"events":57,"util":65,"util-extend":70}],68:[function(require,module,exports){
 /*
  * domhelper
  * http://github.com/yawetse/domhelper
@@ -24999,7 +25029,7 @@ if ( typeof window === 'object' && typeof window.document === 'object' ) {
 
 module.exports = require('./lib/domhelper');
 
-},{"./lib/domhelper":66}],66:[function(require,module,exports){
+},{"./lib/domhelper":69}],69:[function(require,module,exports){
 /*
  * linotype
  * https://github.com/typesettin/linotype
@@ -25339,9 +25369,9 @@ module.exports = domhelper;
 if ( typeof window === "object" && typeof window.document === "object" ) {
 	window.domhelper = domhelper;
 }
-},{"classie":14}],67:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],68:[function(require,module,exports){
+},{"classie":17}],70:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],71:[function(require,module,exports){
 /*
  * pushie
  * http://github.amexpub.com/modules/pushie
@@ -25353,7 +25383,7 @@ arguments[4][13][0].apply(exports,arguments)
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":69}],69:[function(require,module,exports){
+},{"./lib/pushie":72}],72:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -25524,9 +25554,9 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":54,"util":62,"util-extend":70}],70:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}],71:[function(require,module,exports){
+},{"events":57,"util":65,"util-extend":73}],73:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}],74:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -25620,7 +25650,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":72,"./socket":74,"./url":75,"debug":79,"socket.io-parser":112}],72:[function(require,module,exports){
+},{"./manager":75,"./socket":77,"./url":78,"debug":82,"socket.io-parser":115}],75:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26179,7 +26209,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":73,"./socket":74,"backo2":76,"component-bind":77,"component-emitter":78,"debug":79,"engine.io-client":82,"indexof":109,"socket.io-parser":112}],73:[function(require,module,exports){
+},{"./on":76,"./socket":77,"backo2":79,"component-bind":80,"component-emitter":81,"debug":82,"engine.io-client":85,"indexof":112,"socket.io-parser":115}],76:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -26205,7 +26235,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],74:[function(require,module,exports){
+},{}],77:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -26619,7 +26649,7 @@ Socket.prototype.compress = function(compress){
   return this;
 };
 
-},{"./on":73,"component-bind":77,"component-emitter":78,"debug":79,"has-binary":107,"socket.io-parser":112,"to-array":117}],75:[function(require,module,exports){
+},{"./on":76,"component-bind":80,"component-emitter":81,"debug":82,"has-binary":110,"socket.io-parser":115,"to-array":120}],78:[function(require,module,exports){
 (function (global){
 
 /**
@@ -26699,7 +26729,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":79,"parseuri":110}],76:[function(require,module,exports){
+},{"debug":82,"parseuri":113}],79:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -26786,7 +26816,7 @@ Backoff.prototype.setJitter = function(jitter){
 };
 
 
-},{}],77:[function(require,module,exports){
+},{}],80:[function(require,module,exports){
 /**
  * Slice reference.
  */
@@ -26811,9 +26841,9 @@ module.exports = function(obj, fn){
   }
 };
 
-},{}],78:[function(require,module,exports){
-arguments[4][49][0].apply(exports,arguments)
-},{"dup":49}],79:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"dup":52}],82:[function(require,module,exports){
 
 /**
  * This is the web browser implementation of `debug()`.
@@ -26983,7 +27013,7 @@ function localstorage(){
   } catch (e) {}
 }
 
-},{"./debug":80}],80:[function(require,module,exports){
+},{"./debug":83}],83:[function(require,module,exports){
 
 /**
  * This is the common logic for both the Node.js and web browser
@@ -27182,7 +27212,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":81}],81:[function(require,module,exports){
+},{"ms":84}],84:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -27309,11 +27339,11 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],82:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 
 module.exports =  require('./lib/');
 
-},{"./lib/":83}],83:[function(require,module,exports){
+},{"./lib/":86}],86:[function(require,module,exports){
 
 module.exports = require('./socket');
 
@@ -27325,7 +27355,7 @@ module.exports = require('./socket');
  */
 module.exports.parser = require('engine.io-parser');
 
-},{"./socket":84,"engine.io-parser":94}],84:[function(require,module,exports){
+},{"./socket":87,"engine.io-parser":97}],87:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -28057,7 +28087,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":85,"./transports":86,"component-emitter":92,"debug":79,"engine.io-parser":94,"indexof":109,"parsejson":104,"parseqs":105,"parseuri":110}],85:[function(require,module,exports){
+},{"./transport":88,"./transports":89,"component-emitter":95,"debug":82,"engine.io-parser":97,"indexof":112,"parsejson":107,"parseqs":108,"parseuri":113}],88:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -28214,7 +28244,7 @@ Transport.prototype.onClose = function () {
   this.emit('close');
 };
 
-},{"component-emitter":92,"engine.io-parser":94}],86:[function(require,module,exports){
+},{"component-emitter":95,"engine.io-parser":97}],89:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies
@@ -28271,7 +28301,7 @@ function polling(opts){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling-jsonp":87,"./polling-xhr":88,"./websocket":90,"xmlhttprequest-ssl":91}],87:[function(require,module,exports){
+},{"./polling-jsonp":90,"./polling-xhr":91,"./websocket":93,"xmlhttprequest-ssl":94}],90:[function(require,module,exports){
 (function (global){
 
 /**
@@ -28513,7 +28543,7 @@ JSONPPolling.prototype.doWrite = function (data, fn) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":89,"component-inherit":93}],88:[function(require,module,exports){
+},{"./polling":92,"component-inherit":96}],91:[function(require,module,exports){
 (function (global){
 /**
  * Module requirements.
@@ -28929,7 +28959,7 @@ function unloadHandler() {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./polling":89,"component-emitter":92,"component-inherit":93,"debug":79,"xmlhttprequest-ssl":91}],89:[function(require,module,exports){
+},{"./polling":92,"component-emitter":95,"component-inherit":96,"debug":82,"xmlhttprequest-ssl":94}],92:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -29178,7 +29208,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":85,"component-inherit":93,"debug":79,"engine.io-parser":94,"parseqs":105,"xmlhttprequest-ssl":91,"yeast":106}],90:[function(require,module,exports){
+},{"../transport":88,"component-inherit":96,"debug":82,"engine.io-parser":97,"parseqs":108,"xmlhttprequest-ssl":94,"yeast":109}],93:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -29465,7 +29495,7 @@ WS.prototype.check = function(){
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../transport":85,"component-inherit":93,"debug":79,"engine.io-parser":94,"parseqs":105,"ws":53,"yeast":106}],91:[function(require,module,exports){
+},{"../transport":88,"component-inherit":96,"debug":82,"engine.io-parser":97,"parseqs":108,"ws":56,"yeast":109}],94:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -29503,7 +29533,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":103}],92:[function(require,module,exports){
+},{"has-cors":106}],95:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -29669,7 +29699,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],93:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 
 module.exports = function(a, b){
   var fn = function(){};
@@ -29677,7 +29707,7 @@ module.exports = function(a, b){
   a.prototype = new fn;
   a.prototype.constructor = a;
 };
-},{}],94:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -30275,7 +30305,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":95,"after":96,"arraybuffer.slice":97,"base64-arraybuffer":98,"blob":99,"has-binary":100,"utf8":102}],95:[function(require,module,exports){
+},{"./keys":98,"after":99,"arraybuffer.slice":100,"base64-arraybuffer":101,"blob":102,"has-binary":103,"utf8":105}],98:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -30296,7 +30326,7 @@ module.exports = Object.keys || function keys (obj){
   return arr;
 };
 
-},{}],96:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 module.exports = after
 
 function after(count, callback, err_cb) {
@@ -30326,7 +30356,7 @@ function after(count, callback, err_cb) {
 
 function noop() {}
 
-},{}],97:[function(require,module,exports){
+},{}],100:[function(require,module,exports){
 /**
  * An abstraction for slicing an arraybuffer even when
  * ArrayBuffer.prototype.slice is not supported
@@ -30357,7 +30387,7 @@ module.exports = function(arraybuffer, start, end) {
   return result.buffer;
 };
 
-},{}],98:[function(require,module,exports){
+},{}],101:[function(require,module,exports){
 /*
  * base64-arraybuffer
  * https://github.com/niklasvh/base64-arraybuffer
@@ -30418,7 +30448,7 @@ module.exports = function(arraybuffer, start, end) {
   };
 })("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/");
 
-},{}],99:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 (function (global){
 /**
  * Create a blob builder even when vendor prefixes exist
@@ -30518,7 +30548,7 @@ module.exports = (function() {
 })();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],100:[function(require,module,exports){
+},{}],103:[function(require,module,exports){
 (function (global){
 
 /*
@@ -30580,12 +30610,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":101}],101:[function(require,module,exports){
+},{"isarray":104}],104:[function(require,module,exports){
 module.exports = Array.isArray || function (arr) {
   return Object.prototype.toString.call(arr) == '[object Array]';
 };
 
-},{}],102:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -30833,7 +30863,7 @@ module.exports = Array.isArray || function (arr) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],103:[function(require,module,exports){
+},{}],106:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -30852,7 +30882,7 @@ try {
   module.exports = false;
 }
 
-},{}],104:[function(require,module,exports){
+},{}],107:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -30887,7 +30917,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],105:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -30926,7 +30956,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],106:[function(require,module,exports){
+},{}],109:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -30996,7 +31026,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],107:[function(require,module,exports){
+},{}],110:[function(require,module,exports){
 (function (global){
 
 /*
@@ -31059,9 +31089,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":108}],108:[function(require,module,exports){
-arguments[4][101][0].apply(exports,arguments)
-},{"dup":101}],109:[function(require,module,exports){
+},{"isarray":111}],111:[function(require,module,exports){
+arguments[4][104][0].apply(exports,arguments)
+},{"dup":104}],112:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -31072,7 +31102,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],110:[function(require,module,exports){
+},{}],113:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -31113,7 +31143,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],111:[function(require,module,exports){
+},{}],114:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -31258,7 +31288,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":113,"isarray":115}],112:[function(require,module,exports){
+},{"./is-buffer":116,"isarray":118}],115:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -31660,7 +31690,7 @@ function error(data){
   };
 }
 
-},{"./binary":111,"./is-buffer":113,"component-emitter":114,"debug":79,"isarray":115,"json3":116}],113:[function(require,module,exports){
+},{"./binary":114,"./is-buffer":116,"component-emitter":117,"debug":82,"isarray":118,"json3":119}],116:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -31677,11 +31707,11 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],114:[function(require,module,exports){
-arguments[4][92][0].apply(exports,arguments)
-},{"dup":92}],115:[function(require,module,exports){
-arguments[4][101][0].apply(exports,arguments)
-},{"dup":101}],116:[function(require,module,exports){
+},{}],117:[function(require,module,exports){
+arguments[4][95][0].apply(exports,arguments)
+},{"dup":95}],118:[function(require,module,exports){
+arguments[4][104][0].apply(exports,arguments)
+},{"dup":104}],119:[function(require,module,exports){
 (function (global){
 /*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
 ;(function () {
@@ -32587,7 +32617,7 @@ arguments[4][101][0].apply(exports,arguments)
 }).call(this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],117:[function(require,module,exports){
+},{}],120:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -32602,7 +32632,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],118:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 'use strict';
 var debounce = require('debounce');
 var ajaxlinks,
@@ -34100,7 +34130,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../controller/data_tables":7,"../../node_modules/codemirror/addon/comment/comment":17,"../../node_modules/codemirror/addon/comment/continuecomment":18,"../../node_modules/codemirror/addon/edit/matchbrackets":19,"../../node_modules/codemirror/addon/fold/brace-fold":20,"../../node_modules/codemirror/addon/fold/comment-fold":21,"../../node_modules/codemirror/addon/fold/foldcode":22,"../../node_modules/codemirror/addon/fold/foldgutter":23,"../../node_modules/codemirror/addon/fold/indent-fold":24,"../../node_modules/codemirror/addon/hint/css-hint":25,"../../node_modules/codemirror/addon/hint/html-hint":26,"../../node_modules/codemirror/addon/hint/javascript-hint":27,"../../node_modules/codemirror/addon/hint/show-hint":28,"../../node_modules/codemirror/addon/lint/css-lint":30,"../../node_modules/codemirror/addon/lint/javascript-lint":31,"../../node_modules/codemirror/addon/lint/lint":32,"../../node_modules/codemirror/mode/css/css":35,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":36,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":37,"../../node_modules/codemirror/mode/javascript/javascript":38,"./datalist":119,"./filterlist":120,"./medialist":121,"./sortlist":122,"./stylieeditor":123,"./tagman":124,"async":1,"bindie":9,"capitalize":2,"classie":14,"codemirror":34,"debounce":40,"ejs":3,"forbject":42,"formie":45,"moment":6,"platterjs":63,"pluralize":125,"pushie":68,"querystring":60,"socket.io-client":71,"stylie":143,"stylie.modals":126,"stylie.notifications":131,"stylie.tabs":138,"superagent":145}],119:[function(require,module,exports){
+},{"../../controller/data_tables":10,"../../node_modules/codemirror/addon/comment/comment":20,"../../node_modules/codemirror/addon/comment/continuecomment":21,"../../node_modules/codemirror/addon/edit/matchbrackets":22,"../../node_modules/codemirror/addon/fold/brace-fold":23,"../../node_modules/codemirror/addon/fold/comment-fold":24,"../../node_modules/codemirror/addon/fold/foldcode":25,"../../node_modules/codemirror/addon/fold/foldgutter":26,"../../node_modules/codemirror/addon/fold/indent-fold":27,"../../node_modules/codemirror/addon/hint/css-hint":28,"../../node_modules/codemirror/addon/hint/html-hint":29,"../../node_modules/codemirror/addon/hint/javascript-hint":30,"../../node_modules/codemirror/addon/hint/show-hint":31,"../../node_modules/codemirror/addon/lint/css-lint":33,"../../node_modules/codemirror/addon/lint/javascript-lint":34,"../../node_modules/codemirror/addon/lint/lint":35,"../../node_modules/codemirror/mode/css/css":38,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":39,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":40,"../../node_modules/codemirror/mode/javascript/javascript":41,"./datalist":122,"./filterlist":123,"./medialist":124,"./sortlist":125,"./stylieeditor":126,"./tagman":127,"async":1,"bindie":12,"capitalize":2,"classie":17,"codemirror":37,"debounce":43,"ejs":6,"forbject":45,"formie":48,"moment":9,"platterjs":66,"pluralize":128,"pushie":71,"querystring":63,"socket.io-client":74,"stylie":137,"stylie.modals":129,"stylie.notifications":131,"stylie.tabs":135,"superagent":139}],122:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -34359,7 +34389,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":9,"classie":14,"events":54,"superagent":145,"util":62,"util-extend":148}],120:[function(require,module,exports){
+},{"bindie":12,"classie":17,"events":57,"superagent":139,"util":65,"util-extend":142}],123:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -34538,7 +34568,7 @@ filterlist.prototype.__init = function () {
 };
 module.exports = filterlist;
 
-},{"classie":14,"events":54,"querystring":60,"util":62,"util-extend":148}],121:[function(require,module,exports){
+},{"classie":17,"events":57,"querystring":63,"util":65,"util-extend":142}],124:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -34632,8 +34662,6 @@ tsmedialist.prototype.__addValueToDataList = function () {
  */
 tsmedialist.prototype.__init = function () {
 	var medialistcontainer = document.createElement('div'),
-		medialistelement = document.createElement('datalist'),
-		selectelement = document.createElement('select'),
 		checkboxcontainerelement = document.createElement('div'),
 		inputelementcontainer = document.createElement('div'),
 		inputelement = document.createElement('input'),
@@ -34705,8 +34733,6 @@ tsmedialist.prototype.__init = function () {
 
 	inputelementcontainer.appendChild(inputelement);
 	// inputelementcontainer.appendChild(submitbuttonelement);
-	medialistelement.appendChild(selectelement);
-	medialistcontainer.appendChild(medialistelement);
 	medialistcontainer.appendChild(inputelementcontainer);
 	medialistcontainer.appendChild(checkboxcontainerelement);
 	this.options.parentElement.appendChild(medialistcontainer);
@@ -34756,7 +34782,7 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":9,"classie":14,"events":54,"superagent":145,"util":62,"util-extend":148}],122:[function(require,module,exports){
+},{"bindie":12,"classie":17,"events":57,"superagent":139,"util":65,"util-extend":142}],125:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -34962,7 +34988,7 @@ sortlist.prototype.__init = function () {
 };
 module.exports = sortlist;
 
-},{"classie":14,"events":54,"querystring":60,"util":62,"util-extend":148}],123:[function(require,module,exports){
+},{"classie":17,"events":57,"querystring":63,"util":65,"util-extend":142}],126:[function(require,module,exports){
 /*
  * stylie.treeview
  * https://github.com/typesettin/stylie.treeview
@@ -35443,7 +35469,7 @@ StylieTextEditor.prototype.restoreSelection = function () {
 
 module.exports = StylieTextEditor;
 
-},{"../../node_modules/codemirror/addon/comment/comment":17,"../../node_modules/codemirror/addon/comment/continuecomment":18,"../../node_modules/codemirror/addon/edit/matchbrackets":19,"../../node_modules/codemirror/addon/fold/brace-fold":20,"../../node_modules/codemirror/addon/fold/comment-fold":21,"../../node_modules/codemirror/addon/fold/foldcode":22,"../../node_modules/codemirror/addon/fold/foldgutter":23,"../../node_modules/codemirror/addon/fold/indent-fold":24,"../../node_modules/codemirror/addon/hint/css-hint":25,"../../node_modules/codemirror/addon/hint/html-hint":26,"../../node_modules/codemirror/addon/hint/javascript-hint":27,"../../node_modules/codemirror/addon/hint/show-hint":28,"../../node_modules/codemirror/addon/lint/css-lint":30,"../../node_modules/codemirror/addon/lint/javascript-lint":31,"../../node_modules/codemirror/addon/lint/lint":32,"../../node_modules/codemirror/mode/css/css":35,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":36,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":37,"../../node_modules/codemirror/mode/javascript/javascript":38,"classie":14,"codemirror":34,"events":54,"stylie.modals":126,"util":62,"util-extend":148}],124:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":20,"../../node_modules/codemirror/addon/comment/continuecomment":21,"../../node_modules/codemirror/addon/edit/matchbrackets":22,"../../node_modules/codemirror/addon/fold/brace-fold":23,"../../node_modules/codemirror/addon/fold/comment-fold":24,"../../node_modules/codemirror/addon/fold/foldcode":25,"../../node_modules/codemirror/addon/fold/foldgutter":26,"../../node_modules/codemirror/addon/fold/indent-fold":27,"../../node_modules/codemirror/addon/hint/css-hint":28,"../../node_modules/codemirror/addon/hint/html-hint":29,"../../node_modules/codemirror/addon/hint/javascript-hint":30,"../../node_modules/codemirror/addon/hint/show-hint":31,"../../node_modules/codemirror/addon/lint/css-lint":33,"../../node_modules/codemirror/addon/lint/javascript-lint":34,"../../node_modules/codemirror/addon/lint/lint":35,"../../node_modules/codemirror/mode/css/css":38,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":39,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":40,"../../node_modules/codemirror/mode/javascript/javascript":41,"classie":17,"codemirror":37,"events":57,"stylie.modals":129,"util":65,"util-extend":142}],127:[function(require,module,exports){
 'use strict';
 var debounce = require('debounce');
 
@@ -35459,14 +35485,6 @@ var util = require('util'),
 	request = require('superagent'),
 	Bindie = require('bindie');
 ejs.delimiter = '?';
-
-var get_checkbox_template = function () {
-	return document.querySelector('#compose_taxonomies_template').innerHTML; //returnTemplateHTML;
-};
-
-var makeNiceName = function (makenicename) {
-	return makenicename.replace(/[^a-z0-9]/gi, '-');
-};
 
 var uniq_fast = function (a) {
 	var seen = {};
@@ -35528,23 +35546,35 @@ tstagmanager.prototype.initEventListeners = function () {
 			newtaxdata = {};
 		// console.log('before self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
 		if (classie.has(etarget, 'add-taxonomy')) {
-			newtaxdata = {
-				_id: etarget.getAttribute('data-id'),
-				id: etarget.getAttribute('data-id'),
-				title: etarget.getAttribute('data-labeltouse'),
-				name: etarget.getAttribute('data-labeltouse'),
-				fileurl: etarget.getAttribute('data-fileurl'),
-				assettype: etarget.getAttribute('data-assettype'),
-			};
-			if (etarget.getAttribute('data-mappingtype') === 'array') {
-				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data.push(newtaxdata);
+			try {
+				if (!document.querySelector('[name="docid"]') && window.showServerNotification) {
+					window.showServerNotification({
+						type: 'error',
+						message: 'please save before adding taxonomy'
+					});
+				}
+				newtaxdata = {
+					_id: etarget.getAttribute('data-id'),
+					id: etarget.getAttribute('data-id'),
+					title: etarget.getAttribute('data-labeltouse'),
+					name: etarget.getAttribute('data-labeltouse'),
+					fileurl: etarget.getAttribute('data-fileurl'),
+					assettype: etarget.getAttribute('data-assettype'),
+				};
+				if (etarget.getAttribute('data-mappingtype') === 'array') {
+					self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data.push(newtaxdata);
+				}
+				else {
+					self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data = newtaxdata;
+				}
 			}
-			else {
-				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data = newtaxdata;
+			catch (e) {
+				console.error(e);
 			}
+
 			// console.log('after self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
 
-			console.log('handleSearchMenuContentClick e.target', e.target);
+			// console.log('handleSearchMenuContentClick e.target', e.target);
 			self.__updateBindie();
 		}
 	};
@@ -35570,7 +35600,7 @@ tstagmanager.prototype.initEventListeners = function () {
 					responsedata.body.taxfields = self.options.taxfields;
 					searchhtml = ejs.render(self.options.search_result_template, responsedata.body);
 					self.options.search_menu_content.innerHTML = searchhtml;
-					console.log('responsedata.body', responsedata.body);
+					// console.log('responsedata.body', responsedata.body);
 					// 
 				});
 		}
@@ -35728,7 +35758,7 @@ tstagmanager.prototype.__init = function () {
 };
 module.exports = tstagmanager;
 
-},{"../../controller/data_tables":7,"bindie":9,"capitalize":2,"classie":14,"debounce":40,"ejs":3,"events":54,"moment":6,"pluralize":125,"superagent":145,"util":62,"util-extend":148}],125:[function(require,module,exports){
+},{"../../controller/data_tables":10,"bindie":12,"capitalize":2,"classie":17,"debounce":43,"ejs":6,"events":57,"moment":9,"pluralize":128,"superagent":139,"util":65,"util-extend":142}],128:[function(require,module,exports){
 /* global define */
 
 (function (root, pluralize) {
@@ -36163,7 +36193,7 @@ module.exports = tstagmanager;
   return pluralize;
 });
 
-},{}],126:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -36175,7 +36205,7 @@ module.exports = tstagmanager;
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":127}],127:[function(require,module,exports){
+},{"./lib/stylie.modals":130}],130:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -36343,13 +36373,7 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":128,"events":54,"util":62,"util-extend":148}],128:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"./lib/classie":130,"dup":14}],129:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],130:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./class_list_ployfill":129,"dup":16}],131:[function(require,module,exports){
+},{"classie":3,"events":57,"util":65,"util-extend":142}],131:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -36558,13 +36582,7 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":133,"detectcss":136,"events":54,"util":62,"util-extend":148}],133:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"./lib/classie":135,"dup":14}],134:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],135:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./class_list_ployfill":134,"dup":16}],136:[function(require,module,exports){
+},{"classie":3,"detectcss":133,"events":57,"util":65,"util-extend":142}],133:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -36574,7 +36592,7 @@ arguments[4][16][0].apply(exports,arguments)
 
 module.exports = require('./lib/detectCSS');
 
-},{"./lib/detectCSS":137}],137:[function(require,module,exports){
+},{"./lib/detectCSS":134}],134:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules
@@ -36613,7 +36631,7 @@ exports.prefixed = function(style){
     }
     return false;
 };
-},{}],138:[function(require,module,exports){
+},{}],135:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -36625,7 +36643,7 @@ exports.prefixed = function(style){
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":139}],139:[function(require,module,exports){
+},{"./lib/stylie.tabs":136}],136:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -36725,13 +36743,7 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":140,"events":54,"util":62,"util-extend":148}],140:[function(require,module,exports){
-arguments[4][14][0].apply(exports,arguments)
-},{"./lib/classie":142,"dup":14}],141:[function(require,module,exports){
-arguments[4][15][0].apply(exports,arguments)
-},{"dup":15}],142:[function(require,module,exports){
-arguments[4][16][0].apply(exports,arguments)
-},{"./class_list_ployfill":141,"dup":16}],143:[function(require,module,exports){
+},{"classie":3,"events":57,"util":65,"util-extend":142}],137:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -36743,7 +36755,7 @@ arguments[4][16][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":144}],144:[function(require,module,exports){
+},{"./lib/stylie":138}],138:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -36843,1213 +36855,12 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":54,"util":62,"util-extend":148}],145:[function(require,module,exports){
-/**
- * Module dependencies.
- */
-
-var Emitter = require('emitter');
-var reduce = require('reduce');
-
-/**
- * Root reference for iframes.
- */
-
-var root;
-if (typeof window !== 'undefined') { // Browser window
-  root = window;
-} else if (typeof self !== 'undefined') { // Web Worker
-  root = self;
-} else { // Other environments
-  root = this;
-}
-
-/**
- * Noop.
- */
-
-function noop(){};
-
-/**
- * Check if `obj` is a host object,
- * we don't want to serialize these :)
- *
- * TODO: future proof, move to compoent land
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api private
- */
-
-function isHost(obj) {
-  var str = {}.toString.call(obj);
-
-  switch (str) {
-    case '[object File]':
-    case '[object Blob]':
-    case '[object FormData]':
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Determine XHR.
- */
-
-request.getXHR = function () {
-  if (root.XMLHttpRequest
-      && (!root.location || 'file:' != root.location.protocol
-          || !root.ActiveXObject)) {
-    return new XMLHttpRequest;
-  } else {
-    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP'); } catch(e) {}
-  }
-  return false;
-};
-
-/**
- * Removes leading and trailing whitespace, added to support IE.
- *
- * @param {String} s
- * @return {String}
- * @api private
- */
-
-var trim = ''.trim
-  ? function(s) { return s.trim(); }
-  : function(s) { return s.replace(/(^\s*|\s*$)/g, ''); };
-
-/**
- * Check if `obj` is an object.
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api private
- */
-
-function isObject(obj) {
-  return obj === Object(obj);
-}
-
-/**
- * Serialize the given `obj`.
- *
- * @param {Object} obj
- * @return {String}
- * @api private
- */
-
-function serialize(obj) {
-  if (!isObject(obj)) return obj;
-  var pairs = [];
-  for (var key in obj) {
-    if (null != obj[key]) {
-      pushEncodedKeyValuePair(pairs, key, obj[key]);
-        }
-      }
-  return pairs.join('&');
-}
-
-/**
- * Helps 'serialize' with serializing arrays.
- * Mutates the pairs array.
- *
- * @param {Array} pairs
- * @param {String} key
- * @param {Mixed} val
- */
-
-function pushEncodedKeyValuePair(pairs, key, val) {
-  if (Array.isArray(val)) {
-    return val.forEach(function(v) {
-      pushEncodedKeyValuePair(pairs, key, v);
-    });
-  }
-  pairs.push(encodeURIComponent(key)
-    + '=' + encodeURIComponent(val));
-}
-
-/**
- * Expose serialization method.
- */
-
- request.serializeObject = serialize;
-
- /**
-  * Parse the given x-www-form-urlencoded `str`.
-  *
-  * @param {String} str
-  * @return {Object}
-  * @api private
-  */
-
-function parseString(str) {
-  var obj = {};
-  var pairs = str.split('&');
-  var parts;
-  var pair;
-
-  for (var i = 0, len = pairs.length; i < len; ++i) {
-    pair = pairs[i];
-    parts = pair.split('=');
-    obj[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
-  }
-
-  return obj;
-}
-
-/**
- * Expose parser.
- */
-
-request.parseString = parseString;
-
-/**
- * Default MIME type map.
- *
- *     superagent.types.xml = 'application/xml';
- *
- */
-
-request.types = {
-  html: 'text/html',
-  json: 'application/json',
-  xml: 'application/xml',
-  urlencoded: 'application/x-www-form-urlencoded',
-  'form': 'application/x-www-form-urlencoded',
-  'form-data': 'application/x-www-form-urlencoded'
-};
-
-/**
- * Default serialization map.
- *
- *     superagent.serialize['application/xml'] = function(obj){
- *       return 'generated xml here';
- *     };
- *
- */
-
- request.serialize = {
-   'application/x-www-form-urlencoded': serialize,
-   'application/json': JSON.stringify
- };
-
- /**
-  * Default parsers.
-  *
-  *     superagent.parse['application/xml'] = function(str){
-  *       return { object parsed from str };
-  *     };
-  *
-  */
-
-request.parse = {
-  'application/x-www-form-urlencoded': parseString,
-  'application/json': JSON.parse
-};
-
-/**
- * Parse the given header `str` into
- * an object containing the mapped fields.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function parseHeader(str) {
-  var lines = str.split(/\r?\n/);
-  var fields = {};
-  var index;
-  var line;
-  var field;
-  var val;
-
-  lines.pop(); // trailing CRLF
-
-  for (var i = 0, len = lines.length; i < len; ++i) {
-    line = lines[i];
-    index = line.indexOf(':');
-    field = line.slice(0, index).toLowerCase();
-    val = trim(line.slice(index + 1));
-    fields[field] = val;
-  }
-
-  return fields;
-}
-
-/**
- * Check if `mime` is json or has +json structured syntax suffix.
- *
- * @param {String} mime
- * @return {Boolean}
- * @api private
- */
-
-function isJSON(mime) {
-  return /[\/+]json\b/.test(mime);
-}
-
-/**
- * Return the mime type for the given `str`.
- *
- * @param {String} str
- * @return {String}
- * @api private
- */
-
-function type(str){
-  return str.split(/ *; */).shift();
-};
-
-/**
- * Return header field parameters.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function params(str){
-  return reduce(str.split(/ *; */), function(obj, str){
-    var parts = str.split(/ *= */)
-      , key = parts.shift()
-      , val = parts.shift();
-
-    if (key && val) obj[key] = val;
-    return obj;
-  }, {});
-};
-
-/**
- * Initialize a new `Response` with the given `xhr`.
- *
- *  - set flags (.ok, .error, etc)
- *  - parse header
- *
- * Examples:
- *
- *  Aliasing `superagent` as `request` is nice:
- *
- *      request = superagent;
- *
- *  We can use the promise-like API, or pass callbacks:
- *
- *      request.get('/').end(function(res){});
- *      request.get('/', function(res){});
- *
- *  Sending data can be chained:
- *
- *      request
- *        .post('/user')
- *        .send({ name: 'tj' })
- *        .end(function(res){});
- *
- *  Or passed to `.send()`:
- *
- *      request
- *        .post('/user')
- *        .send({ name: 'tj' }, function(res){});
- *
- *  Or passed to `.post()`:
- *
- *      request
- *        .post('/user', { name: 'tj' })
- *        .end(function(res){});
- *
- * Or further reduced to a single call for simple cases:
- *
- *      request
- *        .post('/user', { name: 'tj' }, function(res){});
- *
- * @param {XMLHTTPRequest} xhr
- * @param {Object} options
- * @api private
- */
-
-function Response(req, options) {
-  options = options || {};
-  this.req = req;
-  this.xhr = this.req.xhr;
-  // responseText is accessible only if responseType is '' or 'text' and on older browsers
-  this.text = ((this.req.method !='HEAD' && (this.xhr.responseType === '' || this.xhr.responseType === 'text')) || typeof this.xhr.responseType === 'undefined')
-     ? this.xhr.responseText
-     : null;
-  this.statusText = this.req.xhr.statusText;
-  this.setStatusProperties(this.xhr.status);
-  this.header = this.headers = parseHeader(this.xhr.getAllResponseHeaders());
-  // getAllResponseHeaders sometimes falsely returns "" for CORS requests, but
-  // getResponseHeader still works. so we get content-type even if getting
-  // other headers fails.
-  this.header['content-type'] = this.xhr.getResponseHeader('content-type');
-  this.setHeaderProperties(this.header);
-  this.body = this.req.method != 'HEAD'
-    ? this.parseBody(this.text ? this.text : this.xhr.response)
-    : null;
-}
-
-/**
- * Get case-insensitive `field` value.
- *
- * @param {String} field
- * @return {String}
- * @api public
- */
-
-Response.prototype.get = function(field){
-  return this.header[field.toLowerCase()];
-};
-
-/**
- * Set header related properties:
- *
- *   - `.type` the content type without params
- *
- * A response of "Content-Type: text/plain; charset=utf-8"
- * will provide you with a `.type` of "text/plain".
- *
- * @param {Object} header
- * @api private
- */
-
-Response.prototype.setHeaderProperties = function(header){
-  // content-type
-  var ct = this.header['content-type'] || '';
-  this.type = type(ct);
-
-  // params
-  var obj = params(ct);
-  for (var key in obj) this[key] = obj[key];
-};
-
-/**
- * Parse the given body `str`.
- *
- * Used for auto-parsing of bodies. Parsers
- * are defined on the `superagent.parse` object.
- *
- * @param {String} str
- * @return {Mixed}
- * @api private
- */
-
-Response.prototype.parseBody = function(str){
-  var parse = request.parse[this.type];
-  return parse && str && (str.length || str instanceof Object)
-    ? parse(str)
-    : null;
-};
-
-/**
- * Set flags such as `.ok` based on `status`.
- *
- * For example a 2xx response will give you a `.ok` of __true__
- * whereas 5xx will be __false__ and `.error` will be __true__. The
- * `.clientError` and `.serverError` are also available to be more
- * specific, and `.statusType` is the class of error ranging from 1..5
- * sometimes useful for mapping respond colors etc.
- *
- * "sugar" properties are also defined for common cases. Currently providing:
- *
- *   - .noContent
- *   - .badRequest
- *   - .unauthorized
- *   - .notAcceptable
- *   - .notFound
- *
- * @param {Number} status
- * @api private
- */
-
-Response.prototype.setStatusProperties = function(status){
-  // handle IE9 bug: http://stackoverflow.com/questions/10046972/msie-returns-status-code-of-1223-for-ajax-request
-  if (status === 1223) {
-    status = 204;
-  }
-
-  var type = status / 100 | 0;
-
-  // status / class
-  this.status = this.statusCode = status;
-  this.statusType = type;
-
-  // basics
-  this.info = 1 == type;
-  this.ok = 2 == type;
-  this.clientError = 4 == type;
-  this.serverError = 5 == type;
-  this.error = (4 == type || 5 == type)
-    ? this.toError()
-    : false;
-
-  // sugar
-  this.accepted = 202 == status;
-  this.noContent = 204 == status;
-  this.badRequest = 400 == status;
-  this.unauthorized = 401 == status;
-  this.notAcceptable = 406 == status;
-  this.notFound = 404 == status;
-  this.forbidden = 403 == status;
-};
-
-/**
- * Return an `Error` representative of this response.
- *
- * @return {Error}
- * @api public
- */
-
-Response.prototype.toError = function(){
-  var req = this.req;
-  var method = req.method;
-  var url = req.url;
-
-  var msg = 'cannot ' + method + ' ' + url + ' (' + this.status + ')';
-  var err = new Error(msg);
-  err.status = this.status;
-  err.method = method;
-  err.url = url;
-
-  return err;
-};
-
-/**
- * Expose `Response`.
- */
-
-request.Response = Response;
-
-/**
- * Initialize a new `Request` with the given `method` and `url`.
- *
- * @param {String} method
- * @param {String} url
- * @api public
- */
-
-function Request(method, url) {
-  var self = this;
-  Emitter.call(this);
-  this._query = this._query || [];
-  this.method = method;
-  this.url = url;
-  this.header = {};
-  this._header = {};
-  this.on('end', function(){
-    var err = null;
-    var res = null;
-
-    try {
-      res = new Response(self);
-    } catch(e) {
-      err = new Error('Parser is unable to parse the response');
-      err.parse = true;
-      err.original = e;
-      // issue #675: return the raw response if the response parsing fails
-      err.rawResponse = self.xhr && self.xhr.responseText ? self.xhr.responseText : null;
-      return self.callback(err);
-    }
-
-    self.emit('response', res);
-
-    if (err) {
-      return self.callback(err, res);
-    }
-
-    if (res.status >= 200 && res.status < 300) {
-      return self.callback(err, res);
-    }
-
-    var new_err = new Error(res.statusText || 'Unsuccessful HTTP response');
-    new_err.original = err;
-    new_err.response = res;
-    new_err.status = res.status;
-
-    self.callback(new_err, res);
-  });
-}
-
-/**
- * Mixin `Emitter`.
- */
-
-Emitter(Request.prototype);
-
-/**
- * Allow for extension
- */
-
-Request.prototype.use = function(fn) {
-  fn(this);
-  return this;
-}
-
-/**
- * Set timeout to `ms`.
- *
- * @param {Number} ms
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.timeout = function(ms){
-  this._timeout = ms;
-  return this;
-};
-
-/**
- * Clear previous timeout.
- *
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.clearTimeout = function(){
-  this._timeout = 0;
-  clearTimeout(this._timer);
-  return this;
-};
-
-/**
- * Abort the request, and clear potential timeout.
- *
- * @return {Request}
- * @api public
- */
-
-Request.prototype.abort = function(){
-  if (this.aborted) return;
-  this.aborted = true;
-  this.xhr.abort();
-  this.clearTimeout();
-  this.emit('abort');
-  return this;
-};
-
-/**
- * Set header `field` to `val`, or multiple fields with one object.
- *
- * Examples:
- *
- *      req.get('/')
- *        .set('Accept', 'application/json')
- *        .set('X-API-Key', 'foobar')
- *        .end(callback);
- *
- *      req.get('/')
- *        .set({ Accept: 'application/json', 'X-API-Key': 'foobar' })
- *        .end(callback);
- *
- * @param {String|Object} field
- * @param {String} val
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.set = function(field, val){
-  if (isObject(field)) {
-    for (var key in field) {
-      this.set(key, field[key]);
-    }
-    return this;
-  }
-  this._header[field.toLowerCase()] = val;
-  this.header[field] = val;
-  return this;
-};
-
-/**
- * Remove header `field`.
- *
- * Example:
- *
- *      req.get('/')
- *        .unset('User-Agent')
- *        .end(callback);
- *
- * @param {String} field
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.unset = function(field){
-  delete this._header[field.toLowerCase()];
-  delete this.header[field];
-  return this;
-};
-
-/**
- * Get case-insensitive header `field` value.
- *
- * @param {String} field
- * @return {String}
- * @api private
- */
-
-Request.prototype.getHeader = function(field){
-  return this._header[field.toLowerCase()];
-};
-
-/**
- * Set Content-Type to `type`, mapping values from `request.types`.
- *
- * Examples:
- *
- *      superagent.types.xml = 'application/xml';
- *
- *      request.post('/')
- *        .type('xml')
- *        .send(xmlstring)
- *        .end(callback);
- *
- *      request.post('/')
- *        .type('application/xml')
- *        .send(xmlstring)
- *        .end(callback);
- *
- * @param {String} type
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.type = function(type){
-  this.set('Content-Type', request.types[type] || type);
-  return this;
-};
-
-/**
- * Force given parser
- *
- * Sets the body parser no matter type.
- *
- * @param {Function}
- * @api public
- */
-
-Request.prototype.parse = function(fn){
-  this._parser = fn;
-  return this;
-};
-
-/**
- * Set Accept to `type`, mapping values from `request.types`.
- *
- * Examples:
- *
- *      superagent.types.json = 'application/json';
- *
- *      request.get('/agent')
- *        .accept('json')
- *        .end(callback);
- *
- *      request.get('/agent')
- *        .accept('application/json')
- *        .end(callback);
- *
- * @param {String} accept
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.accept = function(type){
-  this.set('Accept', request.types[type] || type);
-  return this;
-};
-
-/**
- * Set Authorization field value with `user` and `pass`.
- *
- * @param {String} user
- * @param {String} pass
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.auth = function(user, pass){
-  var str = btoa(user + ':' + pass);
-  this.set('Authorization', 'Basic ' + str);
-  return this;
-};
-
-/**
-* Add query-string `val`.
-*
-* Examples:
-*
-*   request.get('/shoes')
-*     .query('size=10')
-*     .query({ color: 'blue' })
-*
-* @param {Object|String} val
-* @return {Request} for chaining
-* @api public
-*/
-
-Request.prototype.query = function(val){
-  if ('string' != typeof val) val = serialize(val);
-  if (val) this._query.push(val);
-  return this;
-};
-
-/**
- * Write the field `name` and `val` for "multipart/form-data"
- * request bodies.
- *
- * ``` js
- * request.post('/upload')
- *   .field('foo', 'bar')
- *   .end(callback);
- * ```
- *
- * @param {String} name
- * @param {String|Blob|File} val
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.field = function(name, val){
-  if (!this._formData) this._formData = new root.FormData();
-  this._formData.append(name, val);
-  return this;
-};
-
-/**
- * Queue the given `file` as an attachment to the specified `field`,
- * with optional `filename`.
- *
- * ``` js
- * request.post('/upload')
- *   .attach(new Blob(['<a id="a"><b id="b">hey!</b></a>'], { type: "text/html"}))
- *   .end(callback);
- * ```
- *
- * @param {String} field
- * @param {Blob|File} file
- * @param {String} filename
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.attach = function(field, file, filename){
-  if (!this._formData) this._formData = new root.FormData();
-  this._formData.append(field, file, filename);
-  return this;
-};
-
-/**
- * Send `data`, defaulting the `.type()` to "json" when
- * an object is given.
- *
- * Examples:
- *
- *       // querystring
- *       request.get('/search')
- *         .end(callback)
- *
- *       // multiple data "writes"
- *       request.get('/search')
- *         .send({ search: 'query' })
- *         .send({ range: '1..5' })
- *         .send({ order: 'desc' })
- *         .end(callback)
- *
- *       // manual json
- *       request.post('/user')
- *         .type('json')
- *         .send('{"name":"tj"}')
- *         .end(callback)
- *
- *       // auto json
- *       request.post('/user')
- *         .send({ name: 'tj' })
- *         .end(callback)
- *
- *       // manual x-www-form-urlencoded
- *       request.post('/user')
- *         .type('form')
- *         .send('name=tj')
- *         .end(callback)
- *
- *       // auto x-www-form-urlencoded
- *       request.post('/user')
- *         .type('form')
- *         .send({ name: 'tj' })
- *         .end(callback)
- *
- *       // defaults to x-www-form-urlencoded
-  *      request.post('/user')
-  *        .send('name=tobi')
-  *        .send('species=ferret')
-  *        .end(callback)
- *
- * @param {String|Object} data
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.send = function(data){
-  var obj = isObject(data);
-  var type = this.getHeader('Content-Type');
-
-  // merge
-  if (obj && isObject(this._data)) {
-    for (var key in data) {
-      this._data[key] = data[key];
-    }
-  } else if ('string' == typeof data) {
-    if (!type) this.type('form');
-    type = this.getHeader('Content-Type');
-    if ('application/x-www-form-urlencoded' == type) {
-      this._data = this._data
-        ? this._data + '&' + data
-        : data;
-    } else {
-      this._data = (this._data || '') + data;
-    }
-  } else {
-    this._data = data;
-  }
-
-  if (!obj || isHost(data)) return this;
-  if (!type) this.type('json');
-  return this;
-};
-
-/**
- * Invoke the callback with `err` and `res`
- * and handle arity check.
- *
- * @param {Error} err
- * @param {Response} res
- * @api private
- */
-
-Request.prototype.callback = function(err, res){
-  var fn = this._callback;
-  this.clearTimeout();
-  fn(err, res);
-};
-
-/**
- * Invoke callback with x-domain error.
- *
- * @api private
- */
-
-Request.prototype.crossDomainError = function(){
-  var err = new Error('Request has been terminated\nPossible causes: the network is offline, Origin is not allowed by Access-Control-Allow-Origin, the page is being unloaded, etc.');
-  err.crossDomain = true;
-
-  err.status = this.status;
-  err.method = this.method;
-  err.url = this.url;
-
-  this.callback(err);
-};
-
-/**
- * Invoke callback with timeout error.
- *
- * @api private
- */
-
-Request.prototype.timeoutError = function(){
-  var timeout = this._timeout;
-  var err = new Error('timeout of ' + timeout + 'ms exceeded');
-  err.timeout = timeout;
-  this.callback(err);
-};
-
-/**
- * Enable transmission of cookies with x-domain requests.
- *
- * Note that for this to work the origin must not be
- * using "Access-Control-Allow-Origin" with a wildcard,
- * and also must set "Access-Control-Allow-Credentials"
- * to "true".
- *
- * @api public
- */
-
-Request.prototype.withCredentials = function(){
-  this._withCredentials = true;
-  return this;
-};
-
-/**
- * Initiate request, invoking callback `fn(res)`
- * with an instanceof `Response`.
- *
- * @param {Function} fn
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.end = function(fn){
-  var self = this;
-  var xhr = this.xhr = request.getXHR();
-  var query = this._query.join('&');
-  var timeout = this._timeout;
-  var data = this._formData || this._data;
-
-  // store callback
-  this._callback = fn || noop;
-
-  // state change
-  xhr.onreadystatechange = function(){
-    if (4 != xhr.readyState) return;
-
-    // In IE9, reads to any property (e.g. status) off of an aborted XHR will
-    // result in the error "Could not complete the operation due to error c00c023f"
-    var status;
-    try { status = xhr.status } catch(e) { status = 0; }
-
-    if (0 == status) {
-      if (self.timedout) return self.timeoutError();
-      if (self.aborted) return;
-      return self.crossDomainError();
-    }
-    self.emit('end');
-  };
-
-  // progress
-  var handleProgress = function(e){
-    if (e.total > 0) {
-      e.percent = e.loaded / e.total * 100;
-    }
-    self.emit('progress', e);
-  };
-  if (this.hasListeners('progress')) {
-    xhr.onprogress = handleProgress;
-  }
-  try {
-    if (xhr.upload && this.hasListeners('progress')) {
-      xhr.upload.onprogress = handleProgress;
-    }
-  } catch(e) {
-    // Accessing xhr.upload fails in IE from a web worker, so just pretend it doesn't exist.
-    // Reported here:
-    // https://connect.microsoft.com/IE/feedback/details/837245/xmlhttprequest-upload-throws-invalid-argument-when-used-from-web-worker-context
-  }
-
-  // timeout
-  if (timeout && !this._timer) {
-    this._timer = setTimeout(function(){
-      self.timedout = true;
-      self.abort();
-    }, timeout);
-  }
-
-  // querystring
-  if (query) {
-    query = request.serializeObject(query);
-    this.url += ~this.url.indexOf('?')
-      ? '&' + query
-      : '?' + query;
-  }
-
-  // initiate request
-  xhr.open(this.method, this.url, true);
-
-  // CORS
-  if (this._withCredentials) xhr.withCredentials = true;
-
-  // body
-  if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !isHost(data)) {
-    // serialize stuff
-    var contentType = this.getHeader('Content-Type');
-    var serialize = this._parser || request.serialize[contentType ? contentType.split(';')[0] : ''];
-    if (!serialize && isJSON(contentType)) serialize = request.serialize['application/json'];
-    if (serialize) data = serialize(data);
-  }
-
-  // set header fields
-  for (var field in this.header) {
-    if (null == this.header[field]) continue;
-    xhr.setRequestHeader(field, this.header[field]);
-  }
-
-  // send stuff
-  this.emit('request', this);
-
-  // IE11 xhr.send(undefined) sends 'undefined' string as POST payload (instead of nothing)
-  // We need null here if data is undefined
-  xhr.send(typeof data !== 'undefined' ? data : null);
-  return this;
-};
-
-/**
- * Faux promise support
- *
- * @param {Function} fulfill
- * @param {Function} reject
- * @return {Request}
- */
-
-Request.prototype.then = function (fulfill, reject) {
-  return this.end(function(err, res) {
-    err ? reject(err) : fulfill(res);
-  });
-}
-
-/**
- * Expose `Request`.
- */
-
-request.Request = Request;
-
-/**
- * Issue a request:
- *
- * Examples:
- *
- *    request('GET', '/users').end(callback)
- *    request('/users').end(callback)
- *    request('/users', callback)
- *
- * @param {String} method
- * @param {String|Function} url or callback
- * @return {Request}
- * @api public
- */
-
-function request(method, url) {
-  // callback
-  if ('function' == typeof url) {
-    return new Request('GET', method).end(url);
-  }
-
-  // url first
-  if (1 == arguments.length) {
-    return new Request('GET', method);
-  }
-
-  return new Request(method, url);
-}
-
-/**
- * GET `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.get = function(url, data, fn){
-  var req = request('GET', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.query(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * HEAD `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.head = function(url, data, fn){
-  var req = request('HEAD', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * DELETE `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-function del(url, fn){
-  var req = request('DELETE', url);
-  if (fn) req.end(fn);
-  return req;
-};
-
-request.del = del;
-request.delete = del;
-
-/**
- * PATCH `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed} data
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.patch = function(url, data, fn){
-  var req = request('PATCH', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * POST `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed} data
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.post = function(url, data, fn){
-  var req = request('POST', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * PUT `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.put = function(url, data, fn){
-  var req = request('PUT', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * Expose `request`.
- */
-
-module.exports = request;
-
-},{"emitter":146,"reduce":147}],146:[function(require,module,exports){
-arguments[4][92][0].apply(exports,arguments)
-},{"dup":92}],147:[function(require,module,exports){
-arguments[4][50][0].apply(exports,arguments)
-},{"dup":50}],148:[function(require,module,exports){
-arguments[4][13][0].apply(exports,arguments)
-},{"dup":13}]},{},[118]);
+},{"events":57,"util":65,"util-extend":142}],139:[function(require,module,exports){
+arguments[4][51][0].apply(exports,arguments)
+},{"dup":51,"emitter":140,"reduce":141}],140:[function(require,module,exports){
+arguments[4][52][0].apply(exports,arguments)
+},{"dup":52}],141:[function(require,module,exports){
+arguments[4][53][0].apply(exports,arguments)
+},{"dup":53}],142:[function(require,module,exports){
+arguments[4][16][0].apply(exports,arguments)
+},{"dup":16}]},{},[121]);

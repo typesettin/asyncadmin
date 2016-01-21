@@ -14,14 +14,6 @@ var util = require('util'),
 	Bindie = require('bindie');
 ejs.delimiter = '?';
 
-var get_checkbox_template = function () {
-	return document.querySelector('#compose_taxonomies_template').innerHTML; //returnTemplateHTML;
-};
-
-var makeNiceName = function (makenicename) {
-	return makenicename.replace(/[^a-z0-9]/gi, '-');
-};
-
 var uniq_fast = function (a) {
 	var seen = {};
 	var out = [];
@@ -82,23 +74,35 @@ tstagmanager.prototype.initEventListeners = function () {
 			newtaxdata = {};
 		// console.log('before self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
 		if (classie.has(etarget, 'add-taxonomy')) {
-			newtaxdata = {
-				_id: etarget.getAttribute('data-id'),
-				id: etarget.getAttribute('data-id'),
-				title: etarget.getAttribute('data-labeltouse'),
-				name: etarget.getAttribute('data-labeltouse'),
-				fileurl: etarget.getAttribute('data-fileurl'),
-				assettype: etarget.getAttribute('data-assettype'),
-			};
-			if (etarget.getAttribute('data-mappingtype') === 'array') {
-				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data.push(newtaxdata);
+			try {
+				if (!document.querySelector('[name="docid"]') && window.showServerNotification) {
+					window.showServerNotification({
+						type: 'error',
+						message: 'please save before adding taxonomy'
+					});
+				}
+				newtaxdata = {
+					_id: etarget.getAttribute('data-id'),
+					id: etarget.getAttribute('data-id'),
+					title: etarget.getAttribute('data-labeltouse'),
+					name: etarget.getAttribute('data-labeltouse'),
+					fileurl: etarget.getAttribute('data-fileurl'),
+					assettype: etarget.getAttribute('data-assettype'),
+				};
+				if (etarget.getAttribute('data-mappingtype') === 'array') {
+					self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data.push(newtaxdata);
+				}
+				else {
+					self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data = newtaxdata;
+				}
 			}
-			else {
-				self.options.taxfields[etarget.getAttribute('data-fieldname')].field_data = newtaxdata;
+			catch (e) {
+				console.error(e);
 			}
+
 			// console.log('after self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
 
-			console.log('handleSearchMenuContentClick e.target', e.target);
+			// console.log('handleSearchMenuContentClick e.target', e.target);
 			self.__updateBindie();
 		}
 	};
@@ -124,7 +128,7 @@ tstagmanager.prototype.initEventListeners = function () {
 					responsedata.body.taxfields = self.options.taxfields;
 					searchhtml = ejs.render(self.options.search_result_template, responsedata.body);
 					self.options.search_menu_content.innerHTML = searchhtml;
-					console.log('responsedata.body', responsedata.body);
+					// console.log('responsedata.body', responsedata.body);
 					// 
 				});
 		}

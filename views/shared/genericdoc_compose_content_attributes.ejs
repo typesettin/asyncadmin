@@ -1,6 +1,6 @@
 <%
 contenttypestouse =false;
-if(!genericdoc && default_contentypes){
+if(!genericdoc && typeof default_contentypes !=='undefined'&& default_contentypes){
 	contenttypestouse = default_contentypes;
 }
 else if(genericdoc && genericdoc.contenttypes){

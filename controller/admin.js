@@ -684,6 +684,7 @@ var controller = function (resources) {
 	Contenttype = mongoose.model('Contenttype');
 	Item = mongoose.model('Item');
 	User = mongoose.model('User');
+	// console.log('Item', typeof Item.schema.paths.content);
 	// AppDBSetting = mongoose.model('Setting');
 	appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;

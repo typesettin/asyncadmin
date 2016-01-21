@@ -8,6 +8,41 @@
 @import (inline) "../../node_modules/codemirror/addon/fold/foldgutter.css";
 @import (inline) "../../node_modules/codemirror/addon/lint/lint.css";
 @import (inline) "../../node_modules/codemirror/addon/hint/show-hint.css";
+@serif: Helvetica,Georgia,serif;
+@serifclean: "Helvetica Neue",Helvetica,garamond,Georgia,serif;
+@sanserif: Arial,sans-serif;
+.ts-serif{
+	font-family: @serif;
+}
+.ts-serif-clean{
+	font-family: @serifclean;
+}
+.ts-sans-serif{
+	font-family: @sanserif;
+}
+
+.ts{
+	
+	/* CSS Tree menu styles */
+	ol.ts-tree{
+		// padding: 0 0 0 (@sizexl/2);
+		// width: 300px;
+
+		/* Just some base styles not needed for example to function */
+		*, html {
+				.ts-sans-serif;
+			}
+		}
+
+		// li{ 
+		// 	input + ol{
+		// 		background: url(../img/icons/icon-openfolder.svg) 0 @sizesm no-repeat;
+		// 		// margin: -1em 0 0 -44px; /* 15px */
+		// 		// height: @sizelg;
+		// 		background-size: (@sizexl/2);
+		// 	}
+		// }
+	}
  body, 
   .ts .ts-serif-clean,
   .ts h1, .ts h2, .ts h3, .ts h4, .ts h5, .ts h6,

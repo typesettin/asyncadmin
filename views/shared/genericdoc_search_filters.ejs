@@ -6,7 +6,7 @@
   method="get">
   <details class="ts-genericdoc" <%if(request.query.fq){%> open="open"<%}%> >
     <summary>
-      <span class="ts-text-xx ts-text-bold">Manage &rsaquo; <%-genericdoctype%>s</span>
+      <span class="ts-text-xx ">Manage &rsaquo; <%-locals.viewhelper.pluralize(genericdoctype)%></span>
       <% if(typeof genericdocopen_admin!=="undefined" && genericdocopen_admin ) {%>
         <a class=" ts-button ts-pull-right ts-cursor-pointer ts-open-admin-console" data-prefill-admin-input="execCommand <%- genericdoctypelink %> search " >New <%- genericdoctype %></a>
       <%}else if(genericdoctypelink ==="asset" || genericdoctypelink ==="category" || genericdoctypelink ==="contenttype"  || genericdoctypelink ==="tag"  || genericdoctypelink ==="userrole" || genericdoctypelink==="userprivilege"  || ( typeof genericdocusemodal!=="undefined" && genericdocusemodal )) {%>

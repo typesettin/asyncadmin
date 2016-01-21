@@ -75,6 +75,7 @@ module.exports = function (periodic) {
 	periodic.app.locals.diff = diff;
 	periodic.app.locals.extend = extend;
 	periodic.app.locals.prettysize = prettysize;
+	periodic.app.locals.themename = periodic.settings.theme || 'Theme';
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.session_ttl = periodic.settings.sessions.ttl_in_seconds;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
