@@ -1,9 +1,9 @@
-<% genericdoc = userprofile %>
-<% genericdocid = userprofile._id %>
-<% genericdoctype = "User" %>
-<% genericdoctypename = "user" %>
-<% genericdoctypelink = "user" %>
-<% genericdoctypeplurallink = "users" %>
+<% var genericdoc = userprofile %>
+<% var genericdocid = userprofile._id %>
+<% var genericdoctype = "User" %>
+<% var genericdoctypename = "user" %>
+<% var genericdoctypelink = "user" %>
+<% var genericdoctypeplurallink = "users" %>
 <% include ../../shared/header %>
 <div class="ts-container">
   <div class="ts-text-container ts-genericdoc">
@@ -23,7 +23,7 @@
           </nav>
           <div class="ts-tabs-content">
             <section class="ts-no-padding">
-              <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/user/edit" enctype="multipart/form-data" 
+              <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" autocomplete="off" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/user/edit" enctype="multipart/form-data" 
           data-successsubmitfunction="refresh_content_attributes_media">
 								<% include _compose_user_form %>
               </form>
@@ -39,12 +39,12 @@
     </div>
 	</div>
 </div>
-  <% generictaxnomy = 'tag' %>
+  <% var generictaxnomy = 'tag' %>
   <% include ../../shared/_new_generic_taxonomy_modal %>
-  <% generictaxnomy = 'category' %>
+  <% var generictaxnomy = 'category' %>
   <% include ../../shared/_new_generic_taxonomy_modal %>
-  <% generictaxnomy = 'contenttype' %>
+  <% var generictaxnomy = 'contenttype' %>
   <% include ../../shared/_new_generic_taxonomy_modal %>
-  <% generictaxnomy = 'asset' %>
+  <% var generictaxnomy = 'asset' %>
   <% include ../../shared/_new_generic_asset_modal %>
 <% include ../../shared/footer %>

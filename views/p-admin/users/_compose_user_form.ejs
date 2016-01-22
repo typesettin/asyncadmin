@@ -1,4 +1,4 @@
-<% genericdoctaxfields = "assets:array:asset:media:createable,primaryasset:single:asset:media:createable,tags:array:tag:doc:createable,categories:array:category:doc:createable,contenttypes:array:contenttype:doc:createable" 
+<% var genericdoctaxfields = "assets:array:asset:media:createable,primaryasset:single:asset:media:createable,tags:array:tag:doc:createable,categories:array:category:doc:createable,contenttypes:array:contenttype:doc:createable" 
 
 	if(user.privileges['750'] || user.accounttype==='admin'){
 		genericdoctaxfields+=',userroles:array:userrole:doc:createable';
@@ -29,7 +29,7 @@
 					</div>
 					<div class="ts-row ts-form-row">
 						<label class="ts-label">Website</label>
-						<input type="text" name="url" placeholder="http://mywebsite.com" value="<%- genericdoc.url %>"  class="ts-input" />
+						<input type="url" name="url" placeholder="http://mywebsite.com" value="<%- genericdoc.url %>"  class="ts-input" />
 					</div>
 					<div class="ts-row ts-form-row">
 						<label class="ts-label">Bio</label>
@@ -76,7 +76,7 @@
 					<summary>
 						<div class="ts-pull-right">
 				      <button class="ts-button ts-button-accent-color" type="submit" name="savebutton">
-				      	<% if(genericdoc.username){%>Update<%}else{%>Create<%}%>
+				      	<% if(genericdoc.email){%>Update<%}else{%>Create<%}%>
 					     </button>
 							<%if(genericdoc){%>
 								<a data-href="/<%- locals.adminPath %>/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-deleted-redirect-href="/<%- locals.adminPath %>/users" >Delete</a>
@@ -88,7 +88,7 @@
 					<!-- Start: Account Information -->
 					<div class="ts-row ts-form-row">
 						<label class="ts-label">Email</label>
-						<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" class="ts-input"/>
+						<input type="email" name="email" placeholder="Your email address" value="<%- genericdoc.email %>" autocomplete="off" class="ts-input"/>
 					</div>
 					<div class="ts-row ts-form-row">
 						<label class="ts-label">Username</label>

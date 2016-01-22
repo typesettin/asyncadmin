@@ -1179,6 +1179,9 @@ var startSessionCountdown = function () {
 		if (secondsLeft === 0) {
 			clearInterval(session_timeout_interval);
 			window.adminRefresh();
+			window.showErrorNotificaton({
+				message: 'Your session has expired due to inactivity'
+			});
 		}
 		else {
 			secondsLeft--;
