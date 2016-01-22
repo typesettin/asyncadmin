@@ -31,7 +31,6 @@ else if(genericdoc && genericdoc.contenttypes){
 									</label>
 									<div class="ts-col-span9">
 									<% 
-									console.log('attr.datatype',attr.datatype);
 										if(((attr.datatype==='array' || attr.datatype==='dropdown') && attr.defaultvalue)  || attr.datatype==='boolean'){
 											var selectOptionsFromDefaultVal =(attr.datatype==='boolean') ? [true,false] : attr.defaultvalue.split(',');
 											console.log('attr.datatype',attr.datatype,'selectOptionsFromDefaultVal',selectOptionsFromDefaultVal);
