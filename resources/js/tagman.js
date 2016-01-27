@@ -148,7 +148,15 @@ tstagmanager.prototype.initEventListeners = function () {
 	var create_filter_select_handler = function () {
 		window.AdminModal.show('new-' + this.value + '-modal');
 	};
+	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector'));
 	// self.options.element.addEventListener('keydown', debounce(self.search_menu_callback.apply(self), 200), false);
+	tax_prop_container.addEventListener('click', function (e) {
+		var etarget = e.target;
+		if (classie.has(etarget, 'ts-tax-clear-button')) {
+			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input type="checkbox" checked="checked" name="remove-attr-name" value="remove-array-or-single"/>';
+		}
+		console.log('tax_prop_container etarget', etarget);
+	}, false)
 	self.options.element.addEventListener('keyup', debounce(search_menu_callback, 200), false);
 	self.options.search_menu_content.addEventListener('click', handleSearchMenuContentClick, false);
 	self.options.search_filter_select.addEventListener('change', search_filter_select_handler, false);
