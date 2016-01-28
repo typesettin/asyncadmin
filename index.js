@@ -169,6 +169,7 @@ module.exports = function (periodic) {
 		// periodic.core.controller.save_revision,
 		adminController.checkUserValidation,
 		// userController.loadUser,
+		adminController.fixCodeMirrorSubmit,
 		userController.update);
 	userAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, userController.create);
 	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
