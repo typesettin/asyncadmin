@@ -58,7 +58,6 @@ var admin_index = function (req, res) {
 };
 
 var fixCodeMirrorSubmit = function (req, res, next) {
-	// console.log('fixCodeMirrorSubmit req.body',req.body)
 	if (req.body.genericdocjson) {
 
 		req.controllerData = req.controllerData || {};
@@ -73,6 +72,14 @@ var fixCodeMirrorSubmit = function (req, res, next) {
 		delete req.body.__v;
 		delete req.body.format;
 	}
+	Object.keys(req.body).forEach(function (key) {
+		if (req.body[key] === '!!--EMPTY--single--EMTPY--!!') {
+			req.body[key] = null;
+		}
+		else if (req.body[key] === '!!--EMPTY--array--EMTPY--!!') {
+			req.body[key] = [];
+		}
+	});
 	next();
 };
 

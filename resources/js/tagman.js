@@ -153,9 +153,23 @@ tstagmanager.prototype.initEventListeners = function () {
 	tax_prop_container.addEventListener('click', function (e) {
 		var etarget = e.target;
 		if (classie.has(etarget, 'ts-tax-clear-button')) {
-			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input type="checkbox" checked="checked" name="remove-attr-name" value="remove-array-or-single"/>';
+			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
+
+			if (self.options.formietosubmit && window.AdminFormies[self.options.formietosubmit]) {
+				window.AdminFormies[self.options.formietosubmit].submit();
+			}
+
+
+
+			if (etarget.getAttribute('data-field-mapping-type') === 'array') {
+				self.options.taxfields[etarget.getAttribute('data-field-name')].field_data = [];
+			}
+			else {
+				self.options.taxfields[etarget.getAttribute('data-field-name')].field_data = '';
+			}
+			self.__updateBindie();
 		}
-		console.log('tax_prop_container etarget', etarget);
+		// console.log('tax_prop_container etarget', etarget);
 	}, false)
 	self.options.element.addEventListener('keyup', debounce(search_menu_callback, 200), false);
 	self.options.search_menu_content.addEventListener('click', handleSearchMenuContentClick, false);
