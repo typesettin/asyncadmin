@@ -1672,6 +1672,7 @@ var fs = require('fs')
   , _REGEX_STRING = '(<%%|<%=|<%-|<%_|<%#|<%|%>|-%>|_%>)'
   , _OPTS = [ 'cache', 'filename', 'delimiter', 'scope', 'context'
             , 'debug', 'compileDebug', 'client', '_with', 'rmWhitespace'
+            , 'strict', 'localsName'
             ]
   , _TRAILING_SEMCOL = /;\s*$/
   , _BOM = /^\uFEFF/;
@@ -1961,7 +1962,14 @@ exports.renderFile = function () {
   // No options object -- if there are optiony names
   // in the data, copy them to options
   if (arguments.length == 3) {
-    cpOptsInData(data, opts);
+    // Express 4
+    if (data.settings && data.settings['view options']) {
+      cpOptsInData(data.settings['view options'], opts);
+    }
+    // Express 3 and lower
+    else {
+      cpOptsInData(data, opts);
+    }
   }
   opts.filename = path;
 
@@ -1998,10 +2006,19 @@ function Template(text, opts) {
   options.debug = !!opts.debug;
   options.filename = opts.filename;
   options.delimiter = opts.delimiter || exports.delimiter || _DEFAULT_DELIMITER;
-  options._with = typeof opts._with != 'undefined' ? opts._with : true;
+  options.strict = opts.strict || false;
   options.context = opts.context;
   options.cache = opts.cache || false;
   options.rmWhitespace = opts.rmWhitespace;
+  options.localsName = opts.localsName || exports.localsName || _DEFAULT_LOCALS_NAME;
+
+  if (options.strict) {
+    options._with = false;
+  }
+  else {
+    options._with = typeof opts._with != 'undefined' ? opts._with : true;
+  }
+
   this.opts = options;
 
   this.regex = this.createRegex();
@@ -2046,7 +2063,7 @@ Template.prototype = {
       this.generateSource();
       prepended += '  var __output = [], __append = __output.push.bind(__output);' + '\n';
       if (opts._with !== false) {
-        prepended +=  '  with (' + exports.localsName + ' || {}) {' + '\n';
+        prepended +=  '  with (' + opts.localsName + ' || {}) {' + '\n';
         appended += '  }' + '\n';
       }
       appended += '  return __output.join("");' + '\n';
@@ -2079,8 +2096,12 @@ Template.prototype = {
       }
     }
 
+    if (opts.strict) {
+      src = '"use strict";\n' + src;
+    }
+
     try {
-      fn = new Function(exports.localsName + ', escape, include, rethrow', src);
+      fn = new Function(opts.localsName + ', escape, include, rethrow', src);
     }
     catch(e) {
       // istanbul ignore else
@@ -2195,11 +2216,16 @@ Template.prototype = {
 
     function _addOutput() {
       if (self.truncate) {
-        line = line.replace('\n', '');
+        // Only replace single leading linebreak in the line after
+        // -%> tag -- this is the single, trailing linebreak
+        // after the tag that the truncation mode replaces
+        // Handle Win / Unix / old Mac linebreaks -- do the \r\n
+        // combo first in the regex-or
+        line = line.replace(/^(?:\r\n|\r|\n)/, '')
         self.truncate = false;
       }
       else if (self.opts.rmWhitespace) {
-        // Gotta me more careful here.
+        // Gotta be more careful here.
         // .replace(/^(\s*)\n/, '$1') might be more appropriate here but as
         // rmWhitespace already removes trailing spaces anyway so meh.
         line = line.replace(/^\n/, '');
@@ -2493,7 +2519,7 @@ module.exports={
     "engine",
     "ejs"
   ],
-  "version": "2.3.4",
+  "version": "2.4.1",
   "author": {
     "name": "Matthew Eernisse",
     "email": "mde@fleegix.org",
@@ -2536,9 +2562,9 @@ module.exports={
     "doc": "rimraf out && jsdoc -c jsdoc.json lib/* docs/jsdoc/*",
     "devdoc": "rimraf out && jsdoc -p -c jsdoc.json lib/* docs/jsdoc/*"
   },
-  "_id": "ejs@2.3.4",
-  "_shasum": "3c76caa09664b3583b0037af9dc136e79ec68b98",
-  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.3.4.tgz",
+  "_id": "ejs@2.4.1",
+  "_shasum": "82e15b1b2a1f948b18097476ba2bd7c66f4d1566",
+  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.4.1.tgz",
   "_from": "ejs@>=2.3.1 <3.0.0",
   "_npmVersion": "2.10.1",
   "_nodeVersion": "0.12.4",
@@ -2557,8 +2583,8 @@ module.exports={
     }
   ],
   "dist": {
-    "shasum": "3c76caa09664b3583b0037af9dc136e79ec68b98",
-    "tarball": "http://registry.npmjs.org/ejs/-/ejs-2.3.4.tgz"
+    "shasum": "82e15b1b2a1f948b18097476ba2bd7c66f4d1566",
+    "tarball": "http://registry.npmjs.org/ejs/-/ejs-2.4.1.tgz"
   },
   "directories": {},
   "readme": "ERROR: No README data found!"
@@ -32713,6 +32739,7 @@ var ajaxlinks,
 	filterlistelements,
 	tagmanagerelements,
 	sortlistelements,
+	confirmdelete_modal_element,
 	alreadyAttachedAppResponse = false,
 	adminCommandListIndex = 0,
 	adminCommandList = [],
@@ -33299,6 +33326,7 @@ var confirmDeleteDialog = function (e) {
 		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
 		successfunction = eTarget.getAttribute('data-successfunction'),
 		beforefunction = eTarget.getAttribute('data-beforefunction'),
+		deleteDialogTitle = eTarget.getAttribute('data-title') || eTarget.getAttribute('title') || 'Please Confirm',
 		donotnotify = eTarget.getAttribute('data-donotnotify');
 	e.preventDefault();
 
@@ -33316,6 +33344,7 @@ var confirmDeleteDialog = function (e) {
 	if (donotnotify) {
 		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
 	}
+	confirmdelete_modal_element.querySelector('#confirm-dialog-delete-title').innerHTML = deleteDialogTitle;
 	AdminModal.show('confirmdelete-modal');
 };
 
@@ -34080,7 +34109,7 @@ window.addEventListener('load', function () {
 
 
 	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	// summernotes = document.querySelectorAll('.ts-summernote');
+	confirmdelete_modal_element = document.querySelector('#confirmdelete-modal');
 	preloaderElement = document.querySelector('#ts-preloading');
 	asyncAdminContentElement = document.querySelector('#ts-main-content');
 	adminButtonElement = document.createElement('a');
@@ -35628,12 +35657,13 @@ tstagmanager.prototype.initEventListeners = function () {
 	var create_filter_select_handler = function () {
 		window.AdminModal.show('new-' + this.value + '-modal');
 	};
-	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector'));
+	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector')),
+		t;
 	// self.options.element.addEventListener('keydown', debounce(self.search_menu_callback.apply(self), 200), false);
 	tax_prop_container.addEventListener('click', function (e) {
 		var etarget = e.target;
 		if (classie.has(etarget, 'ts-tax-clear-button')) {
-			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
+			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input style="display:none;" type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
 
 			if (self.options.formietosubmit && window.AdminFormies[self.options.formietosubmit]) {
 				window.AdminFormies[self.options.formietosubmit].submit();
@@ -35647,7 +35677,12 @@ tstagmanager.prototype.initEventListeners = function () {
 			else {
 				self.options.taxfields[etarget.getAttribute('data-field-name')].field_data = '';
 			}
-			self.__updateBindie();
+			// self.__updateBindie();
+
+			// t = setTimeout(function () {
+			// 	self.__updateBindie();
+			// 	clearTimeout(t);
+			// }, 200);
 		}
 		// console.log('tax_prop_container etarget', etarget);
 	}, false)

@@ -73,6 +73,7 @@ var ajaxlinks,
 	filterlistelements,
 	tagmanagerelements,
 	sortlistelements,
+	confirmdelete_modal_element,
 	alreadyAttachedAppResponse = false,
 	adminCommandListIndex = 0,
 	adminCommandList = [],
@@ -659,6 +660,7 @@ var confirmDeleteDialog = function (e) {
 		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
 		successfunction = eTarget.getAttribute('data-successfunction'),
 		beforefunction = eTarget.getAttribute('data-beforefunction'),
+		deleteDialogTitle = eTarget.getAttribute('data-title') || eTarget.getAttribute('title') || 'Please Confirm',
 		donotnotify = eTarget.getAttribute('data-donotnotify');
 	e.preventDefault();
 
@@ -676,6 +678,7 @@ var confirmDeleteDialog = function (e) {
 	if (donotnotify) {
 		confirmDeleteYes.setAttribute('data-donotnotify', donotnotify);
 	}
+	confirmdelete_modal_element.querySelector('#confirm-dialog-delete-title').innerHTML = deleteDialogTitle;
 	AdminModal.show('confirmdelete-modal');
 };
 
@@ -1440,7 +1443,7 @@ window.addEventListener('load', function () {
 
 
 	// ajaxforms = document.querySelectorAll('.async-admin-ajax-forms');
-	// summernotes = document.querySelectorAll('.ts-summernote');
+	confirmdelete_modal_element = document.querySelector('#confirmdelete-modal');
 	preloaderElement = document.querySelector('#ts-preloading');
 	asyncAdminContentElement = document.querySelector('#ts-main-content');
 	adminButtonElement = document.createElement('a');

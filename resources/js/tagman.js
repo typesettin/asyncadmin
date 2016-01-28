@@ -148,12 +148,13 @@ tstagmanager.prototype.initEventListeners = function () {
 	var create_filter_select_handler = function () {
 		window.AdminModal.show('new-' + this.value + '-modal');
 	};
-	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector'));
+	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector')),
+		t;
 	// self.options.element.addEventListener('keydown', debounce(self.search_menu_callback.apply(self), 200), false);
 	tax_prop_container.addEventListener('click', function (e) {
 		var etarget = e.target;
 		if (classie.has(etarget, 'ts-tax-clear-button')) {
-			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
+			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input style="display:none;" type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
 
 			if (self.options.formietosubmit && window.AdminFormies[self.options.formietosubmit]) {
 				window.AdminFormies[self.options.formietosubmit].submit();
@@ -167,7 +168,12 @@ tstagmanager.prototype.initEventListeners = function () {
 			else {
 				self.options.taxfields[etarget.getAttribute('data-field-name')].field_data = '';
 			}
-			self.__updateBindie();
+			// self.__updateBindie();
+
+			// t = setTimeout(function () {
+			// 	self.__updateBindie();
+			// 	clearTimeout(t);
+			// }, 200);
 		}
 		// console.log('tax_prop_container etarget', etarget);
 	}, false)

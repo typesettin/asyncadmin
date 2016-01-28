@@ -17,8 +17,8 @@
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@6.9.6",
-  "_id": "periodicjs.ext.asyncadmin@6.9.6",
+  "_from": "periodicjs.ext.asyncadmin@latest",
+  "_id": "periodicjs.ext.asyncadmin@6.9.7",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
@@ -44,8 +44,8 @@
   "_spec": "periodicjs.ext.asyncadmin@6.9.6",
   "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
   "author": {
-    "email": "yaw.etse@gmail.com",
     "name": "Yaw Joseph Etse",
+    "email": "yaw.etse@gmail.com",
     "url": "http://about.me/yawjosephetse"
   },
   "bugs": {
@@ -131,5 +131,6 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "6.9.7"
+  "version": "6.9.8",
+  "_shasum": "124cb3191b00d82c5eea8349036e2fe1de7ab67c"
 }
