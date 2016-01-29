@@ -1,7 +1,8 @@
 <% 
-  var ts_taxman_initial_placeholder = (typeof ts_taxman_initial_placeholder!=='undefined')? ts_taxman_initial_placeholder : 'Search existing users, contenttypes, tags, categories and assets';
-  var ts_taxman_ajaxformie = (typeof ts_taxman_ajaxformie !=='undefined')? ts_taxman_ajaxformie : 'edit-'+genericdoctypename+'-wysiwyg-form';
-  var ts_taxman_bindiecallback = (typeof ts_taxman_bindiecallback !=='undefined')? ts_taxman_bindiecallback : false;
+  var ts_taxman_initial_placeholder_to_use = (typeof ts_taxman_initial_placeholder!=='undefined')? ts_taxman_initial_placeholder : 'Search existing users, contenttypes, tags, categories and assets';
+  var ts_taxman_ajaxformie_to_use = (typeof ts_taxman_ajaxformie !=='undefined')? ts_taxman_ajaxformie : 'edit-'+genericdoctypename+'-wysiwyg-form';
+  var ts_taxman_bindiecallback_to_use = (typeof ts_taxman_bindiecallback !=='undefined')? ts_taxman_bindiecallback : false;
+
    %>
 <details class="ts-text-sm" open="open" >
   <summary>
@@ -9,7 +10,7 @@
       <span class="ts-button ts-button-light-primary-color" 
       >
         <select id="ts-create-entities" class="ts-button ts-button-transparent ts-width-100 ts-height-100" >
-          <option value="">create new...</option>  
+          <option value="default">create new...</option>  
           <option value="contenttype">create contenttype</option>  
         </select>
       </span>
@@ -34,7 +35,7 @@
             <div class="ts-col-span9">
               <input class="ts-input asyncadmin-ts-tagmanager" id="tax-search" 
                 style="border-bottom:0;height:2.5em;" 
-                placeholder="<%- ts_taxman_initial_placeholder %>"
+                placeholder="<%- ts_taxman_initial_placeholder_to_use %>"
                 data-taxonomy-fields="<%- genericdoctaxfields %>" 
                 data-tax-man-results="tax-man-results"
                 data-presetdata-prefix="genericdoc_"
@@ -43,9 +44,9 @@
                 data-filter-selector="#ts-search-entity-filters"
                 data-create-filter-selector="#ts-create-entities"
                 data-searchresults-template-selector="#ts-taxman-search-result-template"
-                <%if(ts_taxman_bindiecallback){%>data-bindiecallback="<%- ts_taxman_bindiecallback %>"<%}%>
+                <%if(ts_taxman_bindiecallback_to_use){%>data-bindiecallback="<%- ts_taxman_bindiecallback_to_use %>"<%}%>
                 data-taxman-template-selector="#ts-taxman-taxmandata-template"
-                data-ajax-formie="<%- ts_taxman_ajaxformie %>"/>
+                data-ajax-formie="<%- ts_taxman_ajaxformie_to_use %>"/>
             </div>
             
           </div>

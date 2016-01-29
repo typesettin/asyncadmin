@@ -147,6 +147,7 @@ tstagmanager.prototype.initEventListeners = function () {
 	};
 	var create_filter_select_handler = function () {
 		window.AdminModal.show('new-' + this.value + '-modal');
+		self.options.create_filter_select.value = 'default';
 	};
 	var tax_prop_container = document.querySelector(self.options.element.getAttribute('data-taxprops-selector')),
 		t;
@@ -245,7 +246,8 @@ tstagmanager.prototype.__init = function () {
 			field_mapping_type: taxfieldarray[1],
 			field_entity_type: taxfieldarray[2],
 			field_media_type: taxfieldarray[3],
-			field_createable: taxfieldarray[4]
+			field_createable: taxfieldarray[4],
+			field_label: taxfieldarray[5] || taxfieldarray[0]
 		};
 		self.options.search_entities.push(taxfieldarray[2]);
 		if (taxfieldarray[4] === 'createable') {
@@ -296,7 +298,7 @@ tstagmanager.prototype.__init = function () {
 		filterselectinnerhtml += '<option value="' + entity + '">' + capitalize(pluralize(entity)) + '</option>';
 	});
 	this.options.search_filter_select.innerHTML = filterselectinnerhtml;
-	var createselectinnerhtml = '<option value="">Create new ...</option>';
+	var createselectinnerhtml = '<option value="default">Create new ...</option>';
 	if (this.options.createable_entities.length < 1) {
 		this.options.create_filter_select.parentElement.style.display = 'none';
 	}
