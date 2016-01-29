@@ -39,7 +39,7 @@ else if(genericdoc && genericdoc.contenttypes){
 											<select class="ts-input noFormSubmit ts-text-sm" name="contenttypeattributes.<%- ct.name %>.<%- attr.name %>">
 												<% selectOptionsFromDefaultVal.forEach(function(ctvalues,i){
 													%>
-													<option <% if(selectOptionsFromDefaultVal[i] === defaultVal ){%> selected="selected"
+													<option <% if((selectOptionsFromDefaultVal[i] === defaultVal) || (selectOptionsFromDefaultVal[i] === genericdoc.contenttypeattributes[ct.name][attr.name])){%> selected="selected"
 													<%}%> value="<%- ctvalues %>"><%- ctvalues %></option>
 													<%
 												}); %>
