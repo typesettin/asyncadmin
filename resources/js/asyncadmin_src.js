@@ -685,7 +685,14 @@ var confirmDeleteDialog = function (e) {
 var deleteContentSubmit = function (e) {
 	var eTarget = e.target,
 		posturl = eTarget.getAttribute('data-href');
-
+	if (eTarget.getAttribute('data-beforefunction')) {
+		var beforeFunctionString = eTarget.getAttribute('data-beforefunction'),
+			beforefn = window[beforeFunctionString];
+		// is object a function?
+		if (typeof beforefn === 'function') {
+			beforefn();
+		}
+	}
 	request
 		.post(posturl)
 		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
