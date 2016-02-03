@@ -9,6 +9,10 @@ var path = require('path'),
 	prettysize = require('prettysize'),
 	stylietreeview = require('stylie.treeview'),
 	data_tables = require('./controller/data_tables'),
+	accountSchema = require('./model/account.js'),
+	AccountModel,
+	AccountController,
+	authenticationRoutes,
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
@@ -33,6 +37,9 @@ module.exports = function (periodic) {
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
+	if(adminExtSettings.use_separate_accounts){
+		AccountModel = periodic.mongoose.model('Account',accountSchema);
+	}
 
 	try {
 		if (periodic.settings.theme) {
@@ -73,12 +80,14 @@ module.exports = function (periodic) {
 	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
 	periodic.app.locals.numeral = numeral;
 	periodic.app.locals.diff = diff;
+	periodic.app.locals.use_separate_accounts = false;
 	periodic.app.locals.extend = extend;
 	periodic.app.locals.prettysize = prettysize;
 	periodic.app.locals.themename = periodic.settings.theme || 'Theme';
 	periodic.app.locals.appenvironment = appenvironment;
 	periodic.app.locals.session_ttl = periodic.settings.sessions.ttl_in_seconds;
 	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
+	periodic.app.locals.adminLoginPath = adminExtSettings.adminLoginPath;
 	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
 	periodic.app.locals.adminExtSettings = adminExtSettings;
 	periodic.app.locals.stylietreeview = stylietreeview;
@@ -108,6 +117,16 @@ module.exports = function (periodic) {
 	periodic.app.controller.extension.asyncadmin.cmd.extension = periodic.app.controller.extension.asyncadmin.admin_extensions.extcmd;
 
 
+
+	//SET CUSTOM ADMIN
+	if(adminExtSettings.use_separate_accounts){
+		periodic.app.controller.extension.login.loginExtSettings.settings = extend(
+		periodic.app.controller.extension.login.loginExtSettings.settings,adminExtSettings.login_settings.settings);
+		periodic.app.locals.use_separate_accounts = true;
+		periodic.app.controller.extension.asyncadmin.search.account = periodic.app.controller.extension.asyncadmin.admin.account_search;
+	}
+
+
 	var adminRouter = periodic.express.Router(),
 		userAdminRouter = periodic.express.Router(),
 		settingsAdminRouter = periodic.express.Router(),
@@ -125,8 +144,19 @@ module.exports = function (periodic) {
 		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles,
 		mailController = periodic.app.controller.extension.mailer.mailer;
 
-	// periodic.app.locals.depopulate = adminController.depopulate;
 
+	if(adminExtSettings.use_separate_accounts){
+		authController = require('../periodicjs.ext.login/controller/auth')(periodic,AccountModel);
+		periodic.app.controller.extension.asyncadmin.authController = authController;
+		authenticationRoutes = require('./routes/auth_router')(periodic);
+		// periodic.app.locals.depopulate = adminController.depopulate;
+		periodic.app.controller.native.account = periodic.core.controller.controller_routes(require('./model/account_controller_settings'));
+
+		periodic.app.controller.native.account.getUsersData = periodic.app.controller.native.account.getAccountsData;
+		AccountController = periodic.app.controller.native.account;
+		uacController = require('../periodicjs.ext.user_access_control/controller/uac')(periodic,AccountModel,AccountController);//periodic.app.controller.extension.user_access_control.uac
+
+	}
 
 	/**
 	 * access control routes
@@ -303,6 +333,9 @@ module.exports = function (periodic) {
 	adminRouter.use('/user', userAdminRouter);
 	adminRouter.use('/settings', settingsAdminRouter);
 
+	if(adminExtSettings.use_separate_accounts){
+		periodic.app.use('/' + periodic.app.locals.adminLoginPath,authenticationRoutes);
+	}
 	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
 	return periodic;
 };

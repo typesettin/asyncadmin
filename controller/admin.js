@@ -733,6 +733,9 @@ var controller = function (resources) {
 		user_search: get_entity_search({
 			entity: 'user'
 		}),
+		account_search: get_entity_search({
+			entity: 'account'
+		}),
 		userrole_search: get_entity_search({
 			entity: 'userrole'
 		}),
