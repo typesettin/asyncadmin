@@ -1,4 +1,8 @@
-<% var navmenu={
+<%
+  var auth_link =(locals.use_separate_accounts)?'p-auth':'auth'; 
+  var user_account_link =(locals.use_separate_accounts)?'account':'user'; 
+
+ var navmenu={
     "tree": []
   },
   StylieTreeview = locals.stylietreeview;
@@ -161,7 +165,7 @@
     "tree-item": "file",
     "tree-item-label": "Log Out",
     "tree-item-id": "asyncadmin.logout",
-    "tree-item-link": "/auth/logout",
+    "tree-item-link": "/"+auth_link+"/logout",
     "tree-item-attributes": {
       "class": "ts-force-link",
       "title": "Log out of your account",
@@ -171,7 +175,7 @@
     "tree-item": "file",
     "tree-item-label": "Log In",
     "tree-item-id": "asyncadmin.login",
-    "tree-item-link": "/auth/login",
+    "tree-item-link": "/"+auth_link+"/login",
     "tree-item-attributes": {
       "class": "ts-force-link",
       "title": "Log in to your account",
@@ -198,7 +202,7 @@
       "tree-item": "file",
       "tree-item-label": "Account Settings",
       "tree-item-id": "asyncadmin.accountsettings",
-      "tree-item-link": "/%locals.adminPath%/user/"+user._id+"/edit",
+      "tree-item-link": "/%locals.adminPath%/"+user_account_link+"/"+user._id+"/edit",
       "tree-item-attributes": {
         "class": "async-admin-ajax-link",
         "title": "Edit your profile",
