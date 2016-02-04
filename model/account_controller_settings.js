@@ -4,5 +4,6 @@ module.exports = {
 	load_multiple_model_population:'assets coverimages primaryasset coverimage userroles',
 	docnamelookup : 'username',
 	searchfields : ['username','firstname','lastname','email'],
+	use_controller_update_for_user : true,
 	use_full_data:true
 };

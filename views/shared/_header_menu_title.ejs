@@ -1,5 +1,5 @@
-<% var auth_link =(use_separate_accounts)?'p-auth':'auth'; 
-	var user_account_link =(use_separate_accounts)?'account':'user'; %>
+<% var auth_link =(locals.use_separate_accounts)?'p-auth':'auth'; 
+	var user_account_link =(locals.use_separate_accounts)?'account':'user'; %>
 <header id="nav-header" class="ts-position-fixed ts-position-top ts-width-100 ts-z-index-1000 ts-bg-text-primary-color ts-serif-clean ts-row ts-padding-md minimize" style="border-bottom: 1px solid black; min-height:3rem; height:auto; overflow:auto;">
 	<div class="ts-container ">
 	  <div id="trigger" class="ts-float-left">

@@ -10,27 +10,20 @@ module.exports = {
 	},
 	adminLoginPath: 'p-auth',
 	use_separate_accounts: false,
-	login_settings:{
+	login_settings: {
 		settings: {
 			authLoginPath: '/p-auth/login',
 			authLogoutPath: '/',
 			authLoggedInHomepage: '/p-admin'
 		},
-		new_user_validation: {
-		},
-		passport: {
-		},
-		token: {
-		},
-		timeout: {
-		},
-		routes: {
-		},
+		new_user_validation: {},
+		passport: {},
+		token: {},
+		timeout: {},
+		routes: {},
 		login_csrf: true,
-		login_social_buttons: {
-		},
-		complexitySettings: {
-		}
+		login_social_buttons: {},
+		complexitySettings: {}
 	}
 };
 /* cron

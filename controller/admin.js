@@ -21,6 +21,7 @@ var async = require('async'),
 	Compilation,
 	Item,
 	User,
+	Account,
 	adminExtSettings,
 	loginSettings;
 
@@ -408,9 +409,39 @@ var extensionsearch = function (options, callback) {
 };
 
 var checkDeleteUser = function (req, res, next) {
-	if ((req.user.activated || req.user.accounttype || req.user.userroles) && !User.hasPrivilege(req.user, 760)) {
+	var ObjectToUse = (req.user.entity === 'account') ? Account : User;
+	if ((req.user.activated || req.user.accounttype || req.user.userroles) && !ObjectToUse.hasPrivilege(req.user, 760)) {
 		var err = new Error('EXT-UAC760: You don\'t have access to modify user access');
 		next(err);
+	}
+	else {
+		next();
+	}
+};
+
+var convert_user_to_account = function (req, res, next) {
+	req.controllerData = req.controllerData || {};
+	req.skippassword = true;
+	req.controllerData.checkuservalidation = {
+		checkusername: false,
+		checkemail: false,
+		useComplexity: false,
+		checkpassword: false
+	};
+	req.body = req.controllerData.user.toJSON();
+	req.body._id = null;
+	req.body._id = undefined;
+	req.body.use_encrypted_password = true;
+	delete req.body._id;
+
+	// req.body = CoreUtilities.removeEmptyObjectValues(req.body);
+	console.log('convert_user_to_account req.body', req.body);
+	next();
+};
+
+var ensureAccountUser = function (req, res, next) {
+	if (req.user.entitytype !== 'account') {
+		next(new Error('EXT-UAC999: Only Extension Accounts are allow access'));
 	}
 	else {
 		next();
@@ -557,8 +588,9 @@ var get_revision_page = function (options) {
 
 	return function (req, res) {
 		var pagetitle = (req.controllerData && req.controllerData.revision_page_attribute_title) ? req.controllerData.revision_page_attribute_title : req.controllerData[entity.name].title || req.controllerData[entity.name].name || req.controllerData[entity.name]._id;
+		var revision_view_file = (entity.plural_name === 'accounts') ? 'users' : entity.plural_name;
 		var viewtemplate = {
-				viewname: 'p-admin/' + entity.plural_name + '/revisions',
+				viewname: 'p-admin/' + revision_view_file + '/revisions',
 				themefileext: appSettings.templatefileextension
 			},
 
@@ -569,6 +601,7 @@ var get_revision_page = function (options) {
 					toplink: '&raquo;   <a href="/' + adminPath + '/content/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '</a> &raquo; ' + pagetitle + ' &raquo; Revisions',
 					extensions: CoreUtilities.getAdminMenu()
 				},
+				entity: entity,
 				user: req.user
 			});
 		if (options.extname) {
@@ -691,6 +724,7 @@ var controller = function (resources) {
 	Contenttype = mongoose.model('Contenttype');
 	Item = mongoose.model('Item');
 	User = mongoose.model('User');
+	Account = mongoose.model('Account');
 	// console.log('Item', typeof Item.schema.paths.content);
 	// AppDBSetting = mongoose.model('Setting');
 	appenvironment = appSettings.application.environment;
@@ -707,6 +741,11 @@ var controller = function (resources) {
 			entity: 'user',
 			extname: 'periodicjs.ext.asyncadmin'
 		}),
+		account_revisions: get_revision_page({
+			entity: 'account',
+			extname: 'periodicjs.ext.asyncadmin'
+		}),
+		ensureAccountUser: ensureAccountUser,
 		depopulate: CoreController.depopulate,
 		revision_delete: revision_delete,
 		revision_revert: revision_revert,
@@ -719,6 +758,7 @@ var controller = function (resources) {
 		settings_faq: settings_faq,
 		skip_population: skip_population,
 		getMarkdownReleases: getMarkdownReleases,
+		convert_user_to_account: convert_user_to_account,
 		getHomepageStats: getHomepageStats,
 		adminExtSettings: adminExtSettings,
 		checkDeleteUser: checkDeleteUser,
@@ -739,7 +779,6 @@ var controller = function (resources) {
 		userrole_search: get_entity_search({
 			entity: 'userrole'
 		}),
-
 		userprivilege_search: get_entity_search({
 			entity: 'userprivilege'
 		}),

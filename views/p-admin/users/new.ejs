@@ -1,16 +1,16 @@
 <% include ../../shared/header %>
 <% var genericdoc = false %>
 <% var genericdocid = undefined %>
-<% var genericdoctypename = "user" %>
-<% var genericdoctypelink = "user" %>
-<% var genericdoctypeplurallink = "users" %>
-<% var genericdoctype = "User" %>
+<% var genericdoctype = entity.capitalized_name /*"User"*/ %>
+<% var genericdoctypename = entity.name /*"user"*/ %>
+<% var genericdoctypelink = entity.name /*"user"*/ %>
+<% var genericdoctypeplurallink = entity.plural_name /*/users"*/ %>
 <div class="ts-container">
 	<section class="ts-text-container ts-genericdoc">
 		<% include ../../shared/_html_inject_precontent %>
     <% include ../../shared/genericdoc_compose_title %>
-		<form class="ts-form async-admin-ajax-forms" id="new-user-form" name="new-user-form" method="post" action="/<%- locals.adminPath %>/user/new"  onsubmit="return false;" enctype='multipart/form-data' 
-data-successredirect-href="/<%- locals.adminPath %>/users">
+		<form class="ts-form async-admin-ajax-forms" id="new-user-form" name="new-user-form" method="post" action="/<%- locals.adminPath %>/<%- genericdoctypename %>/new"  onsubmit="return false;" enctype='multipart/form-data' 
+data-successredirect-href="/<%- locals.adminPath %>/<%- genericdoctypeplurallink %>">
 			<% include _compose_user_form %>
 		</form>
 		<% include ../../shared/_html_inject_postcontent %>

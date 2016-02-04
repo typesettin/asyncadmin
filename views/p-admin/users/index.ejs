@@ -1,16 +1,18 @@
 <% include ../../shared/header %>
-<% var genericdoctype = "User" %>
-<% var genericdoctypelink = "user" %>
-<% var genericdoctypeplurallink = "users" %>
-<% var genericdoccount = userscount %>
-<% var genericdocpages = userpages %>
+<% var genericdoctype = entity.capitalized_name /*"User"*/ %>
+<% var genericdocs = (entity.name==='account')? accounts : users /*"user"*/ %>
+<% var genericdoctypename = entity.name /*"user"*/ %>
+<% var genericdoctypelink = entity.name /*"user"*/ %>
+<% var genericdoctypeplurallink = entity.plural_name /*/users"*/ %>
+<% var genericdoccount = (entity.name==='account')? accountscount : userscount %>
+<% var genericdocpages = (entity.name==='account')? accountpages : userpages %>
 <% var genericdoc_tktouse = "createdat,updatedat,username,email,firstname,lastname,birthday,accounttype,gender,primaryasset,assets,userroles,primaryauthor,coverimages,coverimage" %>
 <div class="ts-container">
   <div class="ts-page-content-container">
     <% include ../../shared/genericdoc_search_filters %>
     <input type="hidden" name="_csrf" value=<%- locals.token %> >
 		<%- locals.get_data_table_html({
-			data: users,
+			data: genericdocs,
 			data_attributes:[
 			 {label: 'Email',sortactive:true,sortid:'email',sortorder:'asc'},
 			 {label: 'Create Date',sortactive:true,sortid:'createdat',sortorder:'asc'},
@@ -24,9 +26,9 @@
 			 ],
 			responsive_table :true,
 			responsive_collapse: locals.default_responsive_collapse({getCollapseNameFunction:function(obj){return obj.email},
-				editlink: '/'+locals.adminPath+'/users/|||_id|||',
-				deletelink: '/'+locals.adminPath +'/users/|||_id|||/delete',
-				deleterefreshlink: '/'+locals.adminPath +'/users/'
+				editlink: '/'+locals.adminPath+'/'+genericdoctypeplurallink+'/|||_id|||',
+				deletelink: '/'+locals.adminPath +'/'+genericdoctypeplurallink+'/|||_id|||/delete',
+				deleterefreshlink: '/'+locals.adminPath +'/'+genericdoctypeplurallink+'/'
 			}),
 			responsive_expand:locals.default_responsive_expand(),
 			thead:locals.default_thead(),
@@ -36,13 +38,13 @@
 				html: function (obj) {
 					var jsontablehtml;
 					// jsontablehtml = '<td><a href="/' + options.adminPath + '/' + content_path + '/' + obj.identification.guid + '"  class="async-admin-ajax-link">' + obj.identification.guid + '</a></td>';
-					jsontablehtml = '<td><a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj.email + '</a></td>'; 
+					jsontablehtml = '<td><a href="/p-admin/'+genericdoctypename+'/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj.email + '</a></td>'; 
 					jsontablehtml += '<td>' + new locals.viewhelper.moment(obj.createdat).format('MM/DD/YYYY |  hh:mm:ssa') + '</td>';
 					jsontablehtml += '<td>' + obj.firstname + '</td>';
 					jsontablehtml += '<td>' + obj.lastname + '</td>'; 
 					jsontablehtml += '<td>' + obj.activated + '</td>';
 					jsontablehtml += '<td>' + obj.accounttype + '</td>';
-					jsontablehtml += '<td><a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj._id + '</a></td>';
+					jsontablehtml += '<td><a href="/p-admin/'+genericdoctypename+'/' + obj._id + '/edit" class="async-admin-ajax-link">' + obj._id + '</a></td>';
 					
 					jsontablehtml += '<td>';
 					if(obj.userroles && obj.userroles.length>0){
@@ -55,14 +57,18 @@
 					}
 					jsontablehtml += '</td>';
 
-					jsontablehtml += '<td> <a href="/p-admin/user/' + obj._id + '/edit" class="async-admin-ajax-link">edit</a> | <a alt="delete" class=" ts-dialog-delete" data-href="/p-admin/users/' + obj._id + '/delete" data-deleted-redirect-href="/p-admin/users">delete</a>	</td>';
+					jsontablehtml += '<td> <a href="/p-admin/'+genericdoctypename+'/' + obj._id + '/edit" class="async-admin-ajax-link">edit</a>';
+					if(entity.name==='user' && locals.use_separate_accounts===true){
+						jsontablehtml += ' | <a data-href="/p-admin/'+genericdoctypename+'/' + obj._id + '/make_account" class="ts-ajax-button" data-redirect-href="/p-admin/accounts" data-ajax-method="post">create account</a>';
+					}
+					jsontablehtml += ' | <a alt="delete" class=" ts-dialog-delete" data-href="/p-admin/'+genericdoctypeplurallink+'/' + obj._id + '/delete" data-deleted-redirect-href="/p-admin/'+genericdoctypeplurallink+'">delete</a>	</td>';
 					return jsontablehtml;
 				}
 			},
 			custom_tfoot: locals.default_custom_tfoot({
-				total:users.length,
-				count:userscount,
-				pages:userpages,
+				total:genericdocs.length,
+				count:genericdoccount,
+				pages:genericdocpages,
 				currentlimit:request.query.limit,
 				currentpage:request.query.pagenum,
 				colspan: 9

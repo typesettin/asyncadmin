@@ -710,7 +710,14 @@ var submitAjaxButton = function (e) {
 		ajaxrequest;
 	showPreloader();
 	ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
-
+	if (eTarget.getAttribute('data-beforefunction')) {
+		var beforeFunctionString = eTarget.getAttribute('data-beforefunction'),
+			beforefn = window[beforeFunctionString];
+		// is object a function?
+		if (typeof beforefn === 'function') {
+			beforefn();
+		}
+	}
 	ajaxrequest
 		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
 		.set('Accept', 'application/json')
@@ -907,6 +914,13 @@ var handle_ajax_button_response = function (e) {
 			}
 			else if (eTarget.getAttribute('data-deleted-redirect-href')) {
 				var deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href');
+				loadAjaxPage({
+					datahref: deleteredirecthref,
+					pushState: true
+				});
+			}
+			else if (eTarget.getAttribute('data-redirect-href')) {
+				var deleteredirecthref = eTarget.getAttribute('data-redirect-href');
 				loadAjaxPage({
 					datahref: deleteredirecthref,
 					pushState: true

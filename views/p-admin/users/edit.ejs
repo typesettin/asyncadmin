@@ -1,13 +1,12 @@
 <% var genericdoc = userprofile %>
 <% var genericdocid = userprofile._id %>
-<% var genericdoctype = "User" %>
-<% var genericdoctypename = "user" %>
-<% var genericdoctypelink = "user" %>
-<% var genericdoctypeplurallink = "users" %>
+<% var genericdoctype = entity.capitalized_name /*"User"*/ %>
+<% var genericdoctypename = entity.name /*"user"*/ %>
+<% var genericdoctypelink = entity.name /*"user"*/ %>
+<% var genericdoctypeplurallink = entity.plural_name /*/users"*/ %>
 <% include ../../shared/header %>
 <div class="ts-container">
   <div class="ts-text-container ts-genericdoc">
-
     <% include ../../shared/genericdoc_compose_title %>
 
     <div class="ts-row">
@@ -23,7 +22,7 @@
           </nav>
           <div class="ts-tabs-content">
             <section class="ts-no-padding">
-              <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" autocomplete="off" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/user/edit" enctype="multipart/form-data" 
+              <form id="edit-<%- genericdoctypename %>-wysiwyg-form" name="edit-<%- genericdoctypename %>-wysiwyg-form" autocomplete="off" class="ts-form async-admin-ajax-forms" method="post" action="/<%- locals.adminPath %>/<%- genericdoctypename %>/edit" enctype="multipart/form-data" 
           data-successsubmitfunction="refresh_content_attributes_media">
 								<% include _compose_user_form %>
               </form>

@@ -1,11 +1,11 @@
 <% include ../../shared/header %>
 <div class="ts-container">
-  <% genericdoc = user %>
-  <% genericdocid = user._id %>
-  <% genericdoctype = "User" %>
-  <% genericdoctypename = "user" %>
-  <% genericdoctypelink = "user" %>
-  <% genericdoctypeplurallink = "users" %>
+  <% genericdoc = (entity.name==='account')? account : user %>
+  <% genericdocid = genericdoc._id %>
+	<% var genericdoctype = entity.capitalized_name /*"User"*/ %>
+  <% var genericdoctypename = entity.name /*"user"*/ %>
+	<% var genericdoctypelink = entity.name /*"user"*/ %>
+	<% var genericdoctypeplurallink = entity.plural_name /*/users"*/ %>
 
   <% include ../../shared/genericdoc_show_revisions %>
 </div>

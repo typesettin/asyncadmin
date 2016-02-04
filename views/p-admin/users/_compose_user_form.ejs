@@ -79,7 +79,7 @@
 				      	<% if(genericdoc.email){%>Update<%}else{%>Create<%}%>
 					     </button>
 							<%if(genericdoc){%>
-								<a data-href="/<%- locals.adminPath %>/user/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-deleted-redirect-href="/<%- locals.adminPath %>/users" >Delete</a>
+								<a data-href="/<%- locals.adminPath %>/<%- genericdoctypename %>/<%- genericdoc._id %>/delete"  class="ts-button ts-color-error ts-text-label ts-dialog-delete " data-deleted-redirect-href="/<%- locals.adminPath %>/users" >Delete</a>
 							<%}%>
 						</div>
 							Account Info

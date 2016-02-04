@@ -11,8 +11,9 @@ var path = require('path'),
 	data_tables = require('./controller/data_tables'),
 	accountSchema = require('./model/account.js'),
 	AccountModel,
-	AccountController,
+	accountController,
 	authenticationRoutes,
+	accountAdminRouter,
 	adminExtSettings,
 	appenvironment,
 	settingJSON,
@@ -37,8 +38,8 @@ module.exports = function (periodic) {
 	settingJSON = fs.readJsonSync(adminExtSettingsFile);
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
-	if(adminExtSettings.use_separate_accounts){
-		AccountModel = periodic.mongoose.model('Account',accountSchema);
+	if (adminExtSettings.use_separate_accounts) {
+		AccountModel = periodic.mongoose.model('Account', accountSchema);
 	}
 
 	try {
@@ -119,9 +120,9 @@ module.exports = function (periodic) {
 
 
 	//SET CUSTOM ADMIN
-	if(adminExtSettings.use_separate_accounts){
+	if (adminExtSettings.use_separate_accounts) {
 		periodic.app.controller.extension.login.loginExtSettings.settings = extend(
-		periodic.app.controller.extension.login.loginExtSettings.settings,adminExtSettings.login_settings.settings);
+			periodic.app.controller.extension.login.loginExtSettings.settings, adminExtSettings.login_settings.settings);
 		periodic.app.locals.use_separate_accounts = true;
 		periodic.app.controller.extension.asyncadmin.search.account = periodic.app.controller.extension.asyncadmin.admin.account_search;
 	}
@@ -145,16 +146,17 @@ module.exports = function (periodic) {
 		mailController = periodic.app.controller.extension.mailer.mailer;
 
 
-	if(adminExtSettings.use_separate_accounts){
-		authController = require('../periodicjs.ext.login/controller/auth')(periodic,AccountModel);
+	if (adminExtSettings.use_separate_accounts) {
+		accountAdminRouter = periodic.express.Router();
+		authController = require('../periodicjs.ext.login/controller/auth')(periodic, AccountModel);
 		periodic.app.controller.extension.asyncadmin.authController = authController;
 		authenticationRoutes = require('./routes/auth_router')(periodic);
 		// periodic.app.locals.depopulate = adminController.depopulate;
 		periodic.app.controller.native.account = periodic.core.controller.controller_routes(require('./model/account_controller_settings'));
 
 		periodic.app.controller.native.account.getUsersData = periodic.app.controller.native.account.getAccountsData;
-		AccountController = periodic.app.controller.native.account;
-		uacController = require('../periodicjs.ext.user_access_control/controller/uac')(periodic,AccountModel,AccountController);//periodic.app.controller.extension.user_access_control.uac
+		accountController = periodic.app.controller.native.account;
+		uacController = require('../periodicjs.ext.user_access_control/controller/uac')(periodic, AccountModel, accountController); //periodic.app.controller.extension.user_access_control.uac
 
 	}
 
@@ -163,10 +165,16 @@ module.exports = function (periodic) {
 	 */
 	adminRouter.get('*', global.CoreCache.disableCache);
 	adminRouter.post('*', global.CoreCache.disableCache);
-	adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	if (adminExtSettings.use_separate_accounts) {
+		adminRouter.all('*', adminController.ensureAccountUser, global.CoreCache.disableCache, authController.ensureAuthenticated, adminController.ensureAccountUser, uacController.loadUserRoles, uacController.check_user_access);
+	}
+	else {
+		adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	}
 	extensionAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	themeAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	userAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	accountAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	settingsAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 
 	/**
@@ -221,7 +229,51 @@ module.exports = function (periodic) {
 	adminRouter.post('/content/user/:id/revision/:revisionindex/delete', adminController.skip_population, userController.loadUser, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit, userController.update);
 	adminRouter.post('/content/user/:id/revision/:revisionindex/revert', adminController.skip_population, userController.loadUser, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit, userController.update);
 
+	if (adminExtSettings.use_separate_accounts) {
+		/**
+		 * admin/account routes
+		 */
+		userAdminRouter.post('/:id/make_account', assetController.upload, userController.loadUser, adminController.convert_user_to_account, accountController.create);
+		adminRouter.get('/accounts', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		adminRouter.get('/content/accounts', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		accountAdminRouter.get('/search', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		accountAdminRouter.get('/new', userAdminController.accounts_new);
+		adminRouter.get('/content/account/new', userAdminController.accounts_new);
+		accountAdminRouter.get('/:id', accountController.loadAccount, userAdminController.accounts_show);
+		accountAdminRouter.get('/:id/edit', accountController.loadAccount, userAdminController.accounts_edit);
+		adminRouter.get('/content/account/:id/edit', accountController.loadAccount, userAdminController.accounts_edit);
+		adminRouter.get('/content/account/:id', accountController.loadAccount, userAdminController.accounts_edit);
+		// console.log('accountController',accountController);
+		accountAdminRouter.post('/edit',
+			assetController.multiupload,
+			assetController.create_assets_from_files,
+			// periodic.core.controller.save_revision,
+			adminController.checkUserValidation,
+			// accountController.loadAccount,
+			adminController.fixCodeMirrorSubmit,
+			accountController.update);
+		accountAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, accountController.create);
+		accountAdminRouter.post('/:id/delete', assetController.upload, accountController.loadAccount, adminController.checkDeleteUser, accountController.remove);
+		adminRouter.post('/accounts/:id/delete', assetController.upload, accountController.loadAccount, adminController.checkDeleteUser, accountController.remove);
 
+
+		adminRouter.post('/content/account/:id/edit',
+			assetController.multiupload,
+			assetController.create_assets_from_files,
+			periodic.core.controller.save_revision,
+			// adminController.checkUserValidation,
+			accountController.loadAccount,
+			adminController.fixCodeMirrorSubmit,
+			adminController.removePasswordFromAdvancedSubmit,
+			accountController.update);
+
+
+		adminRouter.get('/content/account/:id/revisions', adminController.skip_population, accountController.loadAccount, adminController.account_revisions);
+		adminRouter.post('/content/account/:id/revision/:revisionindex/delete', adminController.skip_population, accountController.loadAccount, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit, accountController.update);
+		adminRouter.post('/content/account/:id/revision/:revisionindex/revert', adminController.skip_population, accountController.loadAccount, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit, accountController.update);
+		adminRouter.use('/account', accountAdminRouter);
+
+	}
 
 
 	//user roles
@@ -333,8 +385,8 @@ module.exports = function (periodic) {
 	adminRouter.use('/user', userAdminRouter);
 	adminRouter.use('/settings', settingsAdminRouter);
 
-	if(adminExtSettings.use_separate_accounts){
-		periodic.app.use('/' + periodic.app.locals.adminLoginPath,authenticationRoutes);
+	if (adminExtSettings.use_separate_accounts) {
+		periodic.app.use('/' + periodic.app.locals.adminLoginPath, authenticationRoutes);
 	}
 	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
 	return periodic;
