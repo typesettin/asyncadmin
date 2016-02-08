@@ -724,11 +724,13 @@ var controller = function (resources) {
 	Contenttype = mongoose.model('Contenttype');
 	Item = mongoose.model('Item');
 	User = mongoose.model('User');
-	Account = mongoose.model('Account');
 	// console.log('Item', typeof Item.schema.paths.content);
 	// AppDBSetting = mongoose.model('Setting');
 	appenvironment = appSettings.application.environment;
 	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
+	if (adminExtSettings.use_separate_accounts) {
+		Account = mongoose.model('Account');
+	}
 	loginSettings = resources.app.controller.extension.login.loginExtSettings;
 	adminPath = resources.app.locals.adminPath;
 	controllerOptions = resources.app.controller.native.ControllerSettings;

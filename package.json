@@ -22,7 +22,7 @@
     ]
   ],
   "_from": "periodicjs.ext.asyncadmin@latest",
-  "_id": "periodicjs.ext.asyncadmin@6.10.1",
+  "_id": "periodicjs.ext.asyncadmin@7.0.0",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
@@ -135,6 +135,6 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "7.0.0",
-  "_shasum": "f7f90349cc459132752b75c565cefae1af99c0e3"
+  "version": "7.0.1",
+  "_shasum": "c70474282f2247a6e2e61c491ceded57f294853f"
 }

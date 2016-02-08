@@ -167,6 +167,7 @@ module.exports = function (periodic) {
 	adminRouter.post('*', global.CoreCache.disableCache);
 	if (adminExtSettings.use_separate_accounts) {
 		adminRouter.all('*', adminController.ensureAccountUser, global.CoreCache.disableCache, authController.ensureAuthenticated, adminController.ensureAccountUser, uacController.loadUserRoles, uacController.check_user_access);
+		accountAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	}
 	else {
 		adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
@@ -174,7 +175,7 @@ module.exports = function (periodic) {
 	extensionAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	themeAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 	userAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
-	accountAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+
 	settingsAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
 
 	/**
