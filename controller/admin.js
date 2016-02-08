@@ -430,16 +430,18 @@ var convert_user_to_account = function (req, res, next) {
 	};
 	req.body = req.controllerData.user.toJSON();
 	req.body._id = null;
+	req.body.entitytype = 'account';
 	req.body._id = undefined;
 	req.body.use_encrypted_password = true;
 	delete req.body._id;
 
 	// req.body = CoreUtilities.removeEmptyObjectValues(req.body);
-	console.log('convert_user_to_account req.body', req.body);
+	// console.log('convert_user_to_account req.body', req.body);
 	next();
 };
 
 var ensureAccountUser = function (req, res, next) {
+	// console.log('req.user',req.user);
 	if (req.user.entitytype !== 'account') {
 		next(new Error('EXT-UAC999: Only Extension Accounts are allow access'));
 	}
