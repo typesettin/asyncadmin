@@ -150,10 +150,10 @@ module.exports = function (periodic) {
 		accountAdminRouter = periodic.express.Router();
 		authController = require('../periodicjs.ext.login/controller/auth')(periodic, AccountModel);
 		periodic.app.controller.extension.asyncadmin.authController = authController;
-		authenticationRoutes = require('./routes/auth_router')(periodic);
 		// periodic.app.locals.depopulate = adminController.depopulate;
 		periodic.app.controller.native.account = periodic.core.controller.controller_routes(require('./model/account_controller_settings'));
 
+		authenticationRoutes = require('./routes/auth_router')(periodic);
 		periodic.app.controller.native.account.getUsersData = periodic.app.controller.native.account.getAccountsData;
 		accountController = periodic.app.controller.native.account;
 		uacController = require('../periodicjs.ext.user_access_control/controller/uac')(periodic, AccountModel, accountController); //periodic.app.controller.extension.user_access_control.uac

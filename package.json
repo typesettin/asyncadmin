@@ -135,6 +135,6 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "7.0.2",
+  "version": "7.0.3",
   "_shasum": "ce9bae098b6914b82cb5c6d1f1c2ce640ac7db71"
 }
