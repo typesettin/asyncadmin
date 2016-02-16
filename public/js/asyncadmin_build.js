@@ -2592,7 +2592,7 @@ module.exports={
 
 },{}],9:[function(require,module,exports){
 //! moment.js
-//! version : 2.11.1
+//! version : 2.11.2
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
 //! license : MIT
 //! momentjs.com
@@ -4409,7 +4409,7 @@ module.exports={
     }
 
     // ASP.NET json date format regex
-    var aspNetRegex = /(\-)?(?:(\d*)[. ])?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?)?/;
+    var aspNetRegex = /^(\-)?(?:(\d*)[. ])?(\d+)\:(\d+)(?:\:(\d+)\.?(\d{3})?\d*)?$/;
 
     // from http://docs.closure-library.googlecode.com/git/closure_goog_date_date.js.source.html
     // somewhat more in line with 4.4.3.2 2004 spec, but allows decimal anywhere
@@ -6164,7 +6164,7 @@ module.exports={
     // Side effect imports
 
 
-    utils_hooks__hooks.version = '2.11.1';
+    utils_hooks__hooks.version = '2.11.2';
 
     setHookCallback(local__createLocal);
 
@@ -34112,8 +34112,7 @@ window.notifyAdminButton = function () {
 	}
 };
 
-window.addEventListener('load', function () {
-	window.domLoadEventFired = true;
+var initElementSelectors = function () {
 	adminConsoleElement = document.querySelector('#ts-admin-console');
 	adminConsoleElementContent = document.querySelector('#ts-admin-console-content');
 	asyncHTMLWrapper = document.querySelector('#ts-asyncadmin-content-wrapper');
@@ -34135,8 +34134,6 @@ window.addEventListener('load', function () {
 	asyncAdminContentElement = document.querySelector('#ts-main-content');
 	adminButtonElement = document.createElement('a');
 	adminButtonElement.innerHTML = 'Admin Console';
-	classie.add(adminButtonElement, 'ts-cursor-pointer');
-	classie.add(adminButtonElement, 'ts-open-admin-console');
 
 	open_modal_buttons = document.querySelectorAll('.ts-open-modal');
 	mobile_nav_menu_overlay = document.querySelector('.ts-nav-overlay');
@@ -34147,16 +34144,17 @@ window.addEventListener('load', function () {
 
 	servermodalElement = document.querySelector('#servermodal-modal');
 	confirmDeleteYes = document.getElementById('confirm-delete-yes');
+};
+
+window.addEventListener('load', function () {
+	window.domLoadEventFired = true;
+
+	initElementSelectors();
+	classie.add(adminButtonElement, 'ts-cursor-pointer');
+	classie.add(adminButtonElement, 'ts-open-admin-console');
+
 	ejs.delimiter = '?';
 
-	for (var u = 0; u < ajaxlinks.length; u++) {
-		ajaxlinks[u].addEventListener('click', preventDefaultClick, false);
-	}
-
-	if (mobile_nav_menu) {
-		// mobile_nav_menu.addEventListener('mousedown', async_admin_ajax_link_handler, false);
-		mobile_nav_menu.addEventListener('click', async_admin_ajax_link_handler, false);
-	}
 	asyncAdminPushie = new Pushie({
 		replacecallback: pushstatecallback,
 		pushcallback: pushstatecallback,

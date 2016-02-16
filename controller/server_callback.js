@@ -5,7 +5,7 @@ var logger,
 
 var send_server_callback = function (options) {
 	try {
-		if (io.engine) {
+		if (io && io.engine) {
 			io.sockets.emit('server_callback', {
 				functionName: options.functionName,
 				functionData: options.functionData

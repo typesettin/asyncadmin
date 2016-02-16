@@ -19,14 +19,22 @@
     [
       "periodicjs.ext.asyncadmin@6.9.9",
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ],
+    [
+      "periodicjs.ext.asyncadmin@7.0.4",
+      "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@latest",
-  "_id": "periodicjs.ext.asyncadmin@7.0.1",
+  "_from": "periodicjs.ext.asyncadmin@7.0.4",
+  "_id": "periodicjs.ext.asyncadmin@7.0.4",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
   "_nodeVersion": "4.2.4",
+  "_npmOperationalInternal": {
+    "host": "packages-9-west.internal.npmjs.com",
+    "tmp": "tmp/periodicjs.ext.asyncadmin-7.0.4.tgz_1455049718864_0.29070016113109887"
+  },
   "_npmUser": {
     "email": "yaw.etse@gmail.com",
     "name": "yawetse"
@@ -35,21 +43,21 @@
   "_phantomChildren": {},
   "_requested": {
     "name": "periodicjs.ext.asyncadmin",
-    "raw": "periodicjs.ext.asyncadmin@6.9.9",
-    "rawSpec": "6.9.9",
+    "raw": "periodicjs.ext.asyncadmin@7.0.4",
+    "rawSpec": "7.0.4",
     "scope": null,
-    "spec": "6.9.9",
+    "spec": "7.0.4",
     "type": "version"
   },
   "_requiredBy": [
     "#USER"
   ],
   "_shrinkwrap": null,
-  "_spec": "periodicjs.ext.asyncadmin@6.9.9",
+  "_spec": "periodicjs.ext.asyncadmin@7.0.4",
   "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
   "author": {
-    "name": "Yaw Joseph Etse",
     "email": "yaw.etse@gmail.com",
+    "name": "Yaw Joseph Etse",
     "url": "http://about.me/yawjosephetse"
   },
   "bugs": {
@@ -98,8 +106,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "ff43ea5b0600fd66140289a5e31382f7bffb9251",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-6.9.9.tgz"
+    "shasum": "60b2260becc7e643b1745b049076f28a1ff496e0",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.0.4.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -119,8 +127,8 @@
   "main": "index.js",
   "maintainers": [
     {
-      "name": "yawetse",
-      "email": "yaw.etse@gmail.com"
+      "email": "yaw.etse@gmail.com",
+      "name": "yawetse"
     }
   ],
   "name": "periodicjs.ext.asyncadmin",
@@ -135,6 +143,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "7.0.4",
-  "_shasum": "ce9bae098b6914b82cb5c6d1f1c2ce640ac7db71"
+  "version": "7.0.5"
 }
