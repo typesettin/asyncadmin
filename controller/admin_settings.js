@@ -756,7 +756,7 @@ var update_config_json_files = function (req, res) {
 
 var send_setting_server_callback = function (options) {
 	try {
-		if (io.engine) {
+		if (io && io.engine) {
 			io.sockets.emit('server_callback', {
 				functionName: options.functionName,
 				functionData: options.functionData
