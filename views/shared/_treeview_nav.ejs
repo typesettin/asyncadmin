@@ -50,6 +50,12 @@
     }
   }
 
+  if(locals.extasyncadmin && locals.extasyncadmin && locals.extasyncadmin.menu && locals.extasyncadmin.menu.Themes){
+    for (var x in locals.extasyncadmin.menu.Themes){
+      menu_themes["tree-item-folder-contents"].push(locals.extasyncadmin.menu.Themes[x]);
+    }
+  }
+
   var menu_extensions = {
     "tree-item": "folder",
     "tree-item-label": "Extensions",
@@ -73,13 +79,19 @@
 
   if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Extensions){
     for (var x in locals.themeasyncadmin.menu.Extensions){
-      menu_themes["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Extensions[x]);
+      menu_extensions["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Extensions[x]);
     }
   }
 
   if(pagedata.extensions.menu && pagedata.extensions.menu.Extensions){
     for (var x in pagedata.extensions.menu.Extensions){
       menu_extensions["tree-item-folder-contents"].push(pagedata.extensions.menu.Extensions[x]);
+    }
+  }
+
+  if(locals.extasyncadmin && locals.extasyncadmin.menu && locals.extasyncadmin.menu.Extensions){
+    for (var x in locals.extasyncadmin.menu.Extensions){
+      menu_extensions["tree-item-folder-contents"].push(locals.extasyncadmin.menu.Extensions[x]);
     }
   }
 
@@ -164,13 +176,19 @@
 
   if(locals.themeasyncadmin && locals.themeasyncadmin.menu && locals.themeasyncadmin.menu.Settings){
     for (var x in locals.themeasyncadmin.menu.Settings){
-      menu_themes["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Settings[x]);
+      menu_settings["tree-item-folder-contents"].push(locals.themeasyncadmin.menu.Settings[x]);
     }
   }
 
   if(pagedata.extensions.menu && pagedata.extensions.menu.Settings){
     for (var x in pagedata.extensions.menu.Settings){
       menu_settings["tree-item-folder-contents"].push(pagedata.extensions.menu.Settings[x]);
+    }
+  }
+
+  if(locals.extasyncadmin && locals.extasyncadmin.menu && locals.extasyncadmin.menu.Settings){
+    for (var x in locals.extasyncadmin.menu.Settings){
+      menu_settings["tree-item-folder-contents"].push(locals.extasyncadmin.menu.Settings[x]);
     }
   }
 
@@ -195,7 +213,6 @@
       "style":"background-image: url(/images/adminui/svg/user153.svg);"
     }
   };
-
  
   var menu_dashboard = {
     "tree-item": "file",
@@ -247,6 +264,19 @@
       }
       else{
         navmenu.tree.push(pagedata.extensions.menu.Global[x]);
+      }
+    }
+  }
+
+  if(locals.extasyncadmin && locals.extasyncadmin.menu && locals.extasyncadmin.menu.Global){
+    for (var x in locals.extasyncadmin.menu.Global){
+      if(typeof locals.extasyncadmin.menu.Global[x].userprivilege !=='undefined'){
+        if(user && (user.privileges[locals.extasyncadmin.menu.Global[x].userprivilege] || user.accounttype==='admin')){
+          navmenu.tree.push(locals.extasyncadmin.menu.Global[x]);
+        }
+      }
+      else{
+        navmenu.tree.push(locals.extasyncadmin.menu.Global[x]);
       }
     }
   }

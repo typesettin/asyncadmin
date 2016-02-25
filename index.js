@@ -1,7 +1,7 @@
 'use strict';
 
 var path = require('path'),
-	errorie = require('errorie'),
+	Errorie = require('errorie'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
 	numeral = require('numeral'),
@@ -53,7 +53,7 @@ module.exports = function (periodic) {
 		}
 	}
 	catch (e) {
-		periodic.logger.info('Current Theme does not use a custom cms interface', new errorie({
+		periodic.logger.info('Current Theme does not use a custom cms interface', new Errorie({
 			name: 'Async Admin',
 			message: 'Config error - ' + e.message
 		}));
@@ -68,7 +68,7 @@ module.exports = function (periodic) {
 		periodic.app.locals.asyncadminextJson = extJson;
 	}
 	catch (e) {
-		console.log(new errorie({
+		console.log(new Errorie({
 			name: 'Async Admin extJson',
 			message: 'Config error - ' + e.message
 		}));
