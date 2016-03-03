@@ -1,9 +1,33 @@
 {
+  "name": "periodicjs.ext.asyncadmin",
+  "version": "7.0.7",
   "author": {
     "email": "yaw.etse@gmail.com",
     "name": "Yaw Joseph Etse",
     "url": "http://about.me/yawjosephetse"
   },
+  "contributors": [
+    {
+      "name": "Vishnu Ravi",
+      "email": "hello@vishnu.io",
+      "url": "http://www.vishnu.io"
+    },
+    {
+      "name": "Alan David Garcia",
+      "email": "alandavidgarcia@gmail.com",
+      "url": "http://alangalan.tumblr.com"
+    },
+    {
+      "name": "Ernie Casilla",
+      "email": "ecasilla@icloud.com",
+      "url": "http://www.erniecasilla.com"
+    },
+    {
+      "name": "Jan Bialostok",
+      "email": "janbialostok@gmail.com",
+      "url": "https://github.com/janbialostok"
+    }
+  ],
   "bugs": {
     "url": "https://github.com/typesettin/periodicjs.ext.asyncadmin/issues"
   },
@@ -50,8 +74,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "bcc10f4bd44c04bd81e3a86830dd400420d76b45",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.0.5.tgz"
+    "shasum": "1b959968d544f74156727a4cbab69ced96e79863",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.0.6.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -75,9 +99,7 @@
       "name": "yawetse"
     }
   ],
-  "name": "periodicjs.ext.asyncadmin",
   "optionalDependencies": {},
-  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"
@@ -86,6 +108,5 @@
     "postinstall": "node install.js",
     "postuninstall": "node uninstall.js",
     "test": "mocha"
-  },
-  "version": "7.0.6"
+  }
 }

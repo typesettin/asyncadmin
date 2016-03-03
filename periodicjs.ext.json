@@ -1,16 +1,16 @@
 {
-	"periodicCompatibility":"5.0.0",
-	"periodicDependencies": [{
-    	"extname":"periodicjs.ext.mailer",
-    	"version":"~4.0.0"
-	},{
-    	"extname":"periodicjs.ext.login",
-        "version":"~4.9.6"
-	},{
+    "periodicCompatibility":"6.5.2",
+    "periodicDependencies": [{
+        "extname":"periodicjs.ext.mailer",
+        "version":"~6.0.0"
+    },{
+        "extname":"periodicjs.ext.login",
+        "version":"~7.2.0"
+    },{
         "extname": "periodicjs.ext.scheduled_content",
-        "version":"~4.0.0"
+        "version":"~6.0.0"
     },{
         "extname": "periodicjs.ext.user_access_control",
-        "version":"~4.0.0"
+        "version":"~7.0.0"
   }]
 }

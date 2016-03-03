@@ -197,7 +197,8 @@ module.exports = function (periodic) {
 	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	adminRouter.get('/content/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
 	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
-	userAdminRouter.get('/new', userAdminController.users_new);
+	adminRouter.get('/content/user/new', userAdminController.users_new);
+	adminRouter.get('/user/new', userAdminController.users_new);
 	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
 	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
 	adminRouter.get('/content/user/:id/edit', userController.loadUser, userAdminController.users_edit);
