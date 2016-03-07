@@ -14,11 +14,13 @@
 				tag: 'tr',
 				style: 'vertical-align:top;',
 				html: function (obj) {
-					var jsontablehtml,
+					var jsontablehtml='',
 					labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
-					jsontablehtml = '<td width="15%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.entitytype) + '" class="async-admin-ajax-link">' + obj.entitytype + '</a></td>'; 
-					jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.updatedat).fromNow() + '</td>';
-					jsontablehtml += '<td width="60%"><a href="/p-admin/content/' + obj.entitytype + '/' + obj._id + '/" class="async-admin-ajax-link">' + labeltouse + '</a></td>';
+					if(obj.entitytype){
+						jsontablehtml = '<td width="15%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.entitytype) + '" class="async-admin-ajax-link">' + obj.entitytype + '</a></td>'; 
+						jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.updatedat).fromNow() + '</td>';
+						jsontablehtml += '<td width="60%"><a href="/p-admin/content/' + obj.entitytype + '/' + obj._id + '/" class="async-admin-ajax-link">' + labeltouse + '</a></td>';
+					}
 					return jsontablehtml;
 				}
 			}
@@ -39,8 +41,11 @@
 				style: 'vertical-align:top;',
 				html: function (obj) {
 					var jsontablehtml,
-					jsontablehtml = '<td width="30%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.collection).toLowerCase() + '" class="async-admin-ajax-link">' + locals.viewhelper.pluralize(obj.collection) + '</a></td>'; 
-					jsontablehtml += '<td width="60%"> ' + obj.count + '</td>';
+					jsontablehtml='';
+					if(obj.collection){
+						jsontablehtml = '<td width="30%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.collection).toLowerCase() + '" class="async-admin-ajax-link">' + locals.viewhelper.pluralize(obj.collection) + '</a></td>'; 
+						jsontablehtml += '<td width="60%"> ' + obj.count + '</td>';
+					}
 					return jsontablehtml;
 				}
 			}
@@ -59,9 +64,11 @@
 				tag: 'tr',
 				style: 'vertical-align:top;',
 				html: function (obj) {
-					var jsontablehtml,
-					jsontablehtml = '<td width="30%"><a href="/p-admin/theme/' + obj.themename.toLowerCase() + '" class="async-admin-ajax-link">' + obj.themename + '</a></td>'; 
-					jsontablehtml += '<td width="60%"> ' + obj.active + '</td>';
+					var jsontablehtml='';
+					if(obj.themename){
+						jsontablehtml = '<td width="30%"><a href="/p-admin/theme/' + obj.themename.toLowerCase() + '" class="async-admin-ajax-link">' + obj.themename + '</a></td>'; 
+						jsontablehtml += '<td width="60%"> ' + obj.active + '</td>';
+					}
 					return jsontablehtml;
 				}
 			}
@@ -83,11 +90,13 @@
 				tag: 'tr',
 				style: 'vertical-align:top;',
 				html: function (obj) {
-					var jsontablehtml,
-					jsontablehtml = '<td width="45%"><a href="/p-admin/extension/' + obj.name.toLowerCase() + '" class="async-admin-ajax-link">' + obj.name + '</a></td>'; 
-					jsontablehtml += '<td width="10%"> ' + obj.version + '</td>';
-					jsontablehtml += '<td width="10%"> ' + obj.enabled + '</td>';
-					jsontablehtml += '<td width="25%"> ' + new locals.viewhelper.moment(obj.date).fromNow() + '</td>';
+					var jsontablehtml='';
+					if(obj.name){
+						jsontablehtml = '<td width="45%"><a href="/p-admin/extension/' + obj.name.toLowerCase() + '" class="async-admin-ajax-link">' + obj.name + '</a></td>'; 
+						jsontablehtml += '<td width="10%"> ' + obj.version + '</td>';
+						jsontablehtml += '<td width="10%"> ' + obj.enabled + '</td>';
+						jsontablehtml += '<td width="25%"> ' + new locals.viewhelper.moment(obj.date).fromNow() + '</td>';
+					}
 					return jsontablehtml;
 				}
 			}
