@@ -19,7 +19,11 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 			if(contenttypestouse && contenttypestouse.length){
 			contenttypestouse.forEach(function(ct){ %>
 			<div>
-				<strong style="margin-top:0;"><%- ct.title %><small><a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a></small></strong>
+				<strong style="margin-top:0;"><%- ct.title %>
+					<small>
+						<a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a>
+					</small>
+				</strong>
 				<%
 				if(ct.attributes) {
 				ct.attributes.forEach(function(attr){
@@ -42,13 +46,18 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 						if(isDropDownInput) {
 							selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
 						%>
-							<select class="<%- cssInputClass %>" name="<%- inputName %>">
+							<select
+									class="<%- cssInputClass %>"
+									name="<%- inputName %>"
+							>
 								<% selectOptionsFromDefaultVal.forEach( function (ctvalue) {
+
 									if(ctvalue  === defaultVal || (['true','false'].indexOf(ctvalue)!==-1)) { %>
 										<option selected="selected" value="<%- ctvalue %>"><%- ctvalue %></option>
 									<% } else { %>
 										<option value="<%- ctvalue %>"><%- ctvalue %></option>
 									<% } %>
+
 								<% }); %>
 							</select>
 						<% } else if(isOtherInput) { %>
@@ -101,14 +110,14 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 				<% }); %>
 			<% } %>
 			</div>
-			<% });
+			<% }); %>
 			<% } %>
 		</div>
 	</aside>
 </details>
-
 <script type="template/javascript" id="ct-attr-template">
-<?
+
+	<?
 	var contenttypestouse;
 
 	if(!genericdoc && default_contentypes){
@@ -152,13 +161,16 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 				if(isDropDownInput) {
 					selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
 				?>
-				<select class="<?- cssInputClass ?>" name="<?- inputName ?>">
+				<select
+						class="<?- cssInputClass ?>"
+						name="<?- inputName ?>"
+				>
 					<? selectOptionsFromDefaultVal.forEach( function (ctvalue) {
-					if(ctvalue  === defaultVal || (['true','false'].indexOf(ctvalue)!==-1)) { ?>
-					<option selected="selected" value="<?- ctvalue ?>"><?- ctvalue ?></option>
-					<? } else { ?>
-					<option value="<?- ctvalue ?>"><?- ctvalue ?></option>
-					<? } ?>
+							if(ctvalue  === defaultVal || (['true','false'].indexOf(ctvalue)!==-1)) { ?>
+								<option selected="selected" value="<?- ctvalue ?>"><?- ctvalue ?></option>
+							<? } else { ?>
+								<option value="<?- ctvalue ?>"><?- ctvalue ?></option>
+							<? } ?>
 					<? }); ?>
 				</select>
 				<? } else if(isOtherInput) { ?>
@@ -211,7 +223,7 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 		<? }); ?>
 		<? } ?>
 	</div>
-	<? });
+	<? }); ?>
 	<? } ?>
 	</div>
 </script>
