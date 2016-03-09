@@ -37,32 +37,32 @@
 								var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 						%>
 								<div class="ts-row ts-form-row">
-									<label class="ts-label ts-col-span3"><%- attr.title %></label>
+									<label class="ts-label ts-col-span3"><%-attr.title%></label>
 									<div class="ts-col-span9">
 						<%
 									if(isDropDownInput) {
 										selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
 						%>
-										<select class="<%-cssInputClass%>" name="<%-inputName%>">
-											<% selectOptionsFromDefaultVal.forEach(function(ctvalues, i){ %>
-												<option <%if(selectOptionsFromDefaultVal[i] === defaultVal){ %> selected="selected"<% } %> value="<%-ctvalues %>"><%-ctvalues %></option>
+										<select class="<%- cssInputClass %>" name="<%- inputName %>">
+											<% selectOptionsFromDefaultVal.forEach( function ( ctvalues, i ) { %>
+												<option <% if(selectOptionsFromDefaultVal[i] === defaultVal) { %> selected="selected"<% } %> value="<%- ctvalues %>"><%- ctvalues %></option>
 											<% }); %>
 										</select>
 						<%
 									}
 									else if(attr.datatype === 'textarea'){
 						%>
-										<textarea style="min-height:10em" class="<%-cssInputClass%>"  placeholder="<%- attr.title %>" name="<%-inputName%>"><%-defaultVal %></textarea>
+										<textarea style="min-height:10em" class="<%- cssInputClass %>"  placeholder="<%- attr.title %>" name="<%- inputName %>"><%- defaultVal %></textarea>
 						<%
 									}
 									else if(isOtherInput){
 						%>
-										<input class="<%-cssInputClass%>" type="<%- attr.datatype %>" placeholder="<%- attr.title %>" value="<%-defaultVal %>" <%if(attr.datatype==='color'){%>style="min-height:2rem;"<%}%> name="<%-inputName%>">
+										<input class="<%- cssInputClass %>" type="<%- attr.datatype %>" placeholder="<%- attr.title %>" value="<%- defaultVal %>" <% if(attr.datatype ==='color'){ %>style="min-height:2rem;"<% } %> name="<%- inputName %>">
 						<%
 									}
 									else {
 						%>
-										<input class="<%-cssInputClass%> " type="text" placeholder="<%- attr.title %>" value="<%- defaultVal %>" name="<%-inputName%>">
+										<input class="<%- cssInputClass%> " type="text" placeholder="<%- attr.title %>" value="<%- defaultVal %>" name="<%- inputName %>">
 										<% if(attr.datatype==='image'){ %>
 											<div class="ts-width-100 ts-no-x-overflow"><img  class="ts-width-100" src="<%- defaultVal %>"/></div>
 										<% } %>
