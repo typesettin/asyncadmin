@@ -5,6 +5,11 @@
 	} else if(genericdoc && genericdoc.contenttypes) {
 		contenttypestouse = genericdoc.contenttypes;
 	}
+	var dropDownInputs = ['array', 'dropdown', 'boolean'];
+	var otherInputs = ['url', 'number', 'date', 'time', 'datetime', 'tel', 'range', 'email', 'color'];
+	var contentTypeAttributesExist = (genericdoc) ? genericdoc.contenttypeattributes : null;
+	var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
+
 %>
 <details class="ts-text-sm" <%if(contenttypestouse && contenttypestouse.length){%>open<%}%>>
 	<summary>Content Type Attributes</summary>
@@ -16,25 +21,19 @@
 					<div>
 						<strong style="margin-top:0;"><%- ct.title %><small><a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a></small></strong>
 					<%
-						if(ct.attributes){
+						if(ct.attributes) {
 							ct.attributes.forEach(function(attr){
-								var dropDownInputs = ['array', 'dropdown', 'boolean'];
 								var isDropDownInput = (dropDownInputs.indexOf(attr.datatype)!==-1);
-
-								var otherInputs = ['url', 'number', 'date', 'time', 'datetime', 'tel', 'range', 'email', 'color'];
 								var isOtherInput = (otherInputs.indexOf(attr.datatype)!==-1);
-
 								var selectOptionsFromDefaultVal = null;
 								var contentTypeAttributeVal = null;
 
-								var contentTypeAttributesExist = (genericdoc) ? genericdoc.contenttypeattributes : null;
 								if (contentTypeAttributesExist) {
 									contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
 								}
 								var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;
-
 								var inputName = 'contenttypeattributes' + '.' + ct.name + '.' + attr.name;
-								var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
+
 						%>
 								<div class="ts-row ts-form-row">
 									<label class="ts-label ts-col-span3"><%-attr.title%></label>
@@ -84,7 +83,7 @@
 
 <script type="template/javascript" id="ct-attr-template">
 	<div>
-			<? 
+			<?
 			var contenttypestouse;
 			if(!genericdoc && default_contentypes){
 				contenttypestouse = default_contentypes;
@@ -110,7 +109,7 @@
 										<?= attr.title ?>
 									</label>
 									<div class="ts-col-span9">
-									<? 
+									<?
 										if(attr.datatype==='array' && attr.defaultvalue){
 											var selectOptionsFromDefaultVal = attr.defaultvalue.split(',');
 											?>
@@ -123,17 +122,17 @@
 												}); ?>
 											</select>
 											<?
-										} 
+										}
 										else if(attr.datatype==='textarea' ){
 											?>
 											<textarea style="min-height:10em" class="ts-input noFormSubmit ts-text-sm"  placeholder="<?- attr.title ?>" name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>"><?- defaultVal ?></textarea>
 											<?
-										} 
+										}
 										else if(attr.datatype==='url' || attr.datatype==='number'  || attr.datatype==='date'  || attr.datatype==='time'  || attr.datatype==='datetime'  || attr.datatype==='tel'  || attr.datatype==='range'  || attr.datatype==='email'   || attr.datatype==='color' ){
 											?>
 											<input class="ts-input noFormSubmit ts-text-sm" type="<?- attr.datatype ?>" placeholder="<?- attr.title ?>" value="<?- defaultVal ?>"  <?if(attr.datatype==='color'){?>style="min-height:2rem;"<?}?> name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>">
 											<?
-										} 
+										}
 										else{?>
 											<input class="ts-input noFormSubmit ts-text-sm" type="text" placeholder="<?= attr.title ?>" value="<?- defaultVal ?>" name="contenttypeattributes.<?= ct.name ?>.<?= attr.name ?>">
 									<?}?>
