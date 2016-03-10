@@ -1,149 +1,229 @@
 <%
-	contenttypestouse =false;
-	if(!genericdoc && typeof default_contentypes !=='undefined' && default_contentypes){
-		contenttypestouse = default_contentypes;
-	} else if(genericdoc && genericdoc.contenttypes) {
-		contenttypestouse = genericdoc.contenttypes;
-	}
+contenttypestouse = false;
+if(!genericdoc && typeof default_contentypes !=='undefined' && default_contentypes){
+	contenttypestouse = default_contentypes;
+} else if(genericdoc && genericdoc.contenttypes) {
+	contenttypestouse = genericdoc.contenttypes;
+}
+var dropDownInputs = ['array', 'dropdown', 'boolean'];
+var otherInputs = ['url', 'number', 'date', 'time', 'datetime', 'tel', 'range', 'email'];
+var contentTypeAttributesExist = (genericdoc) ? genericdoc.contenttypeattributes : null;
+var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
+
 %>
 <details class="ts-text-sm" <%if(contenttypestouse && contenttypestouse.length){%>open<%}%>>
 	<summary>Content Type Attributes</summary>
 	<aside id="doc-ct-attr">
 		<div>
-		<%
+			<%
 			if(contenttypestouse && contenttypestouse.length){
-				contenttypestouse.forEach(function(ct){ %>
-					<div>
-						<strong style="margin-top:0;"><%- ct.title %><small><a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a></small></strong>
-					<%
-						if(ct.attributes){
-							ct.attributes.forEach(function(attr){
-								var dropDownInputs = ['array', 'dropdown', 'boolean'];
-								var isDropDownInput = (dropDownInputs.indexOf(attr.datatype)!==-1);
+			contenttypestouse.forEach(function(ct){ %>
+			<div>
+				<strong style="margin-top:0;"><%- ct.title %>
+					<small>
+						<a class="async-admin-ajax-link " href="/<%- locals.adminPath %>/content/contenttype/<%-ct.name%>">(edit)</a>
+					</small>
+				</strong>
+				<%
+				if(ct.attributes) {
+				ct.attributes.forEach(function(attr){
+					var isDropDownInput = (dropDownInputs.indexOf(attr.datatype)!==-1);
+					var isOtherInput = (otherInputs.indexOf(attr.datatype)!==-1);
+					var selectOptionsFromDefaultVal = null;
+					var contentTypeAttributeVal = null;
 
-								var otherInputs = ['url', 'number', 'date', 'time', 'datetime', 'tel', 'range', 'email', 'color'];
-								var isOtherInput = (otherInputs.indexOf(attr.datatype)!==-1);
+					if (contentTypeAttributesExist) {
+						contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
+					}
+					var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;
+					var inputName = 'contenttypeattributes' + '.' + ct.name + '.' + attr.name;
 
-								var selectOptionsFromDefaultVal = null;
-								var contentTypeAttributeVal = null;
+				%>
+				<div class="ts-row ts-form-row">
+					<label class="ts-label ts-col-span3"><%-attr.title%></label>
+					<div class="ts-col-span9">
+						<%
+						if(isDropDownInput) {
+							selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
+						%>
+							<select
+									class="<%- cssInputClass %>"
+									name="<%- inputName %>"
+							>
+								<% selectOptionsFromDefaultVal.forEach( function (ctvalue) {
 
-								var contentTypeAttributesExist = (genericdoc) ? genericdoc.contenttypeattributes : null;
-								if (contentTypeAttributesExist) {
-									contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
-								}
-								var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;
+									if(ctvalue  === defaultVal || (['true','false'].indexOf(ctvalue)!==-1)) { %>
+										<option selected="selected" value="<%- ctvalue %>"><%- ctvalue %></option>
+									<% } else { %>
+										<option value="<%- ctvalue %>"><%- ctvalue %></option>
+									<% } %>
 
-								var inputName = 'contenttypeattributes' + '.' + ct.name + '.' + attr.name;
-								var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
-						%>
-								<div class="ts-row ts-form-row">
-									<label class="ts-label ts-col-span3"><%-attr.title%></label>
-									<div class="ts-col-span9">
-						<%
-									if(isDropDownInput) {
-										selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
-						%>
-										<select class="<%- cssInputClass %>" name="<%- inputName %>">
-											<% selectOptionsFromDefaultVal.forEach( function ( ctvalues, i ) { %>
-												<option <% if(selectOptionsFromDefaultVal[i] === defaultVal) { %> selected="selected"<% } %> value="<%- ctvalues %>"><%- ctvalues %></option>
-											<% }); %>
-										</select>
-						<%
-									}
-									else if(attr.datatype === 'textarea'){
-						%>
-										<textarea style="min-height:10em" class="<%- cssInputClass %>"  placeholder="<%- attr.title %>" name="<%- inputName %>"><%- defaultVal %></textarea>
-						<%
-									}
-									else if(isOtherInput){
-						%>
-										<input class="<%- cssInputClass %>" type="<%- attr.datatype %>" placeholder="<%- attr.title %>" value="<%- defaultVal %>" <% if(attr.datatype ==='color'){ %>style="min-height:2rem;"<% } %> name="<%- inputName %>">
-						<%
-									}
-									else {
-						%>
-										<input class="<%- cssInputClass%> " type="text" placeholder="<%- attr.title %>" value="<%- defaultVal %>" name="<%- inputName %>">
-										<% if(attr.datatype==='image'){ %>
-											<div class="ts-width-100 ts-no-x-overflow"><img  class="ts-width-100" src="<%- defaultVal %>"/></div>
-										<% } %>
-						<%
-									}
-						%>
-								</div>
+								<% }); %>
+							</select>
+						<% } else if(isOtherInput) { %>
+							<input
+								class="<%- cssInputClass %>"
+								type="<%- attr.datatype %>"
+								placeholder="<%- attr.title %>"
+								value="<%- defaultVal %>"
+								name="<%- inputName %>"
+							>
+						<% } else if(attr.datatype === 'textarea') { %>
+							<textarea
+								style="min-height:10em"
+								class="<%- cssInputClass %>"
+								placeholder="<%- attr.title %>"
+								name="<%- inputName %>">
+								<%- defaultVal %>
+							</textarea>
+						<% } else if(attr.datatype ==='color') { %>
+							<input
+								class="<%- cssInputClass %>"
+								type="<%- attr.datatype %>"
+								placeholder="<%- attr.title %>"
+								value="<%- defaultVal %>"
+								style="min-height:2rem;"
+								name="<%- inputName %>"
+							>
+						<% } else if (attr.datatype ==='image') { %>
+							<input
+								class="<%- cssInputClass%>"
+								type="text"
+								placeholder="<%- attr.title %>"
+								value="<%- defaultVal %>"
+								name="<%- inputName %>"
+							>
+							<div class="ts-width-100 ts-no-x-overflow">
+								<img  class="ts-width-100" src="<%- defaultVal %>"/>
+							</div>
+						<% } else { %>
+							<input
+								class="<%- cssInputClass%>"
+								type="text"
+								placeholder="<%- attr.title %>"
+								value="<%- defaultVal %>"
+								name="<%- inputName %>"
+							>
+						<% } %>
 					</div>
-							<%});
-						}
-					%>
-					</div>
-				<% });
-			}
-		%>
+				</div>
+				<% }); %>
+			<% } %>
+			</div>
+			<% }); %>
+			<% } %>
 		</div>
 	</aside>
 </details>
-
 <script type="template/javascript" id="ct-attr-template">
-	<div>
-			<? 
-			var contenttypestouse;
-			if(!genericdoc && default_contentypes){
-				contenttypestouse = default_contentypes;
-			}
-			else if(genericdoc && genericdoc.contenttypes){
-				contenttypestouse = genericdoc.contenttypes;
-			}
-			if(contenttypestouse){
-				contenttypestouse.forEach(function(ct){
-					?>
-					<div>
-						<strong style="margin-top:0;"><?= ct.title ?><small> <a href="/p-admin/content/contenttype/<?=ct.name?>">(edit)</a></small></strong>
-						<? if(ct.attributes){
-							ct.attributes.forEach(function(attr){
-								var defaultVal = attr.defaultvalue;
 
-								if(genericdoc && genericdoc.contenttypeattributes && genericdoc.contenttypeattributes[ct.name] && genericdoc.contenttypeattributes[ct.name][attr.name]){
-									defaultVal = genericdoc.contenttypeattributes[ct.name][attr.name];
-								}
-								?>
-								<div class="ts-row ts-form-row">
-									<label class="ts-label ts-col-span3">
-										<?= attr.title ?>
-									</label>
-									<div class="ts-col-span9">
-									<? 
-										if(attr.datatype==='array' && attr.defaultvalue){
-											var selectOptionsFromDefaultVal = attr.defaultvalue.split(',');
-											?>
-											<select class="ts-input noFormSubmit ts-text-sm" name="contenttypeattributes.<?= ct.name ?>.<?= attr.name ?>">
-												<? selectOptionsFromDefaultVal.forEach(function(ctvalues,i){
-													?>
-													<option <? if(selectOptionsFromDefaultVal[i] === defaultVal ){?> selected="selected"
-													<?}?> value="<?= ctvalues ?>"><?= ctvalues ?></option>
-													<?
-												}); ?>
-											</select>
-											<?
-										} 
-										else if(attr.datatype==='textarea' ){
-											?>
-											<textarea style="min-height:10em" class="ts-input noFormSubmit ts-text-sm"  placeholder="<?- attr.title ?>" name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>"><?- defaultVal ?></textarea>
-											<?
-										} 
-										else if(attr.datatype==='url' || attr.datatype==='number'  || attr.datatype==='date'  || attr.datatype==='time'  || attr.datatype==='datetime'  || attr.datatype==='tel'  || attr.datatype==='range'  || attr.datatype==='email'   || attr.datatype==='color' ){
-											?>
-											<input class="ts-input noFormSubmit ts-text-sm" type="<?- attr.datatype ?>" placeholder="<?- attr.title ?>" value="<?- defaultVal ?>"  <?if(attr.datatype==='color'){?>style="min-height:2rem;"<?}?> name="contenttypeattributes.<?- ct.name ?>.<?- attr.name ?>">
-											<?
-										} 
-										else{?>
-											<input class="ts-input noFormSubmit ts-text-sm" type="text" placeholder="<?= attr.title ?>" value="<?- defaultVal ?>" name="contenttypeattributes.<?= ct.name ?>.<?= attr.name ?>">
-									<?}?>
-									</div>
-								</div>
-							<?});
-						} ?>
-					</div>
-					<?
-				});
-			} ?>
+	<?
+	var contenttypestouse;
+
+	if(!genericdoc && default_contentypes){
+		contenttypestouse = default_contentypes;
+	}
+	else if(genericdoc && genericdoc.contenttypes){
+		contenttypestouse = genericdoc.contenttypes;
+	}
+
+	var dropDownInputs = ['array', 'dropdown', 'boolean'];
+	var otherInputs = ['url', 'number', 'date', 'time', 'datetime', 'tel', 'range', 'email'];
+	var contentTypeAttributesExist = (genericdoc) ? genericdoc.contenttypeattributes : null;
+	var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
+
+?>
+	<div>
+	<?
+	if(contenttypestouse && contenttypestouse.length){
+	contenttypestouse.forEach(function(ct){ ?>
+	<div>
+		<strong style="margin-top:0;"><?- ct.title ?><small><a class="async-admin-ajax-link " href="/<?- locals.adminPath ?>/content/contenttype/<?-ct.name?>">(edit)</a></small></strong>
+		<?
+		if(ct.attributes) {
+		ct.attributes.forEach(function(attr){
+			var isDropDownInput = (dropDownInputs.indexOf(attr.datatype)!==-1);
+			var isOtherInput = (otherInputs.indexOf(attr.datatype)!==-1);
+			var selectOptionsFromDefaultVal = null;
+			var contentTypeAttributeVal = null;
+
+			if (contentTypeAttributesExist) {
+				contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
+			}
+			var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;
+			var inputName = 'contenttypeattributes' + '.' + ct.name + '.' + attr.name;
+
+		?>
+		<div class="ts-row ts-form-row">
+			<label class="ts-label ts-col-span3"><?-attr.title?></label>
+			<div class="ts-col-span9">
+				<?
+				if(isDropDownInput) {
+					selectOptionsFromDefaultVal = (attr.datatype === 'boolean') ? [true,false] : defaultVal.split(',');
+				?>
+				<select
+						class="<?- cssInputClass ?>"
+						name="<?- inputName ?>"
+				>
+					<? selectOptionsFromDefaultVal.forEach( function (ctvalue) {
+							if(ctvalue  === defaultVal || (['true','false'].indexOf(ctvalue)!==-1)) { ?>
+								<option selected="selected" value="<?- ctvalue ?>"><?- ctvalue ?></option>
+							<? } else { ?>
+								<option value="<?- ctvalue ?>"><?- ctvalue ?></option>
+							<? } ?>
+					<? }); ?>
+				</select>
+				<? } else if(isOtherInput) { ?>
+				<input
+						class="<?- cssInputClass ?>"
+						type="<?- attr.datatype ?>"
+						placeholder="<?- attr.title ?>"
+						value="<?- defaultVal ?>"
+						name="<?- inputName ?>"
+				>
+				<? } else if(attr.datatype === 'textarea') { ?>
+				<textarea
+						style="min-height:10em"
+						class="<?- cssInputClass ?>"
+						placeholder="<?- attr.title ?>"
+						name="<?- inputName ?>">
+								<?- defaultVal ?>
+							</textarea>
+				<? } else if(attr.datatype ==='color') { ?>
+				<input
+						class="<?- cssInputClass ?>"
+						type="<?- attr.datatype ?>"
+						placeholder="<?- attr.title ?>"
+						value="<?- defaultVal ?>"
+						style="min-height:2rem;"
+						name="<?- inputName ?>"
+				>
+				<? } else if (attr.datatype ==='image') { ?>
+				<input
+						class="<?- cssInputClass?>"
+						type="text"
+						placeholder="<?- attr.title ?>"
+						value="<?- defaultVal ?>"
+						name="<?- inputName ?>"
+				>
+				<div class="ts-width-100 ts-no-x-overflow">
+					<img  class="ts-width-100" src="<?- defaultVal ?>"/>
+				</div>
+				<? } else { ?>
+				<input
+						class="<?- cssInputClass?>"
+						type="text"
+						placeholder="<?- attr.title ?>"
+						value="<?- defaultVal ?>"
+						name="<?- inputName ?>"
+				>
+				<? } ?>
+			</div>
 		</div>
+		<? }); ?>
+		<? } ?>
+	</div>
+	<? }); ?>
+	<? } ?>
+	</div>
 </script>
