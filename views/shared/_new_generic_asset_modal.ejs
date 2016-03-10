@@ -1,13 +1,22 @@
+<%
+  var  update_asset_test = ( typeof updateasset !=='undefined' && updateasset); 
+%>
+
 <div class="ts-modal-hidden-container">
   <div id="new-asset-modal" data-name="new-asset-modal" class="ts-modal ts-modal-effect-1">
     <section class="ts-modal-content ts-bg-text-primary-color  ts-no-heading-margin ts-padding-md ts-shadow ">
-    <h6> Upload new assets </h6>
+    <h6> <% if( update_asset_test){%>Update asset<%}else{%>Upload new assets<%} %> </h6>
       <form 
         class="ts-form async-admin-ajax-forms" 
         name="new-asset-form" 
         id="new-asset-form" 
         method="post" 
+        <% if( update_asset_test){%>
+        action="/<%- locals.adminPath %>/content/<%- genericdoctypename %>/<%- genericdoc._id %>/edit?_csrf=<%- locals.token %>"
+        <%}else{%>
         action="/<%- locals.adminPath %>/content/asset/new" 
+        <%} %>
+        data-successsubmitfunction="adminRefresh" 
         enctype="multipart/form-data" >
         <input type="hidden" name="_csrf" value=<%- locals.token %> >
         <div  id="new-asset-modal-content">
@@ -18,7 +27,7 @@
             <hr/>
           <div class="ts-row ">
               <details class="ts-text-xs ts-col-span12" style="margin-top:0">
-                <summary  style="margin-top:0">Advanced Options</summary>
+                <summary  style="margin-top:0">Encryption &amp; Advanced Options</summary>
                 <aside class="ts-row">
                   <div class="ts-col-span6">
                     <input type="checkbox" 
@@ -54,6 +63,14 @@
                     name="ts-format" 
                     title="Custom format" 
                     />
+                  </div>
+                  <div class="ts-col-span12">
+                    <input type="checkbox" 
+                    id="encryptfiles"
+                    name="encryptfiles" 
+                    title="Use end to end encryption" 
+                    />
+                    <label class="ts-label" for="encryptfiles">Use client-side end to end encryption</label>
                   </div>
                   
                 </aside>
