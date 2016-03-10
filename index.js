@@ -383,6 +383,7 @@ module.exports = function (periodic) {
 	periodic.app.post('/' + periodic.app.locals.adminPath + '/mailer/sendmail', mailController.sendmail);
 
 	periodic.app.get('/replietest', periodic.app.controller.extension.asyncadmin.socket_log.get_replie_stats);
+	periodic.app.get('/p-secure/asset/:id/:filename', assetController.loadAsset, assetController.decryptAsset);
 
 	adminRouter.use('/extension', extensionAdminRouter);
 	adminRouter.use('/theme', themeAdminRouter);
