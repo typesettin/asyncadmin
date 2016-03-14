@@ -25,8 +25,15 @@
 					<div class="ts-col-span10 ts-padding-md">
 						<? if(obj.fileurl && obj.assettype ){?>
 							<figure>
-       		 			<? if(obj.assettype && obj.assettype.match("image")){ ?>
-       		 				<img class="" style="max-width:50%;height:auto" src="<?-obj.fileurl?>"/>
+       		 			<? if(obj.assettype && obj.assettype.match("image")){
+       		 				if(obj.attributes && obj.attributes.encrypted_client_side){?>
+	       		 				<div>
+		       		 				<img  style="height:auto; max-width:10rem; background-image:url('/extensions/periodicjs.ext.asyncadmin/img/preloader/128x128/Preloader_7/Preloader_7.gif'); background-position:50% 50%; background-repeat:no-repeat;" class="ts-col-span12" src="/p-secure/asset/<?- obj._id ?>/<?- obj.attributes.periodicFilename ?>"/>
+	       		 				</div>
+       		 				<?}
+       		 				else{?>
+	       		 				<img class="" style="max-width:10rem;height:auto" src="<?-obj.fileurl?>"/>
+       		 				<?}?>
 					      <? } else if(obj.assettype && obj.assettype.match("pdf")){ ?>
 					        <span class="flaticon-acrobat2"> </span>
 					      <? } else if(obj.assettype && obj.assettype.match("zip")){ ?>

@@ -265,8 +265,8 @@ var get_assets_html = function (options) {
 			else if (genericasset.assettype && genericasset.assettype.match('music')) {
 				returnHTML += '<span class="ts-button flaticon-music232 ts-text-xx"></span>';
 			}
-			else if (genericasset.assettype && genericasset.assettype.match('text')) {
-				returnHTML += '<span class="ts-button flaticon-text140 ts-text-xx"></span>';
+			else if (genericasset.assettype && genericasset.assettype.match('application') || genericasset.assettype && genericasset.assettype.match('javascript') || genericasset.assettype && genericasset.assettype.match('css')) {
+				returnHTML += '<span class="ts-button flaticon-code41 ts-text-xx"></span>';
 			}
 			else if (genericasset.assettype && genericasset.assettype.match('video')) {
 				returnHTML += '<span class="ts-button flaticon-video170 ts-text-xx"></span>';
@@ -280,11 +280,11 @@ var get_assets_html = function (options) {
 			else if (genericasset.assettype && genericasset.assettype.match('zip')) {
 				returnHTML += '<span class="ts-button flaticon-compressed1 ts-text-xx"></span>';
 			}
-			else if (genericasset.assettype && genericasset.assettype.match('application')) {
-				returnHTML += '<span class="ts-button flaticon-code41 ts-text-xx"></span>';
-			}
 			else if (genericasset.assettype && genericasset.assettype.match('image')) {
 				returnHTML += '<img style="max-width:4em; max-height:4em;" src="' + genericasset.fileurl + '"/>';
+			}
+			else if (genericasset.assettype && genericasset.assettype.match('text')) {
+				returnHTML += '<span class="ts-button flaticon-text140 ts-text-xx"></span>';
 			}
 			else {
 				returnHTML += '<span class="ts-button flaticon-file87 ts-text-xx"></span>';
