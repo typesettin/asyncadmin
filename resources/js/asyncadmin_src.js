@@ -750,7 +750,23 @@ var initAjaxSubmitButtonListeners = function () {
 
 window.initAjaxSubmitButtonListeners = initAjaxSubmitButtonListeners;
 
-var loadAjaxPage = function (options) {
+var loadAjaxPage = function (options, asyncCB) {
+	var asyncCallback = options.callback || asyncCB || false;
+	var setPageEvents = function () {
+		initFlashMessage();
+		initSummernote();
+		initAjaxFormies();
+		initTabs();
+		initModalWindows();
+		initCodemirrors();
+		initAjaxDeleteButtonListeners();
+		initAjaxSubmitButtonListeners();
+		initDatalists();
+		initMedialists();
+		initFilterlists();
+		initAjaxLinkEventListeners();
+		initAdminSearch();
+	};
 	// window.console.clear();
 	closeSearchNav();
 	closeMobileNav();
@@ -772,7 +788,6 @@ var loadAjaxPage = function (options) {
 			.withCredentials()
 			.set('Accept', 'text/html')
 			.end(function (error, res) {
-				window.document.body.scrollTop = 0;
 				startSessionTimeoutCountner();
 
 				// console.log('error', error);
@@ -781,70 +796,75 @@ var loadAjaxPage = function (options) {
 					window.showErrorNotificaton({
 						message: error.message
 					});
+					if (asyncCallback) {
+						asyncCallback(error);
+					}
+					endPreloader();
 				}
 				else if (res.error) {
 					endPreloader();
 					window.showErrorNotificaton({
 						message: 'Status [' + res.error.status + ']: ' + res.error.message
 					});
+					if (asyncCallback) {
+						asyncCallback(res.error);
+					}
+					endPreloader();
 				}
 				else {
-					try {
-						htmlDivElement.innerHTML = res.text;
-						newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
-						newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
-						asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
-						document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
-						asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
-
-						// console.log('htmlDivElement title', );
-						window.document.title = htmlDivElement.querySelector('title').innerHTML;
-						newJavascripts = htmlDivElement.querySelectorAll('script');
-						for (var j = 0; j < newJavascripts.length; j++) {
-							if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
-								var newJSScript = document.createElement('script');
-								if (newJavascripts[j].src) {
-									newJSScript.src = newJavascripts[j].src;
-								}
-								if (newJavascripts[j].id) {
-									newJSScript.id = newJavascripts[j].id;
-								}
-								if (newJavascripts[j].type) {
-									newJSScript.type = newJavascripts[j].type;
-								}
-								// newJSScript.class = newJavascripts[j].class;
-								newJSScript.innerHTML = newJavascripts[j].innerHTML;
-								asyncHTMLWrapper.appendChild(newJSScript);
-							}
-						}
-						if (options.pushState) {
-							// console.log('options.datahref', options.datahref);
-							asyncAdminPushie.pushHistory({
-								data: {
-									datahref: options.datahref
-								},
-								title: 'Title:' + options.datahref,
-								href: options.datahref
-							});
-						}
+					if (asyncCallback) {
+						asyncCallback(null, res.text);
 						endPreloader();
-
-						initFlashMessage();
-						initSummernote();
-						initAjaxFormies();
-						initTabs();
-						initModalWindows();
-						initCodemirrors();
-						initAjaxDeleteButtonListeners();
-						initAjaxSubmitButtonListeners();
-						initDatalists();
-						initMedialists();
-						initFilterlists();
-						initAjaxLinkEventListeners();
-						initAdminSearch();
+						setPageEvents();
 					}
-					catch (ajaxPageError) {
-						handleUncaughtError(ajaxPageError);
+					else {
+						window.document.body.scrollTop = 0;
+						try {
+							htmlDivElement.innerHTML = res.text;
+							newPageContent = htmlDivElement.querySelector('#ts-asyncadmin-content-wrapper');
+							newPageTitle = htmlDivElement.querySelector('#menu-header-stylie').innerHTML;
+							asyncHTMLWrapper.removeChild(document.querySelector(asyncContentSelector));
+							document.querySelector('#menu-header-stylie').innerHTML = newPageTitle;
+							asyncHTMLWrapper.innerHTML = newPageContent.innerHTML;
+
+							// console.log('htmlDivElement title', );
+							window.document.title = htmlDivElement.querySelector('title').innerHTML;
+							newJavascripts = htmlDivElement.querySelectorAll('script');
+							for (var j = 0; j < newJavascripts.length; j++) {
+								if (!newJavascripts[j].src.match('/extensions/periodicjs.ext.asyncadmin/js/asyncadmin.min.js')) {
+									var newJSScript = document.createElement('script');
+									if (newJavascripts[j].src) {
+										newJSScript.src = newJavascripts[j].src;
+									}
+									if (newJavascripts[j].id) {
+										newJSScript.id = newJavascripts[j].id;
+									}
+									if (newJavascripts[j].type) {
+										newJSScript.type = newJavascripts[j].type;
+									}
+									// newJSScript.class = newJavascripts[j].class;
+									newJSScript.innerHTML = newJavascripts[j].innerHTML;
+									asyncHTMLWrapper.appendChild(newJSScript);
+								}
+							}
+							if (options.pushState) {
+								// console.log('options.datahref', options.datahref);
+								asyncAdminPushie.pushHistory({
+									data: {
+										datahref: options.datahref
+									},
+									title: 'Title:' + options.datahref,
+									href: options.datahref
+								});
+							}
+							endPreloader();
+
+							setPageEvents();
+						}
+						catch (ajaxPageError) {
+							handleUncaughtError(ajaxPageError);
+						}
+
 					}
 				}
 			});
@@ -941,6 +961,20 @@ var async_admin_ajax_link_handler = function (e) {
 		loadAjaxPage({
 			datahref: etargethref,
 			pushState: true
+		});
+		// StyliePushMenu._resetMenu();
+		return false;
+	}
+
+	if (classie.has(etarget, 'async-admin-ajax-modal')) {
+		e.preventDefault();
+		// console.log('etargethref', etargethref);
+		loadAjaxPage({
+			datahref: etargethref,
+			pushState: false
+		}, function (err, ajaxhtml) {
+			servermodalElement.querySelector('#servermodal-content').innerHTML = ajaxhtml;
+			AdminModal.show('servermodal-modal');
 		});
 		// StyliePushMenu._resetMenu();
 		return false;
@@ -1230,8 +1264,8 @@ var startSessionTimeoutCountner = function () {
 		window.showServerModal('<div id="servermodal-content"><div class="ts-bg-accent-color ts-text-text-primary-color ts-padding-sm "><span>Logout Warning</span></div>' +
 			'Your session is about to expire, do you wish to continue?' +
 			'<div class="ts-text-center">' +
-			' <span class="ts-button ts-continue-session-button ts-modal-close">Continue</span> ' +
-			' <a href="/auth/logout" class="ts-button ts-button-divider-text-color">Log out (<span id="ts-timeout-counter">' + secondsLeft + '</span>)</i></a>' +
+			' <span class="ts-button ts-continue-session-button ts-modal-close">Continue (<span id="ts-timeout-counter">' + secondsLeft + '</span>)</span> ' +
+			' <a href="/auth/logout" class="ts-button ts-button-divider-text-color">Log out</i></a>' +
 			'</div>' +
 			'</div>');
 		// session_timeout_interval
@@ -1387,14 +1421,21 @@ window.showStylieAlert = function (options) {
 window.refresh_content_attributes_media = function (data) {
 	var genericdoc = data.body.data.doc,
 		medialistcheckbox_elements = document.querySelectorAll('.medialistcheckbox');
+	var contenttype_elements = document.querySelectorAll('input[name="contenttypes"][checked]');
+	// console.log('genericdoc', genericdoc);
 	if (content_attribute_template) {
+		// console.log('content_attribute_template', content_attribute_template);
 		content_attribute_HTML = ejs.render(content_attribute_template, {
 			genericdoc: genericdoc
 		});
+		// console.log('content_attribute_HTML', content_attribute_HTML);
 		content_attribute_content_html.innerHTML = content_attribute_HTML;
 	}
 
-	if (medialistcheckbox_elements && genericdoc.assets && medialistcheckbox_elements.length !== genericdoc.assets.length) {
+	if (contenttype_elements && genericdoc.contenttypes && contenttype_elements.length !== genericdoc.contenttypes.length) {
+		window.adminRefresh();
+	}
+	else if (medialistcheckbox_elements && genericdoc.assets && medialistcheckbox_elements.length !== genericdoc.assets.length) {
 		console.log('document.querySelectorAll(.medialistcheckbox).length', document.querySelectorAll('.medialistcheckbox').length);
 		console.log('genericdoc.assets.length', genericdoc.assets.length);
 		// console.log('do a window refresh');

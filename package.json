@@ -1,36 +1,71 @@
 {
-  "name": "periodicjs.ext.asyncadmin",
-  "version": "7.2.0",
-  "author": {
-    "name": "Yaw Joseph Etse",
+  "_args": [
+    [
+      "periodicjs.ext.asyncadmin@7.2.0",
+      "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ]
+  ],
+  "_from": "periodicjs.ext.asyncadmin@7.2.0",
+  "_id": "periodicjs.ext.asyncadmin@7.2.0",
+  "_inCache": true,
+  "_installable": true,
+  "_location": "/periodicjs.ext.asyncadmin",
+  "_nodeVersion": "4.2.4",
+  "_npmOperationalInternal": {
+    "host": "packages-13-west.internal.npmjs.com",
+    "tmp": "tmp/periodicjs.ext.asyncadmin-7.2.0.tgz_1457991064579_0.6190887768752873"
+  },
+  "_npmUser": {
     "email": "yaw.etse@gmail.com",
+    "name": "yawetse"
+  },
+  "_npmVersion": "2.14.12",
+  "_phantomChildren": {},
+  "_requested": {
+    "name": "periodicjs.ext.asyncadmin",
+    "raw": "periodicjs.ext.asyncadmin@7.2.0",
+    "rawSpec": "7.2.0",
+    "scope": null,
+    "spec": "7.2.0",
+    "type": "version"
+  },
+  "_requiredBy": [
+    "#USER"
+  ],
+  "_shasum": "1216718375844451d28b13ad3fe11ee3c7e1a339",
+  "_shrinkwrap": null,
+  "_spec": "periodicjs.ext.asyncadmin@7.2.0",
+  "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
+  "author": {
+    "email": "yaw.etse@gmail.com",
+    "name": "Yaw Joseph Etse",
     "url": "http://about.me/yawjosephetse"
   },
-  "contributors": [
-    {
-      "name": "Vishnu Ravi",
-      "email": "hello@vishnu.io",
-      "url": "http://www.vishnu.io"
-    },
-    {
-      "name": "Alan David Garcia",
-      "email": "alandavidgarcia@gmail.com",
-      "url": "http://alangalan.tumblr.com"
-    },
-    {
-      "name": "Ernie Casilla",
-      "email": "ecasilla@icloud.com",
-      "url": "http://www.erniecasilla.com"
-    },
-    {
-      "name": "Jan Bialostok",
-      "email": "janbialostok@gmail.com",
-      "url": "https://github.com/janbialostok"
-    }
-  ],
   "bugs": {
     "url": "https://github.com/typesettin/periodicjs.ext.asyncadmin/issues"
   },
+  "contributors": [
+    {
+      "email": "hello@vishnu.io",
+      "name": "Vishnu Ravi",
+      "url": "http://www.vishnu.io"
+    },
+    {
+      "email": "alandavidgarcia@gmail.com",
+      "name": "Alan David Garcia",
+      "url": "http://alangalan.tumblr.com"
+    },
+    {
+      "email": "ecasilla@icloud.com",
+      "name": "Ernie Casilla",
+      "url": "http://www.erniecasilla.com"
+    },
+    {
+      "email": "janbialostok@gmail.com",
+      "name": "Jan Bialostok",
+      "url": "https://github.com/janbialostok"
+    }
+  ],
   "dependencies": {
     "bindie": "^2.1.0",
     "classie": "^1.0.0",
@@ -74,8 +109,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "1b959968d544f74156727a4cbab69ced96e79863",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.0.6.tgz"
+    "shasum": "1216718375844451d28b13ad3fe11ee3c7e1a339",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.2.0.tgz"
   },
   "engines": {
     "node": ">=4.2.4"
@@ -95,11 +130,13 @@
   "main": "index.js",
   "maintainers": [
     {
-      "name": "yawetse",
-      "email": "yaw.etse@gmail.com"
+      "email": "yaw.etse@gmail.com",
+      "name": "yawetse"
     }
   ],
+  "name": "periodicjs.ext.asyncadmin",
   "optionalDependencies": {},
+  "readme": "ERROR: No README data found!",
   "repository": {
     "type": "git",
     "url": "git://github.com/typesettin/periodicjs.ext.asyncadmin.git"
@@ -109,9 +146,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "readme": "# periodicjs.ext.login\n\nAn authentication extension that uses passport to authenticate user sessions.\n\n [API Documentation](https://github.com/typesettin/periodicjs.ext.login/blob/master/doc/api.md)\n\n## Installation\n\n```\n$ npm install periodicjs.ext.login\n```\n\n## Configure\n\nyou can define your own passort authentication strategies, after the extension has been installed, the extension configuration is located in `content/config/extensions/periodicjs.ext.login/transport.json`\n\n##Development\n*Make sure you have grunt installed*\n```\n$ npm install -g grunt-cli\n```\n\nThen run grunt watch\n```\n$ grunt watch\n```\nFor generating documentation\n```\n$ grunt doc\n$ jsdoc2md controller/**/*.js index.js install.js uninstall.js > doc/api.md\n```\n##Notes\n* Check out https://github.com/typesettin/periodicjs for the full Periodic Documentation",
-  "readmeFilename": "README.md",
-  "_id": "periodicjs.ext.asyncadmin@7.1.1",
-  "_shasum": "bd80e7d1fe056be78765362d51cc7c3ba12228ce",
-  "_from": "periodicjs.ext.asyncadmin@latest"
+  "version": "7.3.0"
 }

@@ -32,7 +32,7 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 					var selectOptionsFromDefaultVal = null;
 					var contentTypeAttributeVal = null;
 
-					if (contentTypeAttributesExist) {
+					if (contentTypeAttributesExist && genericdoc.contenttypeattributes[ct.name]) {
 						contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
 					}
 					var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;
@@ -147,7 +147,7 @@ var cssInputClass = 'ts-input noFormSubmit ts-text-sm';
 			var selectOptionsFromDefaultVal = null;
 			var contentTypeAttributeVal = null;
 
-			if (contentTypeAttributesExist) {
+			if (contentTypeAttributesExist && genericdoc.contenttypeattributes[ct.name]) {
 				contentTypeAttributeVal = genericdoc.contenttypeattributes[ct.name][attr.name] || null;
 			}
 			var defaultVal = (genericdoc && contentTypeAttributeVal) ? contentTypeAttributeVal : attr.defaultvalue;

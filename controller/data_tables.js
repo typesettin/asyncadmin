@@ -203,9 +203,9 @@ var default_custom_tfoot = function (options) {
 var cms_default_responsive_collapse = function (options) {
 	var path_to_content = options.path_to_content || 'content',
 		defaultOptions = {
-			editlink: '/' + options.adminPath + '/'+path_to_content+'/' + options.model_name + '/|||_id|||/edit',
-			deletelink: '/' + options.adminPath + '/'+path_to_content+'/' + options.model_name + '/|||_id|||/delete',
-			deleterefreshlink: '/' + options.adminPath + '/'+path_to_content+'/' + pluralize.plural(options.model_name) + '/'
+			editlink: '/' + options.adminPath + '/' + path_to_content + '/' + options.model_name + '/|||_id|||/edit',
+			deletelink: '/' + options.adminPath + '/' + path_to_content + '/' + options.model_name + '/|||_id|||/delete',
+			deleterefreshlink: '/' + options.adminPath + '/' + path_to_content + '/' + pluralize.plural(options.model_name) + '/'
 		};
 	return function (data_item) {
 		var editlink = defaultOptions.editlink.replace('|||_id|||', data_item._id);
@@ -236,7 +236,7 @@ var get_taxonomy_html = function (options) {
 				returnHTML += '<small class="ts-text-divider-text-color" >' + displaylink + '</small> ';
 			}
 			else {
-				returnHTML += '<a class="async-admin-ajax-link" href="/' + options.adminPath + '/'+path_to_content+'/' + options.tax_model_name + '/' + generictax._id + '/edit">' + displaylink + '</a> ';
+				returnHTML += '<a class="async-admin-ajax-link" href="/' + options.adminPath + '/' + path_to_content + '/' + options.tax_model_name + '/' + generictax._id + '/edit">' + displaylink + '</a> ';
 			}
 			if (i !== (options.generictaxomony.length - 1)) {
 				returnHTML += ' , ';
@@ -256,7 +256,7 @@ var get_assets_html = function (options) {
 			// image79
 			// lock72 - keyhole lock74
 			// zipped2 - zip
-			if(genericasset.attributes && genericasset.attributes.encrypted_client_side){
+			if (genericasset.attributes && genericasset.attributes.encrypted_client_side) {
 				returnHTML += '<span class="ts-button flaticon-file82 ts-text-xx"></span>';
 			}
 			else if (genericasset.assettype && genericasset.assettype.match('audio')) {
@@ -294,7 +294,7 @@ var get_assets_html = function (options) {
 			// returnHTML+='<caption>'+ genericasset.title +'</caption>';
 			// returnHTML+='</figure>';
 		});
-			returnHTML += '</div>';
+		returnHTML += '</div>';
 	}
 	return returnHTML;
 };
@@ -308,12 +308,12 @@ var cms_default_tbody = function (options) {
 		style: 'vertical-align:top;',
 		html: function (obj /*,i*/ ) {
 			var displayname = obj.title || obj.name || obj._id;
-			if(obj.attributes && obj.attributes.encrypted_client_side){
-				displayname+=' <i class="flaticon-access1 ts-text-xs ts-button-icon"></i>';
+			if (obj.attributes && obj.attributes.encrypted_client_side) {
+				displayname += ' <i class="flaticon-access1 ts-text-xs ts-button-icon"></i>';
 			}
 			var jsontablehtml;
 			jsontablehtml = '<td>';
-			jsontablehtml += '<a href="/' + options.adminPath + '/'+path_to_content+'/' + options.model_name + '/' + obj._id + '/edit"  class="async-admin-ajax-link">' + displayname + '</a>';
+			jsontablehtml += '<a href="/' + options.adminPath + '/' + path_to_content + '/' + options.model_name + '/' + obj._id + '/edit"  class="async-admin-ajax-link">' + displayname + '</a>';
 			jsontablehtml += '</td>';
 			//create date
 			jsontablehtml += '<td>' + new Moment(obj.createdat).format('MM/DD/YYYY |  hh:mm:ssa') + '</td>';
@@ -353,8 +353,8 @@ var cms_default_tbody = function (options) {
 			});
 			jsontablehtml += '</td>';
 			//options
-			jsontablehtml += '<td> <a href="/' + options.adminPath + '/'+path_to_content+'/' + options.model_name + '/' + obj._id + '/edit"  class="async-admin-ajax-link flaticon-write19 ts-button-icon ts-button"></a>   ';
-			jsontablehtml += '<a class="ts-button-error-color ts-dialog-delete flaticon-recycle70 ts-button-icon ts-button"  data-href="/' + options.adminPath + '/'+path_to_content+'/' + options.model_name + '/' + obj._id + '/delete" data-deleted-redirect-href="/' + options.adminPath + '/'+path_to_content+'/' + pluralize.plural(options.model_name) + '"/></a></td>';
+			jsontablehtml += '<td> <a href="/' + options.adminPath + '/' + path_to_content + '/' + options.model_name + '/' + obj._id + '/edit"  class="async-admin-ajax-link flaticon-write19 ts-button-icon ts-button"></a>   ';
+			jsontablehtml += '<a class="ts-button-error-color ts-dialog-delete flaticon-recycle70 ts-button-icon ts-button"  data-href="/' + options.adminPath + '/' + path_to_content + '/' + options.model_name + '/' + obj._id + '/delete" data-deleted-redirect-href="/' + options.adminPath + '/' + path_to_content + '/' + pluralize.plural(options.model_name) + '"/></a></td>';
 			return jsontablehtml;
 		}
 	};
