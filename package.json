@@ -3,17 +3,21 @@
     [
       "periodicjs.ext.asyncadmin@7.2.0",
       "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs"
+    ],
+    [
+      "periodicjs.ext.asyncadmin@7.3.0",
+      "/Users/yawetse/Developer/github/promise/promise-process-service/node_modules/periodicjs"
     ]
   ],
-  "_from": "periodicjs.ext.asyncadmin@7.2.0",
-  "_id": "periodicjs.ext.asyncadmin@7.2.0",
+  "_from": "periodicjs.ext.asyncadmin@7.3.0",
+  "_id": "periodicjs.ext.asyncadmin@7.3.0",
   "_inCache": true,
   "_installable": true,
   "_location": "/periodicjs.ext.asyncadmin",
   "_nodeVersion": "4.2.4",
   "_npmOperationalInternal": {
     "host": "packages-13-west.internal.npmjs.com",
-    "tmp": "tmp/periodicjs.ext.asyncadmin-7.2.0.tgz_1457991064579_0.6190887768752873"
+    "tmp": "tmp/periodicjs.ext.asyncadmin-7.3.0.tgz_1458316945299_0.23486984963528812"
   },
   "_npmUser": {
     "email": "yaw.etse@gmail.com",
@@ -23,19 +27,18 @@
   "_phantomChildren": {},
   "_requested": {
     "name": "periodicjs.ext.asyncadmin",
-    "raw": "periodicjs.ext.asyncadmin@7.2.0",
-    "rawSpec": "7.2.0",
+    "raw": "periodicjs.ext.asyncadmin@7.3.0",
+    "rawSpec": "7.3.0",
     "scope": null,
-    "spec": "7.2.0",
+    "spec": "7.3.0",
     "type": "version"
   },
   "_requiredBy": [
     "#USER"
   ],
-  "_shasum": "1216718375844451d28b13ad3fe11ee3c7e1a339",
   "_shrinkwrap": null,
-  "_spec": "periodicjs.ext.asyncadmin@7.2.0",
-  "_where": "/Users/yawetse/Developer/github/promise/promise-internal-server/node_modules/periodicjs",
+  "_spec": "periodicjs.ext.asyncadmin@7.3.0",
+  "_where": "/Users/yawetse/Developer/github/promise/promise-process-service/node_modules/periodicjs",
   "author": {
     "email": "yaw.etse@gmail.com",
     "name": "Yaw Joseph Etse",
@@ -109,8 +112,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "1216718375844451d28b13ad3fe11ee3c7e1a339",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.2.0.tgz"
+    "shasum": "f074cc4b400b38782ff8f0b0b5945638b865b684",
+    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.3.0.tgz"
   },
   "engines": {
     "node": ">=4.2.4"

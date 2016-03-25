@@ -684,7 +684,9 @@ var confirmDeleteDialog = function (e) {
 
 var deleteContentSubmit = function (e) {
 	var eTarget = e.target,
-		posturl = eTarget.getAttribute('data-href');
+		posturl = eTarget.getAttribute('data-href'),
+		postmethod = eTarget.getAttribute('data-ajax-method'),
+		ajaxrequest;
 	if (eTarget.getAttribute('data-beforefunction')) {
 		var beforeFunctionString = eTarget.getAttribute('data-beforefunction'),
 			beforefn = window[beforeFunctionString];
@@ -693,8 +695,19 @@ var deleteContentSubmit = function (e) {
 			beforefn();
 		}
 	}
-	request
-		.post(posturl)
+	if (postmethod === 'post') {
+		ajaxrequest = request.post(posturl);
+	}
+	else if (postmethod === 'put') {
+		ajaxrequest = request.put(posturl);
+	}
+	else if (postmethod === 'delete' || postmethod === 'del') {
+		ajaxrequest = request.del(posturl);
+	}
+	else {
+		ajaxrequest = request.get(posturl);
+	}
+	ajaxrequest
 		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
 		.set('Accept', 'application/json')
 		.query({
@@ -709,7 +722,19 @@ var submitAjaxButton = function (e) {
 		postmethod = eTarget.getAttribute('data-ajax-method'),
 		ajaxrequest;
 	showPreloader();
-	ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
+	if (postmethod === 'post') {
+		ajaxrequest = request.post(posturl);
+	}
+	else if (postmethod === 'put') {
+		ajaxrequest = request.put(posturl);
+	}
+	else if (postmethod === 'delete' || postmethod === 'del') {
+		ajaxrequest = request.del(posturl);
+	}
+	else {
+		ajaxrequest = request.get(posturl);
+	}
+	// ajaxrequest = (postmethod === 'post') ? request.post(posturl) : request.get(posturl);
 	if (eTarget.getAttribute('data-beforefunction')) {
 		var beforeFunctionString = eTarget.getAttribute('data-beforefunction'),
 			beforefn = window[beforeFunctionString];
