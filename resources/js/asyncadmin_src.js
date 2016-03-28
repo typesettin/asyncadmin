@@ -660,12 +660,16 @@ var confirmDeleteDialog = function (e) {
 		deleteredirecthref = eTarget.getAttribute('data-deleted-redirect-href'),
 		successfunction = eTarget.getAttribute('data-successfunction'),
 		beforefunction = eTarget.getAttribute('data-beforefunction'),
+		ajaxmethod = eTarget.getAttribute('data-ajax-method'),
 		deleteDialogTitle = eTarget.getAttribute('data-title') || eTarget.getAttribute('title') || 'Please Confirm',
 		donotnotify = eTarget.getAttribute('data-donotnotify');
 	e.preventDefault();
 
 	confirmDeleteYes.setAttribute('data-href', '#');
 	confirmDeleteYes.setAttribute('data-href', posturl);
+	if (ajaxmethod) {
+		confirmDeleteYes.setAttribute('data-ajax-method', ajaxmethod);
+	}
 	if (deleteredirecthref) {
 		confirmDeleteYes.setAttribute('data-deleted-redirect-href', deleteredirecthref);
 	}
@@ -695,8 +699,8 @@ var deleteContentSubmit = function (e) {
 			beforefn();
 		}
 	}
-	if (postmethod === 'post') {
-		ajaxrequest = request.post(posturl);
+	if (postmethod === 'get') {
+		ajaxrequest = request.get(posturl);
 	}
 	else if (postmethod === 'put') {
 		ajaxrequest = request.put(posturl);
@@ -705,7 +709,7 @@ var deleteContentSubmit = function (e) {
 		ajaxrequest = request.del(posturl);
 	}
 	else {
-		ajaxrequest = request.get(posturl);
+		ajaxrequest = request.post(posturl);
 	}
 	ajaxrequest
 		.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
