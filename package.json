@@ -36,7 +36,7 @@
     "debounce": "^1.0.0",
     "diff": "^2.2.1",
     "forbject": "^1.4.0",
-    "formie": "^1.0.0",
+    "formie": "^1.1.0",
     "minimist": "^1.2.0",
     "node-json2html": "^1.0.0",
     "numeral": "^1.5.3",
@@ -51,8 +51,12 @@
   },
   "description": "An authentication extension for periodicjs that uses passport to authenticate user sessions.",
   "devDependencies": {
+    "async": "^2.0.0-rc.5",
+    "bindie": "^2.1.0",
     "browserify": "^13.0.0",
+    "capitalize": "^1.0.0",
     "chai": "^3.0.0",
+    "ejs": "^2.4.1",
     "grunt": "^1.0.1",
     "grunt-browserify": "^5.0.0",
     "grunt-contrib-copy": "^1.0.0",
@@ -72,6 +76,13 @@
     "jsdoc": "^3.3.2",
     "mocha": "^2.4.5",
     "mocha-lcov-reporter": "^1.2.0",
+    "moment": "^2.13.0",
+    "pluralize": "^2.0.0",
+    "stylie": "^2.0.1",
+    "stylie.modals": "^2.0.1",
+    "stylie.notifications": "^2.0.1",
+    "stylie.tabs": "^2.0.1",
+    "superagent": "^2.0.0-alpha.3",
     "uglify-js": "^2.4.15",
     "uglifyify": "^3.0.1"
   },
@@ -81,7 +92,7 @@
     "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.3.0.tgz"
   },
   "engines": {
-    "node": ">=4.2.4"
+    "node": ">=6.x"
   },
   "gitHead": "5815ea1110e2dca76fdea369310bcacf1ab4023e",
   "homepage": "https://github.com/typesettin/periodicjs.ext.asyncadmin",
@@ -114,5 +125,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "7.3.2"
+  "version": "7.3.3"
 }
