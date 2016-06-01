@@ -60,8 +60,8 @@ var admin_index = function (req, res) {
 
 var fixCodeMirrorSubmit = function (req, res, next) {
 	if (req.body.genericdocjson) {
-
 		req.controllerData = req.controllerData || {};
+		req.controllerData.skip_xss = true;
 		req.controllerData.encryptFields = true;
 		var jsonbody = JSON.parse(req.body.genericdocjson);
 		delete req.body.genericdocjson;
