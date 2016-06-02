@@ -378,6 +378,7 @@ var defaultAjaxFormie = function (formElement) {
 			}
 			for (var r = 0; r < codemirrorTextAreas.length; r++) {
 				codemirrorTextAreas[r].innerHTML = codeMirrors[codemirrorTextAreas[r].id].getValue();
+				codeMirrors[codemirrorTextAreas[r].id].save();
 			}
 		},
 		successcallback: function (response) {
