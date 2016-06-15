@@ -371,7 +371,7 @@ exports.default_thead = default_thead;
 exports.default_custom_tfoot = default_custom_tfoot;
 exports.get_data_table_html = get_data_table_html;
 
-},{"./json2html":2,"moment":85,"pluralize":93,"util-extend":126}],2:[function(require,module,exports){
+},{"./json2html":2,"moment":83,"pluralize":91,"util-extend":125}],2:[function(require,module,exports){
 'use strict';
 //Copyright (c) 2013 Crystalline Technologies
 //
@@ -1088,7 +1088,7 @@ module.exports = function(arraybuffer, start, end) {
     /**
      * Converts `value` to an integer.
      *
-     * **Note:** This function is loosely based on
+     * **Note:** This method is loosely based on
      * [`ToInteger`](http://www.ecma-international.org/ecma-262/6.0/#sec-tointeger).
      *
      * @static
@@ -1202,8 +1202,7 @@ module.exports = function(arraybuffer, start, end) {
     }
 
     /**
-     * A no-operation function that returns `undefined` regardless of the
-     * arguments it receives.
+     * A method that returns `undefined`.
      *
      * @static
      * @memberOf _
@@ -1211,10 +1210,8 @@ module.exports = function(arraybuffer, start, end) {
      * @category Util
      * @example
      *
-     * var object = { 'user': 'fred' };
-     *
-     * _.noop(object) === undefined;
-     * // => true
+     * _.times(2, _.noop);
+     * // => [undefined, undefined]
      */
     function noop() {
       // No operation performed.
@@ -1349,7 +1346,7 @@ module.exports = function(arraybuffer, start, end) {
      * The base implementation of `_.has` without support for deep paths.
      *
      * @private
-     * @param {Object} object The object to query.
+     * @param {Object} [object] The object to query.
      * @param {Array|string} key The key to check.
      * @returns {boolean} Returns `true` if `key` exists, else `false`.
      */
@@ -1357,8 +1354,9 @@ module.exports = function(arraybuffer, start, end) {
       // Avoid a bug in IE 10-11 where objects with a [[Prototype]] of `null`,
       // that are composed entirely of index properties, return `false` for
       // `hasOwnProperty` checks of them.
-      return hasOwnProperty.call(object, key) ||
-        (typeof object == 'object' && key in object && getPrototype(object) === null);
+      return object != null &&
+        (hasOwnProperty.call(object, key) ||
+          (typeof object == 'object' && key in object && getPrototype(object) === null));
     }
 
     /* Built-in method references for those with the same name as other `lodash` methods. */
@@ -1722,8 +1720,11 @@ module.exports = function(arraybuffer, start, end) {
     function _asyncMap(eachfn, arr, iteratee, callback) {
         callback = once(callback || noop);
         arr = arr || [];
-        var results = isArrayLike(arr) || getIterator(arr) ? [] : {};
-        eachfn(arr, function (value, index, callback) {
+        var results = [];
+        var counter = 0;
+
+        eachfn(arr, function (value, _, callback) {
+            var index = counter++;
             iteratee(value, function (err, v) {
                 results[index] = v;
                 callback(err);
@@ -1772,6 +1773,10 @@ module.exports = function(arraybuffer, start, end) {
      * in order. However, the results array will be in the same order as the
      * original `coll`.
      *
+     * If `map` is passed an Object, the results will be an Array.  The results
+     * will roughly be in the order of the original Objects' keys (but this can
+     * vary across JavaScript engines)
+     *
      * @name map
      * @static
      * @memberOf async
@@ -1782,7 +1787,7 @@ module.exports = function(arraybuffer, start, end) {
      * once it has completed with an error (which can be `null`) and a
      * transformed item. Invoked with (item, callback).
      * @param {Function} [callback] - A callback which is called when all `iteratee`
-     * functions have finished, or an error occurs. Results is an array of the
+     * functions have finished, or an error occurs. Results is an Array of the
      * transformed items from the `coll`. Invoked with (err, results).
      * @example
      *
@@ -1992,13 +1997,13 @@ module.exports = function(arraybuffer, start, end) {
      * iteratee shorthands.
      *
      * @private
-     * @param {Array} array The array to iterate over.
+     * @param {Array} [array] The array to iterate over.
      * @param {Function} iteratee The function invoked per iteration.
      * @returns {Array} Returns `array`.
      */
     function arrayEach(array, iteratee) {
       var index = -1,
-          length = array.length;
+          length = array ? array.length : 0;
 
       while (++index < length) {
         if (iteratee(array[index], index, array) === false) {
@@ -2298,6 +2303,49 @@ module.exports = function(arraybuffer, start, end) {
       return result;
     }
 
+    /**
+     * Checks if `value` is a global object.
+     *
+     * @private
+     * @param {*} value The value to check.
+     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
+     */
+    function checkGlobal(value) {
+      return (value && value.Object === Object) ? value : null;
+    }
+
+    /** Detect free variable `global` from Node.js. */
+    var freeGlobal = checkGlobal(typeof global == 'object' && global);
+
+    /** Detect free variable `self`. */
+    var freeSelf = checkGlobal(typeof self == 'object' && self);
+
+    /** Detect `this` as the global object. */
+    var thisGlobal = checkGlobal(typeof this == 'object' && this);
+
+    /** Used as a reference to the global object. */
+    var root = freeGlobal || freeSelf || thisGlobal || Function('return this')();
+
+    /** Used to detect overreaching core-js shims. */
+    var coreJsData = root['__core-js_shared__'];
+
+    /** Used to detect methods masquerading as native. */
+    var maskSrcKey = (function() {
+      var uid = /[^.]+$/.exec(coreJsData && coreJsData.keys && coreJsData.keys.IE_PROTO || '');
+      return uid ? ('Symbol(src)_1.' + uid) : '';
+    }());
+
+    /**
+     * Checks if `func` has its source masked.
+     *
+     * @private
+     * @param {Function} func The function to check.
+     * @returns {boolean} Returns `true` if `func` is masked, else `false`.
+     */
+    function isMasked(func) {
+      return !!maskSrcKey && (maskSrcKey in func);
+    }
+
     /** Used to resolve the decompiled source of functions. */
     var funcToString$1 = Function.prototype.toString;
 
@@ -2345,29 +2393,31 @@ module.exports = function(arraybuffer, start, end) {
     );
 
     /**
-     * Checks if `value` is a native function.
+     * The base implementation of `_.isNative` without bad shim checks.
      *
-     * @static
-     * @memberOf _
-     * @since 3.0.0
-     * @category Lang
+     * @private
      * @param {*} value The value to check.
      * @returns {boolean} Returns `true` if `value` is a native function,
      *  else `false`.
-     * @example
-     *
-     * _.isNative(Array.prototype.push);
-     * // => true
-     *
-     * _.isNative(_);
-     * // => false
      */
-    function isNative(value) {
-      if (!isObject(value)) {
+    function baseIsNative(value) {
+      if (!isObject(value) || isMasked(value)) {
         return false;
       }
       var pattern = (isFunction(value) || isHostObject(value)) ? reIsNative : reIsHostCtor;
       return pattern.test(toSource(value));
+    }
+
+    /**
+     * Gets the value at `key` of `object`.
+     *
+     * @private
+     * @param {Object} [object] The object to query.
+     * @param {string} key The key of the property to get.
+     * @returns {*} Returns the property value.
+     */
+    function getValue(object, key) {
+      return object == null ? undefined : object[key];
     }
 
     /**
@@ -2379,8 +2429,8 @@ module.exports = function(arraybuffer, start, end) {
      * @returns {*} Returns the function if it's native, else `undefined`.
      */
     function getNative(object, key) {
-      var value = object[key];
-      return isNative(value) ? value : undefined;
+      var value = getValue(object, key);
+      return baseIsNative(value) ? value : undefined;
     }
 
     /* Built-in method references that are verified to be native. */
@@ -2501,55 +2551,6 @@ module.exports = function(arraybuffer, start, end) {
     Hash.prototype.get = hashGet;
     Hash.prototype.has = hashHas;
     Hash.prototype.set = hashSet;
-
-    /**
-     * Checks if `value` is a global object.
-     *
-     * @private
-     * @param {*} value The value to check.
-     * @returns {null|Object} Returns `value` if it's a global object, else `null`.
-     */
-    function checkGlobal(value) {
-      return (value && value.Object === Object) ? value : null;
-    }
-
-    /** Used to determine if values are of the language type `Object`. */
-    var objectTypes = {
-      'function': true,
-      'object': true
-    };
-
-    /** Detect free variable `exports`. */
-    var freeExports = (objectTypes[typeof exports] && exports && !exports.nodeType)
-      ? exports
-      : undefined;
-
-    /** Detect free variable `module`. */
-    var freeModule = (objectTypes[typeof module] && module && !module.nodeType)
-      ? module
-      : undefined;
-
-    /** Detect free variable `global` from Node.js. */
-    var freeGlobal = checkGlobal(freeExports && freeModule && typeof global == 'object' && global);
-
-    /** Detect free variable `self`. */
-    var freeSelf = checkGlobal(objectTypes[typeof self] && self);
-
-    /** Detect free variable `window`. */
-    var freeWindow = checkGlobal(objectTypes[typeof window] && window);
-
-    /** Detect `this` as the global object. */
-    var thisGlobal = checkGlobal(objectTypes[typeof this] && this);
-
-    /**
-     * Used as a reference to the global object.
-     *
-     * The `this` value is used if it's the global object to avoid Greasemonkey's
-     * restricted `window` object, otherwise the `window` object is used.
-     */
-    var root = freeGlobal ||
-      ((freeWindow !== (thisGlobal && thisGlobal.window)) && freeWindow) ||
-        freeSelf || thisGlobal || Function('return this')();
 
     /* Built-in method references that are verified to be native. */
     var Map = getNative(root, 'Map');
@@ -2775,14 +2776,14 @@ module.exports = function(arraybuffer, start, end) {
      * shorthands.
      *
      * @private
-     * @param {Array} array The array to iterate over.
+     * @param {Array} [array] The array to iterate over.
      * @param {Function} predicate The function invoked per iteration.
      * @returns {boolean} Returns `true` if any element passes the predicate check,
      *  else `false`.
      */
     function arraySome(array, predicate) {
       var index = -1,
-          length = array.length;
+          length = array ? array.length : 0;
 
       while (++index < length) {
         if (predicate(array[index], index, array)) {
@@ -3397,106 +3398,6 @@ module.exports = function(arraybuffer, start, end) {
     }
 
     /**
-     * A specialized version of `_.map` for arrays without support for iteratee
-     * shorthands.
-     *
-     * @private
-     * @param {Array} array The array to iterate over.
-     * @param {Function} iteratee The function invoked per iteration.
-     * @returns {Array} Returns the new mapped array.
-     */
-    function arrayMap(array, iteratee) {
-      var index = -1,
-          length = array.length,
-          result = Array(length);
-
-      while (++index < length) {
-        result[index] = iteratee(array[index], index, array);
-      }
-      return result;
-    }
-
-    /**
-     * The base implementation of `_.toPairs` and `_.toPairsIn` which creates an array
-     * of key-value pairs for `object` corresponding to the property names of `props`.
-     *
-     * @private
-     * @param {Object} object The object to query.
-     * @param {Array} props The property names to get values for.
-     * @returns {Object} Returns the key-value pairs.
-     */
-    function baseToPairs(object, props) {
-      return arrayMap(props, function(key) {
-        return [key, object[key]];
-      });
-    }
-
-    /**
-     * Converts `set` to its value-value pairs.
-     *
-     * @private
-     * @param {Object} set The set to convert.
-     * @returns {Array} Returns the value-value pairs.
-     */
-    function setToPairs(set) {
-      var index = -1,
-          result = Array(set.size);
-
-      set.forEach(function(value) {
-        result[++index] = [value, value];
-      });
-      return result;
-    }
-
-    var mapTag$3 = '[object Map]';
-    var setTag$3 = '[object Set]';
-    /**
-     * Creates a `_.toPairs` or `_.toPairsIn` function.
-     *
-     * @private
-     * @param {Function} keysFunc The function to get the keys of a given object.
-     * @returns {Function} Returns the new pairs function.
-     */
-    function createToPairs(keysFunc) {
-      return function(object) {
-        var tag = getTag$1(object);
-        if (tag == mapTag$3) {
-          return mapToArray(object);
-        }
-        if (tag == setTag$3) {
-          return setToPairs(object);
-        }
-        return baseToPairs(object, keysFunc(object));
-      };
-    }
-
-    /**
-     * Creates an array of own enumerable string keyed-value pairs for `object`
-     * which can be consumed by `_.fromPairs`. If `object` is a map or set, its
-     * entries are returned.
-     *
-     * @static
-     * @memberOf _
-     * @since 4.0.0
-     * @alias entries
-     * @category Object
-     * @param {Object} object The object to query.
-     * @returns {Array} Returns the key-value pairs.
-     * @example
-     *
-     * function Foo() {
-     *   this.a = 1;
-     *   this.b = 2;
-     * }
-     *
-     * Foo.prototype.c = 3;
-     *
-     * _.toPairs(new Foo);
-     * // => [['a', 1], ['b', 2]] (iteration order is not guaranteed)
-     */
-    var toPairs = createToPairs(keys);
-
-    /**
      * Gets the property names, values, and compare flags of `object`.
      *
      * @private
@@ -3504,11 +3405,14 @@ module.exports = function(arraybuffer, start, end) {
      * @returns {Array} Returns the match data of `object`.
      */
     function getMatchData(object) {
-      var result = toPairs(object),
+      var result = keys(object),
           length = result.length;
 
       while (length--) {
-        result[length][2] = isStrictComparable(result[length][1]);
+        var key = result[length],
+            value = object[key];
+
+        result[length] = [key, value, isStrictComparable(value)];
       }
       return result;
     }
@@ -3671,7 +3575,7 @@ module.exports = function(arraybuffer, start, end) {
     }
 
     /** Used to match property names within property paths. */
-    var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]/g;
+    var rePropName = /[^.[\]]+|\[(?:(-?\d+(?:\.\d+)?)|(["'])((?:(?!\2)[^\\]|\\.)*?)\2)\]|(?=(\.|\[\])(?:\4|$))/g;
 
     /** Used to match backslashes in property paths. */
     var reEscapeChar = /\\(\\)?/g;
@@ -3797,12 +3701,12 @@ module.exports = function(arraybuffer, start, end) {
      * The base implementation of `_.hasIn` without support for deep paths.
      *
      * @private
-     * @param {Object} object The object to query.
+     * @param {Object} [object] The object to query.
      * @param {Array|string} key The key to check.
      * @returns {boolean} Returns `true` if `key` exists, else `false`.
      */
     function baseHasIn(object, key) {
-      return key in Object(object);
+      return object != null && key in Object(object);
     }
 
     /**
@@ -3901,7 +3805,7 @@ module.exports = function(arraybuffer, start, end) {
      *
      * var object = { 'user': 'fred' };
      *
-     * _.identity(object) === object;
+     * console.log(_.identity(object) === object);
      * // => true
      */
     function identity(value) {
@@ -4014,7 +3918,7 @@ module.exports = function(arraybuffer, start, end) {
      */
     function indexOfNaN(array, fromIndex, fromRight) {
       var length = array.length,
-          index = fromIndex + (fromRight ? 0 : -1);
+          index = fromIndex + (fromRight ? 1 : -1);
 
       while ((fromRight ? index-- : ++index < length)) {
         var other = array[index];
@@ -4284,6 +4188,26 @@ module.exports = function(arraybuffer, start, end) {
             });
             return result;
         }
+    }
+
+    /**
+     * A specialized version of `_.map` for arrays without support for iteratee
+     * shorthands.
+     *
+     * @private
+     * @param {Array} [array] The array to iterate over.
+     * @param {Function} iteratee The function invoked per iteration.
+     * @returns {Array} Returns the new mapped array.
+     */
+    function arrayMap(array, iteratee) {
+      var index = -1,
+          length = array ? array.length : 0,
+          result = Array(length);
+
+      while (++index < length) {
+        result[index] = iteratee(array[index], index, array);
+      }
+      return result;
     }
 
     /**
@@ -4583,24 +4507,32 @@ module.exports = function(arraybuffer, start, end) {
         auto(newTasks, callback);
     }
 
-    var _setImmediate = typeof setImmediate === 'function' && setImmediate;
+    var hasSetImmediate = typeof setImmediate === 'function' && setImmediate;
+    var hasNextTick = typeof process === 'object' && typeof process.nextTick === 'function';
 
-    var _defer;
-    if (_setImmediate) {
-        _defer = _setImmediate;
-    } else if (typeof process === 'object' && typeof process.nextTick === 'function') {
-        _defer = process.nextTick;
-    } else {
-        _defer = function (fn) {
-            setTimeout(fn, 0);
-        };
+    function fallback(fn) {
+        setTimeout(fn, 0);
     }
 
-    var setImmediate$1 = rest(function (fn, args) {
-        _defer(function () {
-            fn.apply(null, args);
+    function wrap(defer) {
+        return rest(function (fn, args) {
+            defer(function () {
+                fn.apply(null, args);
+            });
         });
-    });
+    }
+
+    var _defer;
+
+    if (hasSetImmediate) {
+        _defer = setImmediate;
+    } else if (hasNextTick) {
+        _defer = process.nextTick;
+    } else {
+        _defer = fallback;
+    }
+
+    var setImmediate$1 = wrap(_defer);
 
     function queue(worker, concurrency, payload) {
         if (concurrency == null) {
@@ -4651,6 +4583,10 @@ module.exports = function(arraybuffer, start, end) {
                     });
 
                     task.callback.apply(task, args);
+
+                    if (args[0] != null) {
+                        q.error(args[0], task.data);
+                    }
                 });
 
                 if (workers <= q.concurrency - q.buffer) {
@@ -4675,6 +4611,7 @@ module.exports = function(arraybuffer, start, end) {
             buffer: concurrency / 4,
             empty: noop,
             drain: noop,
+            error: noop,
             started: false,
             paused: false,
             push: function (data, callback) {
@@ -5921,7 +5858,6 @@ module.exports = function(arraybuffer, start, end) {
      * node> nextfn();
      * 'three'
      */
-
     function iterator$1 (tasks) {
         function makeCallback(index) {
             function fn() {
@@ -5965,6 +5901,100 @@ module.exports = function(arraybuffer, start, end) {
      * 'hello world'
      */
     var log = consoleFunc('log');
+
+    /**
+     * The same as `mapValues` but runs a maximum of `limit` async operations at a
+     * time.
+     *
+     * @name mapValuesLimit
+     * @static
+     * @memberOf async
+     * @see async.mapValues
+     * @category Collection
+     * @param {Object} obj - A collection to iterate over.
+     * @param {number} limit - The maximum number of async operations at a time.
+     * @param {Function} iteratee - A function to apply to each value in `obj`.
+     * The iteratee is passed a `callback(err, transformed)` which must be called
+     * once it has completed with an error (which can be `null`) and a
+     * transformed value. Invoked with (value, key, callback).
+     * @param {Function} [callback] - A callback which is called when all `iteratee`
+     * functions have finished, or an error occurs. Result is an object of the
+     * transformed values from the `obj`. Invoked with (err, result).
+     */
+    function mapValuesLimit(obj, limit, iteratee, callback) {
+        var newObj = {};
+        eachOfLimit(obj, limit, function (val, key, next) {
+            iteratee(val, key, function (err, result) {
+                if (err) return next(err);
+                newObj[key] = result;
+                next();
+            });
+        }, function (err) {
+            callback(err, newObj);
+        });
+    }
+
+    /**
+     * A relative of `map`, designed for use with objects.
+     *
+     * Produces a new Object by mapping each value of `obj` through the `iteratee`
+     * function. The `iteratee` is called each `value` and `key` from `obj` and a
+     * callback for when it has finished processing. Each of these callbacks takes
+     * two arguments: an `error`, and the transformed item from `obj`. If `iteratee`
+     * passes an error to its callback, the main `callback` (for the `mapValues`
+     * function) is immediately called with the error.
+     *
+     * Note, the order of the keys in the result is not guaranteed.  The keys will
+     * be roughly in the order they complete, (but this is very engine-specific)
+     *
+     * @name mapValues
+     * @static
+     * @memberOf async
+     * @category Collection
+     * @param {Object} obj - A collection to iterate over.
+     * @param {Function} iteratee - A function to apply to each value and key in
+     * `coll`. The iteratee is passed a `callback(err, transformed)` which must be
+     * called once it has completed with an error (which can be `null`) and a
+     * transformed value. Invoked with (value, key, callback).
+     * @param {Function} [callback] - A callback which is called when all `iteratee`
+     * functions have finished, or an error occurs. Results is an array of the
+     * transformed items from the `obj`. Invoked with (err, result).
+     * @example
+     *
+     * async.mapValues({
+     *     f1: 'file1',
+     *     f2: 'file2',
+     *     f3: 'file3'
+     * }, fs.stat, function(err, result) {
+     *     // results is now a map of stats for each file, e.g.
+     *     // {
+     *     //     f1: [stats for file1],
+     *     //     f2: [stats for file2],
+     *     //     f3: [stats for file3]
+     *     // }
+     * });
+     */
+
+    var mapValues = doLimit(mapValuesLimit, Infinity);
+
+    /**
+     * The same as `mapValues` but runs only a single async operation at a time.
+     *
+     * @name mapValuesSeries
+     * @static
+     * @memberOf async
+     * @see async.mapValues
+     * @category Collection
+     * @param {Object} obj - A collection to iterate over.
+     * @param {Function} iteratee - A function to apply to each value in `obj`.
+     * The iteratee is passed a `callback(err, transformed)` which must be called
+     * once it has completed with an error (which can be `null`) and a
+     * transformed value. Invoked with (value, key, callback).
+     * @param {Function} [callback] - A callback which is called when all `iteratee`
+     * functions have finished, or an error occurs. Result is an object of the
+     * transformed values from the `obj`. Invoked with (err, result).
+     */
+    var mapValuesSeries = doLimit(mapValuesLimit, 1);
 
     function has(obj, key) {
         return key in obj;
@@ -6033,6 +6063,48 @@ module.exports = function(arraybuffer, start, end) {
         memoized.unmemoized = fn;
         return memoized;
     }
+
+    /**
+     * Calls `callback` on a later loop around the event loop. In Node.js this just
+     * calls `setImmediate`.  In the browser it will use `setImmediate` if
+     * available, otherwise `setTimeout(callback, 0)`, which means other higher
+     * priority events may precede the execution of `callback`.
+     *
+     * This is used internally for browser-compatibility purposes.
+     *
+     * @name nextTick
+     * @static
+     * @memberOf async
+     * @alias setImmediate
+     * @category Util
+     * @param {Function} callback - The function to call on a later loop around
+     * the event loop. Invoked with (args...).
+     * @param {...*} args... - any number of additional arguments to pass to the
+     * callback on the next tick.
+     * @example
+     *
+     * var call_order = [];
+     * async.nextTick(function() {
+     *     call_order.push('two');
+     *     // call_order now equals ['one','two']
+     * });
+     * call_order.push('one');
+     *
+     * async.setImmediate(function (a, b, c) {
+     *     // a, b, and c equal 1, 2, and 3
+     * }, 1, 2, 3);
+     */
+    var _defer$1;
+
+    if (hasNextTick) {
+        _defer$1 = process.nextTick;
+    } else if (hasSetImmediate) {
+        _defer$1 = setImmediate;
+    } else {
+        _defer$1 = fallback;
+    }
+
+    var nextTick = wrap(_defer$1);
 
     function _parallel(eachfn, tasks, callback) {
         callback = callback || noop;
@@ -6175,6 +6247,8 @@ module.exports = function(arraybuffer, start, end) {
      * from the `queue` is given to a `worker`.
      * @property {Function} drain - a callback that is called when the last item
      * from the `queue` has returned from the `worker`.
+     * @property {Function} error - a callback that is called when a task errors.
+     * Has the signature `function(error, task)`.
      * @property {boolean} paused - a boolean for determining whether the queue is
      * in a paused state.
      * @property {Function} pause - a function that pauses the processing of tasks
@@ -6720,6 +6794,31 @@ module.exports = function(arraybuffer, start, end) {
     }
 
     /**
+     * Creates a function that returns `value`.
+     *
+     * @static
+     * @memberOf _
+     * @since 2.4.0
+     * @category Util
+     * @param {*} value The value to return from the new function.
+     * @returns {Function} Returns the new constant function.
+     * @example
+     *
+     * var objects = _.times(2, _.constant({ 'a': 1 }));
+     *
+     * console.log(objects);
+     * // => [{ 'a': 1 }, { 'a': 1 }]
+     *
+     * console.log(objects[0] === objects[1]);
+     * // => true
+     */
+    function constant$1(value) {
+      return function() {
+        return value;
+      };
+    }
+
+    /**
      * Attempts to get a successful response from `task` no more than `times` times
      * before returning an error. If the task is successful, the `callback` will be
      * passed the result of the successful task. If all attempts fail, the callback
@@ -6734,7 +6833,8 @@ module.exports = function(arraybuffer, start, end) {
      * * `times` - The number of attempts to make before giving up.  The default
      *   is `5`.
      * * `interval` - The time to wait between retries, in milliseconds.  The
-     *   default is `0`.
+     *   default is `0`. The interval may also be specified as a function of the
+     *   retry count (see example).
      * * If `opts` is a number, the number specifies the number of times to retry,
      *   with the default interval of `0`.
      * @param {Function} task - A function which receives two arguments: (1) a
@@ -6762,7 +6862,18 @@ module.exports = function(arraybuffer, start, end) {
      *     // do something with the result
      * });
      *
-     *  // try calling apiMethod the default 5 times no delay between each retry
+     * // try calling apiMethod 10 times with exponential backoff
+     * // (i.e. intervals of 100, 200, 400, 800, 1600, ... milliseconds)
+     * async.retry({
+     *   times: 10,
+     *   interval: function(retryCount) {
+     *     return 50 * Math.pow(2, retryCount);
+     *   }
+     * }, apiMethod, function(err, result) {
+     *     // do something with the result
+     * });
+     *
+     * // try calling apiMethod the default 5 times no delay between each retry
      * async.retry(apiMethod, function(err, result) {
      *     // do something with the result
      * });
@@ -6782,13 +6893,14 @@ module.exports = function(arraybuffer, start, end) {
 
         var opts = {
             times: DEFAULT_TIMES,
-            interval: DEFAULT_INTERVAL
+            intervalFunc: constant$1(DEFAULT_INTERVAL)
         };
 
         function parseTimes(acc, t) {
             if (typeof t === 'object') {
                 acc.times = +t.times || DEFAULT_TIMES;
-                acc.interval = +t.interval || DEFAULT_INTERVAL;
+
+                acc.intervalFunc = typeof t.interval === 'function' ? t.interval : constant$1(+t.interval || DEFAULT_INTERVAL);
             } else if (typeof t === 'number' || typeof t === 'string') {
                 acc.times = +t || DEFAULT_TIMES;
             } else {
@@ -6809,11 +6921,12 @@ module.exports = function(arraybuffer, start, end) {
         }
 
         var attempts = [];
-        while (opts.times) {
-            var isFinalAttempt = !(opts.times -= 1);
+        for (var i = 1; i < opts.times + 1; i++) {
+            var isFinalAttempt = i == opts.times;
             attempts.push(retryAttempt(isFinalAttempt));
-            if (!isFinalAttempt && opts.interval > 0) {
-                attempts.push(retryInterval(opts.interval));
+            var interval = opts.intervalFunc(i);
+            if (!isFinalAttempt && interval > 0) {
+                attempts.push(retryInterval(interval));
             }
         }
 
@@ -7230,7 +7343,6 @@ module.exports = function(arraybuffer, start, end) {
      * @category Util
      * @param {Function} fn - the memoized function
      */
-
     function unmemoize(fn) {
         return function () {
             return (fn.unmemoized || fn).apply(null, arguments);
@@ -7386,8 +7498,11 @@ module.exports = function(arraybuffer, start, end) {
         map: map,
         mapLimit: mapLimit,
         mapSeries: mapSeries,
+        mapValues: mapValues,
+        mapValuesLimit: mapValuesLimit,
+        mapValuesSeries: mapValuesSeries,
         memoize: memoize$1,
-        nextTick: setImmediate$1,
+        nextTick: nextTick,
         parallel: parallel,
         parallelLimit: parallelLimit,
         priorityQueue: priorityQueue,
@@ -7476,8 +7591,11 @@ module.exports = function(arraybuffer, start, end) {
     exports.map = map;
     exports.mapLimit = mapLimit;
     exports.mapSeries = mapSeries;
+    exports.mapValues = mapValues;
+    exports.mapValuesLimit = mapValuesLimit;
+    exports.mapValuesSeries = mapValuesSeries;
     exports.memoize = memoize$1;
-    exports.nextTick = setImmediate$1;
+    exports.nextTick = nextTick;
     exports.parallel = parallel;
     exports.parallelLimit = parallelLimit;
     exports.priorityQueue = priorityQueue;
@@ -7533,7 +7651,7 @@ module.exports = function(arraybuffer, start, end) {
 
 }));
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":94}],6:[function(require,module,exports){
+},{"_process":92}],6:[function(require,module,exports){
 
 /**
  * Expose `Backoff`.
@@ -7827,7 +7945,7 @@ bindie.prototype._render = function (options) {
 };
 module.exports = bindie;
 
-},{"ejs":10,"events":70,"util":128,"util-extend":126}],10:[function(require,module,exports){
+},{"ejs":10,"events":71,"util":127,"util-extend":125}],10:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -8359,7 +8477,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"./utils":11,"fs":14,"path":90}],11:[function(require,module,exports){
+},{"./utils":11,"fs":14,"path":88}],11:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -23139,7 +23257,7 @@ function coerce(val) {
   return val;
 }
 
-},{"ms":86}],49:[function(require,module,exports){
+},{"ms":84}],49:[function(require,module,exports){
 /*
  * detectCSS
  * http://github.amexpub.com/modules/detectCSS
@@ -24064,6 +24182,10 @@ Template.prototype = {
       , d = this.opts.delimiter;
 
     if (matches && matches.length) {
+      if (this.opts.compileDebug && this.opts.filename) {
+        this.source =  '    ; __lines = ' + JSON.stringify(this.templateText) + '\n';
+        this.source += '    ; __filename = "' + this.opts.filename.replace(/\\/g,  '/') + '"\n';
+      }
       matches.forEach(function (line, index) {
         var opening
           , closing
@@ -24248,6 +24370,12 @@ Template.prototype = {
   }
 };
 
+/*
+ * Export the internal function for escaping XML so people
+ * can use for manual escaping if needed
+ * */
+exports.escapeXML = utils.escapeXML;
+
 /**
  * Express.js support.
  *
@@ -24289,7 +24417,7 @@ if (typeof window != 'undefined') {
   window.ejs = exports;
 }
 
-},{"../package.json":55,"./utils":54,"fs":14,"path":90}],54:[function(require,module,exports){
+},{"../package.json":55,"./utils":54,"fs":14,"path":88}],54:[function(require,module,exports){
 /*
  * EJS Embedded JavaScript templates
  * Copyright 2112 Matthew Eernisse (mde@fleegix.org)
@@ -24436,39 +24564,43 @@ exports.cache = {
 module.exports={
   "_args": [
     [
-      "ejs",
-      "/Users/yawetse/Developer/github/test/asyncadmin_ext/periodicjs.ext.asyncadmin"
+      "ejs@^2.4.2",
+      "/Users/yawetse/Developer/github/typesettin/periodicjs.ext.asyncadmin/node_modules/formie"
     ]
   ],
-  "_from": "ejs@latest",
-  "_id": "ejs@2.4.1",
+  "_from": "ejs@>=2.4.2 <3.0.0",
+  "_id": "ejs@2.4.2",
   "_inCache": true,
   "_installable": true,
   "_location": "/ejs",
-  "_nodeVersion": "0.12.4",
+  "_nodeVersion": "4.4.4",
+  "_npmOperationalInternal": {
+    "host": "packages-12-west.internal.npmjs.com",
+    "tmp": "tmp/ejs-2.4.2.tgz_1464117640663_0.8193834638223052"
+  },
   "_npmUser": {
     "email": "mde@fleegix.org",
     "name": "mde"
   },
-  "_npmVersion": "2.10.1",
+  "_npmVersion": "2.15.1",
   "_phantomChildren": {},
   "_requested": {
     "name": "ejs",
-    "raw": "ejs",
-    "rawSpec": "",
+    "raw": "ejs@^2.4.2",
+    "rawSpec": "^2.4.2",
     "scope": null,
-    "spec": "latest",
-    "type": "tag"
+    "spec": ">=2.4.2 <3.0.0",
+    "type": "range"
   },
   "_requiredBy": [
     "#DEV:/",
     "/formie"
   ],
-  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.4.1.tgz",
-  "_shasum": "82e15b1b2a1f948b18097476ba2bd7c66f4d1566",
+  "_resolved": "https://registry.npmjs.org/ejs/-/ejs-2.4.2.tgz",
+  "_shasum": "7057eb4812958fb731841cd9ca353343efe597b1",
   "_shrinkwrap": null,
-  "_spec": "ejs",
-  "_where": "/Users/yawetse/Developer/github/test/asyncadmin_ext/periodicjs.ext.asyncadmin",
+  "_spec": "ejs@^2.4.2",
+  "_where": "/Users/yawetse/Developer/github/typesettin/periodicjs.ext.asyncadmin/node_modules/formie",
   "author": {
     "email": "mde@fleegix.org",
     "name": "Matthew Eernisse",
@@ -24498,8 +24630,8 @@ module.exports={
   },
   "directories": {},
   "dist": {
-    "shasum": "82e15b1b2a1f948b18097476ba2bd7c66f4d1566",
-    "tarball": "https://registry.npmjs.org/ejs/-/ejs-2.4.1.tgz"
+    "shasum": "7057eb4812958fb731841cd9ca353343efe597b1",
+    "tarball": "https://registry.npmjs.org/ejs/-/ejs-2.4.2.tgz"
   },
   "engines": {
     "node": ">=0.10.0"
@@ -24533,9 +24665,10 @@ module.exports={
     "coverage": "istanbul cover node_modules/mocha/bin/_mocha",
     "devdoc": "rimraf out && jsdoc -p -c jsdoc.json lib/* docs/jsdoc/*",
     "doc": "rimraf out && jsdoc -c jsdoc.json lib/* docs/jsdoc/*",
+    "sample": "npm install express && node sample/index.js",
     "test": "mocha"
   },
-  "version": "2.4.1"
+  "version": "2.4.2"
 }
 
 },{}],56:[function(require,module,exports){
@@ -25286,7 +25419,7 @@ Socket.prototype.filterUpgrades = function (upgrades) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./transport":59,"./transports":60,"component-emitter":66,"debug":47,"engine.io-parser":67,"indexof":82,"parsejson":87,"parseqs":88,"parseuri":89}],59:[function(require,module,exports){
+},{"./transport":59,"./transports":60,"component-emitter":66,"debug":47,"engine.io-parser":67,"indexof":81,"parsejson":85,"parseqs":86,"parseuri":87}],59:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -26407,7 +26540,7 @@ Polling.prototype.uri = function(){
   return schema + '://' + (ipv6 ? '[' + this.hostname + ']' : this.hostname) + port + this.path + query;
 };
 
-},{"../transport":59,"component-inherit":44,"debug":47,"engine.io-parser":67,"parseqs":88,"xmlhttprequest-ssl":65,"yeast":129}],64:[function(require,module,exports){
+},{"../transport":59,"component-inherit":44,"debug":47,"engine.io-parser":67,"parseqs":86,"xmlhttprequest-ssl":65,"yeast":128}],64:[function(require,module,exports){
 (function (global){
 /**
  * Module dependencies.
@@ -26699,7 +26832,7 @@ WS.prototype.check = function(){
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../transport":59,"component-inherit":44,"debug":47,"engine.io-parser":67,"parseqs":88,"ws":13,"yeast":129}],65:[function(require,module,exports){
+},{"../transport":59,"component-inherit":44,"debug":47,"engine.io-parser":67,"parseqs":86,"ws":13,"yeast":128}],65:[function(require,module,exports){
 // browser shim for xmlhttprequest module
 var hasCORS = require('has-cors');
 
@@ -26737,7 +26870,7 @@ module.exports = function(opts) {
   }
 }
 
-},{"has-cors":81}],66:[function(require,module,exports){
+},{"has-cors":80}],66:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -27501,7 +27634,7 @@ exports.decodePayloadAsBinary = function (data, binaryType, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./keys":68,"after":3,"arraybuffer.slice":4,"base64-arraybuffer":7,"blob":12,"has-binary":69,"utf8":125}],68:[function(require,module,exports){
+},{"./keys":68,"after":3,"arraybuffer.slice":4,"base64-arraybuffer":7,"blob":12,"has-binary":69,"utf8":124}],68:[function(require,module,exports){
 
 /**
  * Gets the keys for an object.
@@ -27584,7 +27717,12 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":84}],70:[function(require,module,exports){
+},{"isarray":70}],70:[function(require,module,exports){
+module.exports = Array.isArray || function (arr) {
+  return Object.prototype.toString.call(arr) == '[object Array]';
+};
+
+},{}],71:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -27884,7 +28022,7 @@ function isUndefined(arg) {
   return arg === void 0;
 }
 
-},{}],71:[function(require,module,exports){
+},{}],72:[function(require,module,exports){
 /*
  * forbject
  * http://github.amexpub.com/modules/forbject
@@ -27896,7 +28034,7 @@ function isUndefined(arg) {
 
 module.exports = require('./lib/forbject');
 
-},{"./lib/forbject":72}],72:[function(require,module,exports){
+},{"./lib/forbject":73}],73:[function(require,module,exports){
 /*
  * forbject
  * http://github.com/yawetse/forbject
@@ -28149,7 +28287,7 @@ forbject.prototype.setFormObj = function () {
 };
 module.exports = forbject;
 
-},{"events":70,"util":128,"util-extend":126}],73:[function(require,module,exports){
+},{"events":71,"util":127,"util-extend":125}],74:[function(require,module,exports){
 /*
  * formie
  * http://github.amexpub.com/modules/formie
@@ -28161,7 +28299,7 @@ module.exports = forbject;
 
 module.exports = require('./lib/formie');
 
-},{"./lib/formie":74}],74:[function(require,module,exports){
+},{"./lib/formie":75}],75:[function(require,module,exports){
 /*
  * formie
  * http://github.com/yawetse/formie
@@ -28173,7 +28311,7 @@ module.exports = require('./lib/formie');
 var async = require('async'),
 	// classie = require('classie'),
 	events = require('events'),
-	forbject = require('forbject'),
+	Forbject = require('forbject'),
 	querystring = require('querystring'),
 	request = require('superagent'),
 	util = require('util'),
@@ -28300,8 +28438,18 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 			beforefn(e, f);
 		}
 	}
-
-	formieDataFromForm = new forbject(f).getObject();
+	var forbjectOptions = {};
+	if (f.getAttribute('forbject-autorefresh')) {
+		forbjectOptions.autorefresh = f.getAttribute('forbject-autorefresh');
+	}
+	if (f.getAttribute('forbject-addelementsonrefresh')) {
+		forbjectOptions.addelementsonrefresh = f.getAttribute('forbject-addelementsonrefresh');
+	}
+	if (f.getAttribute('forbject-valuefilter')) {
+		forbjectOptions.valuefilter = f.getAttribute('forbject-valuefilter');
+	}
+	this.options.forbject = new Forbject(f, forbjectOptions);
+	formieDataFromForm = this.options.forbject.getObject();
 	// console.log('f.getAttribute("enctype")', f.getAttribute('enctype'));
 
 	this.options.method = (f.getAttribute('method')) ? f.getAttribute('method').toLowerCase() : this.options.method.toLowerCase();
@@ -28338,7 +28486,7 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 			asyncFileReaderCB = function (fileinputname, file) {
 				return function (cb) {
 					var filereader = new FileReader();
-					if(/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)){
+					if (/Firefox[\/\s](\d+\.\d+)/.test(navigator.userAgent)) {
 						filereader.readAsDataURL(file);
 						filereader.onload = function () {
 							// console.log('this is firefox');
@@ -28348,36 +28496,38 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 							// console.log('file.name', file.name);
 							// console.log('file.type', file.type);
 							var makeblob = function dataURItoBlob(dataURI) {
-							  // convert base64/URLEncoded data component to raw binary data held in a string
-							  var byteString;
-							  if (dataURI.split(',')[0].indexOf('base64') >= 0){
-						      byteString = atob(dataURI.split(',')[1]);
-							  }
-							  else{
-						      byteString = unescape(dataURI.split(',')[1]);
-							  }
-							  // separate out the mime component
-							  var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+								// convert base64/URLEncoded data component to raw binary data held in a string
+								var byteString;
+								if (dataURI.split(',')[0].indexOf('base64') >= 0) {
+									byteString = atob(dataURI.split(',')[1]);
+								}
+								else {
+									byteString = unescape(dataURI.split(',')[1]);
+								}
+								// separate out the mime component
+								var mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
 
-							  // write the bytes of the string to a typed array
-							  var ia = new Uint8Array(byteString.length);
-							  for (var i = 0; i < byteString.length; i++) {
-							      ia[i] = byteString.charCodeAt(i);
-							  }
+								// write the bytes of the string to a typed array
+								var ia = new Uint8Array(byteString.length);
+								for (var i = 0; i < byteString.length; i++) {
+									ia[i] = byteString.charCodeAt(i);
+								}
 
-							  return new Blob([ia], {type:mimeString});
+								return new Blob([ia], {
+									type: mimeString
+								});
 							};
 							formData.append(fileinputname, makeblob(filereader.result), file.name);
 							cb(null, file);
 						};
 					}
-					else{
+					else {
 						filereader.readAsDataURL(file);
 						filereader.onload = function () {
 							formData.append(fileinputname, filereader.result, file.name);
 							cb(null, file);
 						};
-					}					
+					}
 				};
 			};
 
@@ -28394,10 +28544,10 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 			}
 			async.parallel(
 				asyncFunctions,
-				function (err /* , results*/) {
+				function (err /* , results*/ ) {
 					// console.log('async err, results',err, results);
 					try {
-						if(err){
+						if (err) {
 							throw err;
 						}
 						client.open(this.options.method, this.options.action + '?' + querystring.stringify(this.options.queryparameters), true);
@@ -28443,6 +28593,7 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 		request
 			.get(this.options.action)
 			.set(this.options.headers)
+			.withCredentials()
 			.query(formieData)
 			.end(ajaxResponseHandler);
 	}
@@ -28451,14 +28602,16 @@ formie.prototype.__ajaxSubmitFormie = function (e, element) {
 		request
 			.del(this.options.action)
 			.set(this.options.headers)
+			.withCredentials()
 			.send(formieData)
 			.end(ajaxResponseHandler);
 	}
-	else if (this.options.method === 'post'|| this.options.method === 'put') {
+	else if (this.options.method === 'post' || this.options.method === 'put') {
 		formieData = extend(formieDataFromForm, this.options.postdata);
 		request
 			.post(this.options.action)
 			.set(this.options.headers)
+			.withCredentials()
 			.query(this.options.queryparameters)
 			.send(formieData)
 			.end(ajaxResponseHandler);
@@ -28558,2572 +28711,11 @@ formie.prototype._init = function () {
 };
 module.exports = formie;
 
-},{"async":75,"events":70,"forbject":71,"querystring":99,"superagent":76,"util":128,"util-extend":126}],75:[function(require,module,exports){
-(function (process,global){
-/*!
- * async
- * https://github.com/caolan/async
- *
- * Copyright 2010-2014 Caolan McMahon
- * Released under the MIT license
- */
-(function () {
-
-    var async = {};
-    function noop() {}
-    function identity(v) {
-        return v;
-    }
-    function toBool(v) {
-        return !!v;
-    }
-    function notId(v) {
-        return !v;
-    }
-
-    // global on the server, window in the browser
-    var previous_async;
-
-    // Establish the root object, `window` (`self`) in the browser, `global`
-    // on the server, or `this` in some virtual machines. We use `self`
-    // instead of `window` for `WebWorker` support.
-    var root = typeof self === 'object' && self.self === self && self ||
-            typeof global === 'object' && global.global === global && global ||
-            this;
-
-    if (root != null) {
-        previous_async = root.async;
-    }
-
-    async.noConflict = function () {
-        root.async = previous_async;
-        return async;
-    };
-
-    function only_once(fn) {
-        return function() {
-            if (fn === null) throw new Error("Callback was already called.");
-            fn.apply(this, arguments);
-            fn = null;
-        };
-    }
-
-    function _once(fn) {
-        return function() {
-            if (fn === null) return;
-            fn.apply(this, arguments);
-            fn = null;
-        };
-    }
-
-    //// cross-browser compatiblity functions ////
-
-    var _toString = Object.prototype.toString;
-
-    var _isArray = Array.isArray || function (obj) {
-        return _toString.call(obj) === '[object Array]';
-    };
-
-    // Ported from underscore.js isObject
-    var _isObject = function(obj) {
-        var type = typeof obj;
-        return type === 'function' || type === 'object' && !!obj;
-    };
-
-    function _isArrayLike(arr) {
-        return _isArray(arr) || (
-            // has a positive integer length property
-            typeof arr.length === "number" &&
-            arr.length >= 0 &&
-            arr.length % 1 === 0
-        );
-    }
-
-    function _arrayEach(arr, iterator) {
-        var index = -1,
-            length = arr.length;
-
-        while (++index < length) {
-            iterator(arr[index], index, arr);
-        }
-    }
-
-    function _map(arr, iterator) {
-        var index = -1,
-            length = arr.length,
-            result = Array(length);
-
-        while (++index < length) {
-            result[index] = iterator(arr[index], index, arr);
-        }
-        return result;
-    }
-
-    function _range(count) {
-        return _map(Array(count), function (v, i) { return i; });
-    }
-
-    function _reduce(arr, iterator, memo) {
-        _arrayEach(arr, function (x, i, a) {
-            memo = iterator(memo, x, i, a);
-        });
-        return memo;
-    }
-
-    function _forEachOf(object, iterator) {
-        _arrayEach(_keys(object), function (key) {
-            iterator(object[key], key);
-        });
-    }
-
-    function _indexOf(arr, item) {
-        for (var i = 0; i < arr.length; i++) {
-            if (arr[i] === item) return i;
-        }
-        return -1;
-    }
-
-    var _keys = Object.keys || function (obj) {
-        var keys = [];
-        for (var k in obj) {
-            if (obj.hasOwnProperty(k)) {
-                keys.push(k);
-            }
-        }
-        return keys;
-    };
-
-    function _keyIterator(coll) {
-        var i = -1;
-        var len;
-        var keys;
-        if (_isArrayLike(coll)) {
-            len = coll.length;
-            return function next() {
-                i++;
-                return i < len ? i : null;
-            };
-        } else {
-            keys = _keys(coll);
-            len = keys.length;
-            return function next() {
-                i++;
-                return i < len ? keys[i] : null;
-            };
-        }
-    }
-
-    // Similar to ES6's rest param (http://ariya.ofilabs.com/2013/03/es6-and-rest-parameter.html)
-    // This accumulates the arguments passed into an array, after a given index.
-    // From underscore.js (https://github.com/jashkenas/underscore/pull/2140).
-    function _restParam(func, startIndex) {
-        startIndex = startIndex == null ? func.length - 1 : +startIndex;
-        return function() {
-            var length = Math.max(arguments.length - startIndex, 0);
-            var rest = Array(length);
-            for (var index = 0; index < length; index++) {
-                rest[index] = arguments[index + startIndex];
-            }
-            switch (startIndex) {
-                case 0: return func.call(this, rest);
-                case 1: return func.call(this, arguments[0], rest);
-            }
-            // Currently unused but handle cases outside of the switch statement:
-            // var args = Array(startIndex + 1);
-            // for (index = 0; index < startIndex; index++) {
-            //     args[index] = arguments[index];
-            // }
-            // args[startIndex] = rest;
-            // return func.apply(this, args);
-        };
-    }
-
-    function _withoutIndex(iterator) {
-        return function (value, index, callback) {
-            return iterator(value, callback);
-        };
-    }
-
-    //// exported async module functions ////
-
-    //// nextTick implementation with browser-compatible fallback ////
-
-    // capture the global reference to guard against fakeTimer mocks
-    var _setImmediate = typeof setImmediate === 'function' && setImmediate;
-
-    var _delay = _setImmediate ? function(fn) {
-        // not a direct alias for IE10 compatibility
-        _setImmediate(fn);
-    } : function(fn) {
-        setTimeout(fn, 0);
-    };
-
-    if (typeof process === 'object' && typeof process.nextTick === 'function') {
-        async.nextTick = process.nextTick;
-    } else {
-        async.nextTick = _delay;
-    }
-    async.setImmediate = _setImmediate ? _delay : async.nextTick;
-
-
-    async.forEach =
-    async.each = function (arr, iterator, callback) {
-        return async.eachOf(arr, _withoutIndex(iterator), callback);
-    };
-
-    async.forEachSeries =
-    async.eachSeries = function (arr, iterator, callback) {
-        return async.eachOfSeries(arr, _withoutIndex(iterator), callback);
-    };
-
-
-    async.forEachLimit =
-    async.eachLimit = function (arr, limit, iterator, callback) {
-        return _eachOfLimit(limit)(arr, _withoutIndex(iterator), callback);
-    };
-
-    async.forEachOf =
-    async.eachOf = function (object, iterator, callback) {
-        callback = _once(callback || noop);
-        object = object || [];
-
-        var iter = _keyIterator(object);
-        var key, completed = 0;
-
-        while ((key = iter()) != null) {
-            completed += 1;
-            iterator(object[key], key, only_once(done));
-        }
-
-        if (completed === 0) callback(null);
-
-        function done(err) {
-            completed--;
-            if (err) {
-                callback(err);
-            }
-            // Check key is null in case iterator isn't exhausted
-            // and done resolved synchronously.
-            else if (key === null && completed <= 0) {
-                callback(null);
-            }
-        }
-    };
-
-    async.forEachOfSeries =
-    async.eachOfSeries = function (obj, iterator, callback) {
-        callback = _once(callback || noop);
-        obj = obj || [];
-        var nextKey = _keyIterator(obj);
-        var key = nextKey();
-        function iterate() {
-            var sync = true;
-            if (key === null) {
-                return callback(null);
-            }
-            iterator(obj[key], key, only_once(function (err) {
-                if (err) {
-                    callback(err);
-                }
-                else {
-                    key = nextKey();
-                    if (key === null) {
-                        return callback(null);
-                    } else {
-                        if (sync) {
-                            async.setImmediate(iterate);
-                        } else {
-                            iterate();
-                        }
-                    }
-                }
-            }));
-            sync = false;
-        }
-        iterate();
-    };
-
-
-
-    async.forEachOfLimit =
-    async.eachOfLimit = function (obj, limit, iterator, callback) {
-        _eachOfLimit(limit)(obj, iterator, callback);
-    };
-
-    function _eachOfLimit(limit) {
-
-        return function (obj, iterator, callback) {
-            callback = _once(callback || noop);
-            obj = obj || [];
-            var nextKey = _keyIterator(obj);
-            if (limit <= 0) {
-                return callback(null);
-            }
-            var done = false;
-            var running = 0;
-            var errored = false;
-
-            (function replenish () {
-                if (done && running <= 0) {
-                    return callback(null);
-                }
-
-                while (running < limit && !errored) {
-                    var key = nextKey();
-                    if (key === null) {
-                        done = true;
-                        if (running <= 0) {
-                            callback(null);
-                        }
-                        return;
-                    }
-                    running += 1;
-                    iterator(obj[key], key, only_once(function (err) {
-                        running -= 1;
-                        if (err) {
-                            callback(err);
-                            errored = true;
-                        }
-                        else {
-                            replenish();
-                        }
-                    }));
-                }
-            })();
-        };
-    }
-
-
-    function doParallel(fn) {
-        return function (obj, iterator, callback) {
-            return fn(async.eachOf, obj, iterator, callback);
-        };
-    }
-    function doParallelLimit(fn) {
-        return function (obj, limit, iterator, callback) {
-            return fn(_eachOfLimit(limit), obj, iterator, callback);
-        };
-    }
-    function doSeries(fn) {
-        return function (obj, iterator, callback) {
-            return fn(async.eachOfSeries, obj, iterator, callback);
-        };
-    }
-
-    function _asyncMap(eachfn, arr, iterator, callback) {
-        callback = _once(callback || noop);
-        arr = arr || [];
-        var results = _isArrayLike(arr) ? [] : {};
-        eachfn(arr, function (value, index, callback) {
-            iterator(value, function (err, v) {
-                results[index] = v;
-                callback(err);
-            });
-        }, function (err) {
-            callback(err, results);
-        });
-    }
-
-    async.map = doParallel(_asyncMap);
-    async.mapSeries = doSeries(_asyncMap);
-    async.mapLimit = doParallelLimit(_asyncMap);
-
-    // reduce only has a series version, as doing reduce in parallel won't
-    // work in many situations.
-    async.inject =
-    async.foldl =
-    async.reduce = function (arr, memo, iterator, callback) {
-        async.eachOfSeries(arr, function (x, i, callback) {
-            iterator(memo, x, function (err, v) {
-                memo = v;
-                callback(err);
-            });
-        }, function (err) {
-            callback(err, memo);
-        });
-    };
-
-    async.foldr =
-    async.reduceRight = function (arr, memo, iterator, callback) {
-        var reversed = _map(arr, identity).reverse();
-        async.reduce(reversed, memo, iterator, callback);
-    };
-
-    async.transform = function (arr, memo, iterator, callback) {
-        if (arguments.length === 3) {
-            callback = iterator;
-            iterator = memo;
-            memo = _isArray(arr) ? [] : {};
-        }
-
-        async.eachOf(arr, function(v, k, cb) {
-            iterator(memo, v, k, cb);
-        }, function(err) {
-            callback(err, memo);
-        });
-    };
-
-    function _filter(eachfn, arr, iterator, callback) {
-        var results = [];
-        eachfn(arr, function (x, index, callback) {
-            iterator(x, function (v) {
-                if (v) {
-                    results.push({index: index, value: x});
-                }
-                callback();
-            });
-        }, function () {
-            callback(_map(results.sort(function (a, b) {
-                return a.index - b.index;
-            }), function (x) {
-                return x.value;
-            }));
-        });
-    }
-
-    async.select =
-    async.filter = doParallel(_filter);
-
-    async.selectLimit =
-    async.filterLimit = doParallelLimit(_filter);
-
-    async.selectSeries =
-    async.filterSeries = doSeries(_filter);
-
-    function _reject(eachfn, arr, iterator, callback) {
-        _filter(eachfn, arr, function(value, cb) {
-            iterator(value, function(v) {
-                cb(!v);
-            });
-        }, callback);
-    }
-    async.reject = doParallel(_reject);
-    async.rejectLimit = doParallelLimit(_reject);
-    async.rejectSeries = doSeries(_reject);
-
-    function _createTester(eachfn, check, getResult) {
-        return function(arr, limit, iterator, cb) {
-            function done() {
-                if (cb) cb(getResult(false, void 0));
-            }
-            function iteratee(x, _, callback) {
-                if (!cb) return callback();
-                iterator(x, function (v) {
-                    if (cb && check(v)) {
-                        cb(getResult(true, x));
-                        cb = iterator = false;
-                    }
-                    callback();
-                });
-            }
-            if (arguments.length > 3) {
-                eachfn(arr, limit, iteratee, done);
-            } else {
-                cb = iterator;
-                iterator = limit;
-                eachfn(arr, iteratee, done);
-            }
-        };
-    }
-
-    async.any =
-    async.some = _createTester(async.eachOf, toBool, identity);
-
-    async.someLimit = _createTester(async.eachOfLimit, toBool, identity);
-
-    async.all =
-    async.every = _createTester(async.eachOf, notId, notId);
-
-    async.everyLimit = _createTester(async.eachOfLimit, notId, notId);
-
-    function _findGetResult(v, x) {
-        return x;
-    }
-    async.detect = _createTester(async.eachOf, identity, _findGetResult);
-    async.detectSeries = _createTester(async.eachOfSeries, identity, _findGetResult);
-    async.detectLimit = _createTester(async.eachOfLimit, identity, _findGetResult);
-
-    async.sortBy = function (arr, iterator, callback) {
-        async.map(arr, function (x, callback) {
-            iterator(x, function (err, criteria) {
-                if (err) {
-                    callback(err);
-                }
-                else {
-                    callback(null, {value: x, criteria: criteria});
-                }
-            });
-        }, function (err, results) {
-            if (err) {
-                return callback(err);
-            }
-            else {
-                callback(null, _map(results.sort(comparator), function (x) {
-                    return x.value;
-                }));
-            }
-
-        });
-
-        function comparator(left, right) {
-            var a = left.criteria, b = right.criteria;
-            return a < b ? -1 : a > b ? 1 : 0;
-        }
-    };
-
-    async.auto = function (tasks, concurrency, callback) {
-        if (typeof arguments[1] === 'function') {
-            // concurrency is optional, shift the args.
-            callback = concurrency;
-            concurrency = null;
-        }
-        callback = _once(callback || noop);
-        var keys = _keys(tasks);
-        var remainingTasks = keys.length;
-        if (!remainingTasks) {
-            return callback(null);
-        }
-        if (!concurrency) {
-            concurrency = remainingTasks;
-        }
-
-        var results = {};
-        var runningTasks = 0;
-
-        var hasError = false;
-
-        var listeners = [];
-        function addListener(fn) {
-            listeners.unshift(fn);
-        }
-        function removeListener(fn) {
-            var idx = _indexOf(listeners, fn);
-            if (idx >= 0) listeners.splice(idx, 1);
-        }
-        function taskComplete() {
-            remainingTasks--;
-            _arrayEach(listeners.slice(0), function (fn) {
-                fn();
-            });
-        }
-
-        addListener(function () {
-            if (!remainingTasks) {
-                callback(null, results);
-            }
-        });
-
-        _arrayEach(keys, function (k) {
-            if (hasError) return;
-            var task = _isArray(tasks[k]) ? tasks[k]: [tasks[k]];
-            var taskCallback = _restParam(function(err, args) {
-                runningTasks--;
-                if (args.length <= 1) {
-                    args = args[0];
-                }
-                if (err) {
-                    var safeResults = {};
-                    _forEachOf(results, function(val, rkey) {
-                        safeResults[rkey] = val;
-                    });
-                    safeResults[k] = args;
-                    hasError = true;
-
-                    callback(err, safeResults);
-                }
-                else {
-                    results[k] = args;
-                    async.setImmediate(taskComplete);
-                }
-            });
-            var requires = task.slice(0, task.length - 1);
-            // prevent dead-locks
-            var len = requires.length;
-            var dep;
-            while (len--) {
-                if (!(dep = tasks[requires[len]])) {
-                    throw new Error('Has nonexistent dependency in ' + requires.join(', '));
-                }
-                if (_isArray(dep) && _indexOf(dep, k) >= 0) {
-                    throw new Error('Has cyclic dependencies');
-                }
-            }
-            function ready() {
-                return runningTasks < concurrency && _reduce(requires, function (a, x) {
-                    return (a && results.hasOwnProperty(x));
-                }, true) && !results.hasOwnProperty(k);
-            }
-            if (ready()) {
-                runningTasks++;
-                task[task.length - 1](taskCallback, results);
-            }
-            else {
-                addListener(listener);
-            }
-            function listener() {
-                if (ready()) {
-                    runningTasks++;
-                    removeListener(listener);
-                    task[task.length - 1](taskCallback, results);
-                }
-            }
-        });
-    };
-
-
-
-    async.retry = function(times, task, callback) {
-        var DEFAULT_TIMES = 5;
-        var DEFAULT_INTERVAL = 0;
-
-        var attempts = [];
-
-        var opts = {
-            times: DEFAULT_TIMES,
-            interval: DEFAULT_INTERVAL
-        };
-
-        function parseTimes(acc, t){
-            if(typeof t === 'number'){
-                acc.times = parseInt(t, 10) || DEFAULT_TIMES;
-            } else if(typeof t === 'object'){
-                acc.times = parseInt(t.times, 10) || DEFAULT_TIMES;
-                acc.interval = parseInt(t.interval, 10) || DEFAULT_INTERVAL;
-            } else {
-                throw new Error('Unsupported argument type for \'times\': ' + typeof t);
-            }
-        }
-
-        var length = arguments.length;
-        if (length < 1 || length > 3) {
-            throw new Error('Invalid arguments - must be either (task), (task, callback), (times, task) or (times, task, callback)');
-        } else if (length <= 2 && typeof times === 'function') {
-            callback = task;
-            task = times;
-        }
-        if (typeof times !== 'function') {
-            parseTimes(opts, times);
-        }
-        opts.callback = callback;
-        opts.task = task;
-
-        function wrappedTask(wrappedCallback, wrappedResults) {
-            function retryAttempt(task, finalAttempt) {
-                return function(seriesCallback) {
-                    task(function(err, result){
-                        seriesCallback(!err || finalAttempt, {err: err, result: result});
-                    }, wrappedResults);
-                };
-            }
-
-            function retryInterval(interval){
-                return function(seriesCallback){
-                    setTimeout(function(){
-                        seriesCallback(null);
-                    }, interval);
-                };
-            }
-
-            while (opts.times) {
-
-                var finalAttempt = !(opts.times-=1);
-                attempts.push(retryAttempt(opts.task, finalAttempt));
-                if(!finalAttempt && opts.interval > 0){
-                    attempts.push(retryInterval(opts.interval));
-                }
-            }
-
-            async.series(attempts, function(done, data){
-                data = data[data.length - 1];
-                (wrappedCallback || opts.callback)(data.err, data.result);
-            });
-        }
-
-        // If a callback is passed, run this as a controll flow
-        return opts.callback ? wrappedTask() : wrappedTask;
-    };
-
-    async.waterfall = function (tasks, callback) {
-        callback = _once(callback || noop);
-        if (!_isArray(tasks)) {
-            var err = new Error('First argument to waterfall must be an array of functions');
-            return callback(err);
-        }
-        if (!tasks.length) {
-            return callback();
-        }
-        function wrapIterator(iterator) {
-            return _restParam(function (err, args) {
-                if (err) {
-                    callback.apply(null, [err].concat(args));
-                }
-                else {
-                    var next = iterator.next();
-                    if (next) {
-                        args.push(wrapIterator(next));
-                    }
-                    else {
-                        args.push(callback);
-                    }
-                    ensureAsync(iterator).apply(null, args);
-                }
-            });
-        }
-        wrapIterator(async.iterator(tasks))();
-    };
-
-    function _parallel(eachfn, tasks, callback) {
-        callback = callback || noop;
-        var results = _isArrayLike(tasks) ? [] : {};
-
-        eachfn(tasks, function (task, key, callback) {
-            task(_restParam(function (err, args) {
-                if (args.length <= 1) {
-                    args = args[0];
-                }
-                results[key] = args;
-                callback(err);
-            }));
-        }, function (err) {
-            callback(err, results);
-        });
-    }
-
-    async.parallel = function (tasks, callback) {
-        _parallel(async.eachOf, tasks, callback);
-    };
-
-    async.parallelLimit = function(tasks, limit, callback) {
-        _parallel(_eachOfLimit(limit), tasks, callback);
-    };
-
-    async.series = function(tasks, callback) {
-        _parallel(async.eachOfSeries, tasks, callback);
-    };
-
-    async.iterator = function (tasks) {
-        function makeCallback(index) {
-            function fn() {
-                if (tasks.length) {
-                    tasks[index].apply(null, arguments);
-                }
-                return fn.next();
-            }
-            fn.next = function () {
-                return (index < tasks.length - 1) ? makeCallback(index + 1): null;
-            };
-            return fn;
-        }
-        return makeCallback(0);
-    };
-
-    async.apply = _restParam(function (fn, args) {
-        return _restParam(function (callArgs) {
-            return fn.apply(
-                null, args.concat(callArgs)
-            );
-        });
-    });
-
-    function _concat(eachfn, arr, fn, callback) {
-        var result = [];
-        eachfn(arr, function (x, index, cb) {
-            fn(x, function (err, y) {
-                result = result.concat(y || []);
-                cb(err);
-            });
-        }, function (err) {
-            callback(err, result);
-        });
-    }
-    async.concat = doParallel(_concat);
-    async.concatSeries = doSeries(_concat);
-
-    async.whilst = function (test, iterator, callback) {
-        callback = callback || noop;
-        if (test()) {
-            var next = _restParam(function(err, args) {
-                if (err) {
-                    callback(err);
-                } else if (test.apply(this, args)) {
-                    iterator(next);
-                } else {
-                    callback.apply(null, [null].concat(args));
-                }
-            });
-            iterator(next);
-        } else {
-            callback(null);
-        }
-    };
-
-    async.doWhilst = function (iterator, test, callback) {
-        var calls = 0;
-        return async.whilst(function() {
-            return ++calls <= 1 || test.apply(this, arguments);
-        }, iterator, callback);
-    };
-
-    async.until = function (test, iterator, callback) {
-        return async.whilst(function() {
-            return !test.apply(this, arguments);
-        }, iterator, callback);
-    };
-
-    async.doUntil = function (iterator, test, callback) {
-        return async.doWhilst(iterator, function() {
-            return !test.apply(this, arguments);
-        }, callback);
-    };
-
-    async.during = function (test, iterator, callback) {
-        callback = callback || noop;
-
-        var next = _restParam(function(err, args) {
-            if (err) {
-                callback(err);
-            } else {
-                args.push(check);
-                test.apply(this, args);
-            }
-        });
-
-        var check = function(err, truth) {
-            if (err) {
-                callback(err);
-            } else if (truth) {
-                iterator(next);
-            } else {
-                callback(null);
-            }
-        };
-
-        test(check);
-    };
-
-    async.doDuring = function (iterator, test, callback) {
-        var calls = 0;
-        async.during(function(next) {
-            if (calls++ < 1) {
-                next(null, true);
-            } else {
-                test.apply(this, arguments);
-            }
-        }, iterator, callback);
-    };
-
-    function _queue(worker, concurrency, payload) {
-        if (concurrency == null) {
-            concurrency = 1;
-        }
-        else if(concurrency === 0) {
-            throw new Error('Concurrency must not be zero');
-        }
-        function _insert(q, data, pos, callback) {
-            if (callback != null && typeof callback !== "function") {
-                throw new Error("task callback must be a function");
-            }
-            q.started = true;
-            if (!_isArray(data)) {
-                data = [data];
-            }
-            if(data.length === 0 && q.idle()) {
-                // call drain immediately if there are no tasks
-                return async.setImmediate(function() {
-                    q.drain();
-                });
-            }
-            _arrayEach(data, function(task) {
-                var item = {
-                    data: task,
-                    callback: callback || noop
-                };
-
-                if (pos) {
-                    q.tasks.unshift(item);
-                } else {
-                    q.tasks.push(item);
-                }
-
-                if (q.tasks.length === q.concurrency) {
-                    q.saturated();
-                }
-            });
-            async.setImmediate(q.process);
-        }
-        function _next(q, tasks) {
-            return function(){
-                workers -= 1;
-
-                var removed = false;
-                var args = arguments;
-                _arrayEach(tasks, function (task) {
-                    _arrayEach(workersList, function (worker, index) {
-                        if (worker === task && !removed) {
-                            workersList.splice(index, 1);
-                            removed = true;
-                        }
-                    });
-
-                    task.callback.apply(task, args);
-                });
-                if (q.tasks.length + workers === 0) {
-                    q.drain();
-                }
-                q.process();
-            };
-        }
-
-        var workers = 0;
-        var workersList = [];
-        var q = {
-            tasks: [],
-            concurrency: concurrency,
-            payload: payload,
-            saturated: noop,
-            empty: noop,
-            drain: noop,
-            started: false,
-            paused: false,
-            push: function (data, callback) {
-                _insert(q, data, false, callback);
-            },
-            kill: function () {
-                q.drain = noop;
-                q.tasks = [];
-            },
-            unshift: function (data, callback) {
-                _insert(q, data, true, callback);
-            },
-            process: function () {
-                while(!q.paused && workers < q.concurrency && q.tasks.length){
-
-                    var tasks = q.payload ?
-                        q.tasks.splice(0, q.payload) :
-                        q.tasks.splice(0, q.tasks.length);
-
-                    var data = _map(tasks, function (task) {
-                        return task.data;
-                    });
-
-                    if (q.tasks.length === 0) {
-                        q.empty();
-                    }
-                    workers += 1;
-                    workersList.push(tasks[0]);
-                    var cb = only_once(_next(q, tasks));
-                    worker(data, cb);
-                }
-            },
-            length: function () {
-                return q.tasks.length;
-            },
-            running: function () {
-                return workers;
-            },
-            workersList: function () {
-                return workersList;
-            },
-            idle: function() {
-                return q.tasks.length + workers === 0;
-            },
-            pause: function () {
-                q.paused = true;
-            },
-            resume: function () {
-                if (q.paused === false) { return; }
-                q.paused = false;
-                var resumeCount = Math.min(q.concurrency, q.tasks.length);
-                // Need to call q.process once per concurrent
-                // worker to preserve full concurrency after pause
-                for (var w = 1; w <= resumeCount; w++) {
-                    async.setImmediate(q.process);
-                }
-            }
-        };
-        return q;
-    }
-
-    async.queue = function (worker, concurrency) {
-        var q = _queue(function (items, cb) {
-            worker(items[0], cb);
-        }, concurrency, 1);
-
-        return q;
-    };
-
-    async.priorityQueue = function (worker, concurrency) {
-
-        function _compareTasks(a, b){
-            return a.priority - b.priority;
-        }
-
-        function _binarySearch(sequence, item, compare) {
-            var beg = -1,
-                end = sequence.length - 1;
-            while (beg < end) {
-                var mid = beg + ((end - beg + 1) >>> 1);
-                if (compare(item, sequence[mid]) >= 0) {
-                    beg = mid;
-                } else {
-                    end = mid - 1;
-                }
-            }
-            return beg;
-        }
-
-        function _insert(q, data, priority, callback) {
-            if (callback != null && typeof callback !== "function") {
-                throw new Error("task callback must be a function");
-            }
-            q.started = true;
-            if (!_isArray(data)) {
-                data = [data];
-            }
-            if(data.length === 0) {
-                // call drain immediately if there are no tasks
-                return async.setImmediate(function() {
-                    q.drain();
-                });
-            }
-            _arrayEach(data, function(task) {
-                var item = {
-                    data: task,
-                    priority: priority,
-                    callback: typeof callback === 'function' ? callback : noop
-                };
-
-                q.tasks.splice(_binarySearch(q.tasks, item, _compareTasks) + 1, 0, item);
-
-                if (q.tasks.length === q.concurrency) {
-                    q.saturated();
-                }
-                async.setImmediate(q.process);
-            });
-        }
-
-        // Start with a normal queue
-        var q = async.queue(worker, concurrency);
-
-        // Override push to accept second parameter representing priority
-        q.push = function (data, priority, callback) {
-            _insert(q, data, priority, callback);
-        };
-
-        // Remove unshift function
-        delete q.unshift;
-
-        return q;
-    };
-
-    async.cargo = function (worker, payload) {
-        return _queue(worker, 1, payload);
-    };
-
-    function _console_fn(name) {
-        return _restParam(function (fn, args) {
-            fn.apply(null, args.concat([_restParam(function (err, args) {
-                if (typeof console === 'object') {
-                    if (err) {
-                        if (console.error) {
-                            console.error(err);
-                        }
-                    }
-                    else if (console[name]) {
-                        _arrayEach(args, function (x) {
-                            console[name](x);
-                        });
-                    }
-                }
-            })]));
-        });
-    }
-    async.log = _console_fn('log');
-    async.dir = _console_fn('dir');
-    /*async.info = _console_fn('info');
-    async.warn = _console_fn('warn');
-    async.error = _console_fn('error');*/
-
-    async.memoize = function (fn, hasher) {
-        var memo = {};
-        var queues = {};
-        var has = Object.prototype.hasOwnProperty;
-        hasher = hasher || identity;
-        var memoized = _restParam(function memoized(args) {
-            var callback = args.pop();
-            var key = hasher.apply(null, args);
-            if (has.call(memo, key)) {   
-                async.setImmediate(function () {
-                    callback.apply(null, memo[key]);
-                });
-            }
-            else if (has.call(queues, key)) {
-                queues[key].push(callback);
-            }
-            else {
-                queues[key] = [callback];
-                fn.apply(null, args.concat([_restParam(function (args) {
-                    memo[key] = args;
-                    var q = queues[key];
-                    delete queues[key];
-                    for (var i = 0, l = q.length; i < l; i++) {
-                        q[i].apply(null, args);
-                    }
-                })]));
-            }
-        });
-        memoized.memo = memo;
-        memoized.unmemoized = fn;
-        return memoized;
-    };
-
-    async.unmemoize = function (fn) {
-        return function () {
-            return (fn.unmemoized || fn).apply(null, arguments);
-        };
-    };
-
-    function _times(mapper) {
-        return function (count, iterator, callback) {
-            mapper(_range(count), iterator, callback);
-        };
-    }
-
-    async.times = _times(async.map);
-    async.timesSeries = _times(async.mapSeries);
-    async.timesLimit = function (count, limit, iterator, callback) {
-        return async.mapLimit(_range(count), limit, iterator, callback);
-    };
-
-    async.seq = function (/* functions... */) {
-        var fns = arguments;
-        return _restParam(function (args) {
-            var that = this;
-
-            var callback = args[args.length - 1];
-            if (typeof callback == 'function') {
-                args.pop();
-            } else {
-                callback = noop;
-            }
-
-            async.reduce(fns, args, function (newargs, fn, cb) {
-                fn.apply(that, newargs.concat([_restParam(function (err, nextargs) {
-                    cb(err, nextargs);
-                })]));
-            },
-            function (err, results) {
-                callback.apply(that, [err].concat(results));
-            });
-        });
-    };
-
-    async.compose = function (/* functions... */) {
-        return async.seq.apply(null, Array.prototype.reverse.call(arguments));
-    };
-
-
-    function _applyEach(eachfn) {
-        return _restParam(function(fns, args) {
-            var go = _restParam(function(args) {
-                var that = this;
-                var callback = args.pop();
-                return eachfn(fns, function (fn, _, cb) {
-                    fn.apply(that, args.concat([cb]));
-                },
-                callback);
-            });
-            if (args.length) {
-                return go.apply(this, args);
-            }
-            else {
-                return go;
-            }
-        });
-    }
-
-    async.applyEach = _applyEach(async.eachOf);
-    async.applyEachSeries = _applyEach(async.eachOfSeries);
-
-
-    async.forever = function (fn, callback) {
-        var done = only_once(callback || noop);
-        var task = ensureAsync(fn);
-        function next(err) {
-            if (err) {
-                return done(err);
-            }
-            task(next);
-        }
-        next();
-    };
-
-    function ensureAsync(fn) {
-        return _restParam(function (args) {
-            var callback = args.pop();
-            args.push(function () {
-                var innerArgs = arguments;
-                if (sync) {
-                    async.setImmediate(function () {
-                        callback.apply(null, innerArgs);
-                    });
-                } else {
-                    callback.apply(null, innerArgs);
-                }
-            });
-            var sync = true;
-            fn.apply(this, args);
-            sync = false;
-        });
-    }
-
-    async.ensureAsync = ensureAsync;
-
-    async.constant = _restParam(function(values) {
-        var args = [null].concat(values);
-        return function (callback) {
-            return callback.apply(this, args);
-        };
-    });
-
-    async.wrapSync =
-    async.asyncify = function asyncify(func) {
-        return _restParam(function (args) {
-            var callback = args.pop();
-            var result;
-            try {
-                result = func.apply(this, args);
-            } catch (e) {
-                return callback(e);
-            }
-            // if result is Promise object
-            if (_isObject(result) && typeof result.then === "function") {
-                result.then(function(value) {
-                    callback(null, value);
-                })["catch"](function(err) {
-                    callback(err.message ? err : new Error(err));
-                });
-            } else {
-                callback(null, result);
-            }
-        });
-    };
-
-    // Node.js
-    if (typeof module === 'object' && module.exports) {
-        module.exports = async;
-    }
-    // AMD / RequireJS
-    else if (typeof define === 'function' && define.amd) {
-        define([], function () {
-            return async;
-        });
-    }
-    // included directly via <script> tag
-    else {
-        root.async = async;
-    }
-
-}());
-
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":94}],76:[function(require,module,exports){
-/**
- * Module dependencies.
- */
-
-var Emitter = require('emitter');
-var reduce = require('reduce');
-var requestBase = require('./request-base');
-var isObject = require('./is-object');
-
-/**
- * Root reference for iframes.
- */
-
-var root;
-if (typeof window !== 'undefined') { // Browser window
-  root = window;
-} else if (typeof self !== 'undefined') { // Web Worker
-  root = self;
-} else { // Other environments
-  root = this;
-}
-
-/**
- * Noop.
- */
-
-function noop(){};
-
-/**
- * Check if `obj` is a host object,
- * we don't want to serialize these :)
- *
- * TODO: future proof, move to compoent land
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api private
- */
-
-function isHost(obj) {
-  var str = {}.toString.call(obj);
-
-  switch (str) {
-    case '[object File]':
-    case '[object Blob]':
-    case '[object FormData]':
-      return true;
-    default:
-      return false;
-  }
-}
-
-/**
- * Expose `request`.
- */
-
-var request = module.exports = require('./request').bind(null, Request);
-
-/**
- * Determine XHR.
- */
-
-request.getXHR = function () {
-  if (root.XMLHttpRequest
-      && (!root.location || 'file:' != root.location.protocol
-          || !root.ActiveXObject)) {
-    return new XMLHttpRequest;
-  } else {
-    try { return new ActiveXObject('Microsoft.XMLHTTP'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP.6.0'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP.3.0'); } catch(e) {}
-    try { return new ActiveXObject('Msxml2.XMLHTTP'); } catch(e) {}
-  }
-  return false;
-};
-
-/**
- * Removes leading and trailing whitespace, added to support IE.
- *
- * @param {String} s
- * @return {String}
- * @api private
- */
-
-var trim = ''.trim
-  ? function(s) { return s.trim(); }
-  : function(s) { return s.replace(/(^\s*|\s*$)/g, ''); };
-
-/**
- * Serialize the given `obj`.
- *
- * @param {Object} obj
- * @return {String}
- * @api private
- */
-
-function serialize(obj) {
-  if (!isObject(obj)) return obj;
-  var pairs = [];
-  for (var key in obj) {
-    if (null != obj[key]) {
-      pushEncodedKeyValuePair(pairs, key, obj[key]);
-        }
-      }
-  return pairs.join('&');
-}
-
-/**
- * Helps 'serialize' with serializing arrays.
- * Mutates the pairs array.
- *
- * @param {Array} pairs
- * @param {String} key
- * @param {Mixed} val
- */
-
-function pushEncodedKeyValuePair(pairs, key, val) {
-  if (Array.isArray(val)) {
-    return val.forEach(function(v) {
-      pushEncodedKeyValuePair(pairs, key, v);
-    });
-  }
-  pairs.push(encodeURIComponent(key)
-    + '=' + encodeURIComponent(val));
-}
-
-/**
- * Expose serialization method.
- */
-
- request.serializeObject = serialize;
-
- /**
-  * Parse the given x-www-form-urlencoded `str`.
-  *
-  * @param {String} str
-  * @return {Object}
-  * @api private
-  */
-
-function parseString(str) {
-  var obj = {};
-  var pairs = str.split('&');
-  var parts;
-  var pair;
-
-  for (var i = 0, len = pairs.length; i < len; ++i) {
-    pair = pairs[i];
-    parts = pair.split('=');
-    obj[decodeURIComponent(parts[0])] = decodeURIComponent(parts[1]);
-  }
-
-  return obj;
-}
-
-/**
- * Expose parser.
- */
-
-request.parseString = parseString;
-
-/**
- * Default MIME type map.
- *
- *     superagent.types.xml = 'application/xml';
- *
- */
-
-request.types = {
-  html: 'text/html',
-  json: 'application/json',
-  xml: 'application/xml',
-  urlencoded: 'application/x-www-form-urlencoded',
-  'form': 'application/x-www-form-urlencoded',
-  'form-data': 'application/x-www-form-urlencoded'
-};
-
-/**
- * Default serialization map.
- *
- *     superagent.serialize['application/xml'] = function(obj){
- *       return 'generated xml here';
- *     };
- *
- */
-
- request.serialize = {
-   'application/x-www-form-urlencoded': serialize,
-   'application/json': JSON.stringify
- };
-
- /**
-  * Default parsers.
-  *
-  *     superagent.parse['application/xml'] = function(str){
-  *       return { object parsed from str };
-  *     };
-  *
-  */
-
-request.parse = {
-  'application/x-www-form-urlencoded': parseString,
-  'application/json': JSON.parse
-};
-
-/**
- * Parse the given header `str` into
- * an object containing the mapped fields.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function parseHeader(str) {
-  var lines = str.split(/\r?\n/);
-  var fields = {};
-  var index;
-  var line;
-  var field;
-  var val;
-
-  lines.pop(); // trailing CRLF
-
-  for (var i = 0, len = lines.length; i < len; ++i) {
-    line = lines[i];
-    index = line.indexOf(':');
-    field = line.slice(0, index).toLowerCase();
-    val = trim(line.slice(index + 1));
-    fields[field] = val;
-  }
-
-  return fields;
-}
-
-/**
- * Check if `mime` is json or has +json structured syntax suffix.
- *
- * @param {String} mime
- * @return {Boolean}
- * @api private
- */
-
-function isJSON(mime) {
-  return /[\/+]json\b/.test(mime);
-}
-
-/**
- * Return the mime type for the given `str`.
- *
- * @param {String} str
- * @return {String}
- * @api private
- */
-
-function type(str){
-  return str.split(/ *; */).shift();
-};
-
-/**
- * Return header field parameters.
- *
- * @param {String} str
- * @return {Object}
- * @api private
- */
-
-function params(str){
-  return reduce(str.split(/ *; */), function(obj, str){
-    var parts = str.split(/ *= */)
-      , key = parts.shift()
-      , val = parts.shift();
-
-    if (key && val) obj[key] = val;
-    return obj;
-  }, {});
-};
-
-/**
- * Initialize a new `Response` with the given `xhr`.
- *
- *  - set flags (.ok, .error, etc)
- *  - parse header
- *
- * Examples:
- *
- *  Aliasing `superagent` as `request` is nice:
- *
- *      request = superagent;
- *
- *  We can use the promise-like API, or pass callbacks:
- *
- *      request.get('/').end(function(res){});
- *      request.get('/', function(res){});
- *
- *  Sending data can be chained:
- *
- *      request
- *        .post('/user')
- *        .send({ name: 'tj' })
- *        .end(function(res){});
- *
- *  Or passed to `.send()`:
- *
- *      request
- *        .post('/user')
- *        .send({ name: 'tj' }, function(res){});
- *
- *  Or passed to `.post()`:
- *
- *      request
- *        .post('/user', { name: 'tj' })
- *        .end(function(res){});
- *
- * Or further reduced to a single call for simple cases:
- *
- *      request
- *        .post('/user', { name: 'tj' }, function(res){});
- *
- * @param {XMLHTTPRequest} xhr
- * @param {Object} options
- * @api private
- */
-
-function Response(req, options) {
-  options = options || {};
-  this.req = req;
-  this.xhr = this.req.xhr;
-  // responseText is accessible only if responseType is '' or 'text' and on older browsers
-  this.text = ((this.req.method !='HEAD' && (this.xhr.responseType === '' || this.xhr.responseType === 'text')) || typeof this.xhr.responseType === 'undefined')
-     ? this.xhr.responseText
-     : null;
-  this.statusText = this.req.xhr.statusText;
-  this.setStatusProperties(this.xhr.status);
-  this.header = this.headers = parseHeader(this.xhr.getAllResponseHeaders());
-  // getAllResponseHeaders sometimes falsely returns "" for CORS requests, but
-  // getResponseHeader still works. so we get content-type even if getting
-  // other headers fails.
-  this.header['content-type'] = this.xhr.getResponseHeader('content-type');
-  this.setHeaderProperties(this.header);
-  this.body = this.req.method != 'HEAD'
-    ? this.parseBody(this.text ? this.text : this.xhr.response)
-    : null;
-}
-
-/**
- * Get case-insensitive `field` value.
- *
- * @param {String} field
- * @return {String}
- * @api public
- */
-
-Response.prototype.get = function(field){
-  return this.header[field.toLowerCase()];
-};
-
-/**
- * Set header related properties:
- *
- *   - `.type` the content type without params
- *
- * A response of "Content-Type: text/plain; charset=utf-8"
- * will provide you with a `.type` of "text/plain".
- *
- * @param {Object} header
- * @api private
- */
-
-Response.prototype.setHeaderProperties = function(header){
-  // content-type
-  var ct = this.header['content-type'] || '';
-  this.type = type(ct);
-
-  // params
-  var obj = params(ct);
-  for (var key in obj) this[key] = obj[key];
-};
-
-/**
- * Parse the given body `str`.
- *
- * Used for auto-parsing of bodies. Parsers
- * are defined on the `superagent.parse` object.
- *
- * @param {String} str
- * @return {Mixed}
- * @api private
- */
-
-Response.prototype.parseBody = function(str){
-  var parse = request.parse[this.type];
-  if (!parse && isJSON(this.type)) {
-    parse = request.parse['application/json'];
-  }
-  return parse && str && (str.length || str instanceof Object)
-    ? parse(str)
-    : null;
-};
-
-/**
- * Set flags such as `.ok` based on `status`.
- *
- * For example a 2xx response will give you a `.ok` of __true__
- * whereas 5xx will be __false__ and `.error` will be __true__. The
- * `.clientError` and `.serverError` are also available to be more
- * specific, and `.statusType` is the class of error ranging from 1..5
- * sometimes useful for mapping respond colors etc.
- *
- * "sugar" properties are also defined for common cases. Currently providing:
- *
- *   - .noContent
- *   - .badRequest
- *   - .unauthorized
- *   - .notAcceptable
- *   - .notFound
- *
- * @param {Number} status
- * @api private
- */
-
-Response.prototype.setStatusProperties = function(status){
-  // handle IE9 bug: http://stackoverflow.com/questions/10046972/msie-returns-status-code-of-1223-for-ajax-request
-  if (status === 1223) {
-    status = 204;
-  }
-
-  var type = status / 100 | 0;
-
-  // status / class
-  this.status = this.statusCode = status;
-  this.statusType = type;
-
-  // basics
-  this.info = 1 == type;
-  this.ok = 2 == type;
-  this.clientError = 4 == type;
-  this.serverError = 5 == type;
-  this.error = (4 == type || 5 == type)
-    ? this.toError()
-    : false;
-
-  // sugar
-  this.accepted = 202 == status;
-  this.noContent = 204 == status;
-  this.badRequest = 400 == status;
-  this.unauthorized = 401 == status;
-  this.notAcceptable = 406 == status;
-  this.notFound = 404 == status;
-  this.forbidden = 403 == status;
-};
-
-/**
- * Return an `Error` representative of this response.
- *
- * @return {Error}
- * @api public
- */
-
-Response.prototype.toError = function(){
-  var req = this.req;
-  var method = req.method;
-  var url = req.url;
-
-  var msg = 'cannot ' + method + ' ' + url + ' (' + this.status + ')';
-  var err = new Error(msg);
-  err.status = this.status;
-  err.method = method;
-  err.url = url;
-
-  return err;
-};
-
-/**
- * Expose `Response`.
- */
-
-request.Response = Response;
-
-/**
- * Initialize a new `Request` with the given `method` and `url`.
- *
- * @param {String} method
- * @param {String} url
- * @api public
- */
-
-function Request(method, url) {
-  var self = this;
-  this._query = this._query || [];
-  this.method = method;
-  this.url = url;
-  this.header = {}; // preserves header name case
-  this._header = {}; // coerces header names to lowercase
-  this.on('end', function(){
-    var err = null;
-    var res = null;
-
-    try {
-      res = new Response(self);
-    } catch(e) {
-      err = new Error('Parser is unable to parse the response');
-      err.parse = true;
-      err.original = e;
-      // issue #675: return the raw response if the response parsing fails
-      err.rawResponse = self.xhr && self.xhr.responseText ? self.xhr.responseText : null;
-      // issue #876: return the http status code if the response parsing fails
-      err.statusCode = self.xhr && self.xhr.status ? self.xhr.status : null;
-      return self.callback(err);
-    }
-
-    self.emit('response', res);
-
-    if (err) {
-      return self.callback(err, res);
-    }
-
-    if (res.status >= 200 && res.status < 300) {
-      return self.callback(err, res);
-    }
-
-    var new_err = new Error(res.statusText || 'Unsuccessful HTTP response');
-    new_err.original = err;
-    new_err.response = res;
-    new_err.status = res.status;
-
-    self.callback(new_err, res);
-  });
-}
-
-/**
- * Mixin `Emitter` and `requestBase`.
- */
-
-Emitter(Request.prototype);
-for (var key in requestBase) {
-  Request.prototype[key] = requestBase[key];
-}
-
-/**
- * Abort the request, and clear potential timeout.
- *
- * @return {Request}
- * @api public
- */
-
-Request.prototype.abort = function(){
-  if (this.aborted) return;
-  this.aborted = true;
-  this.xhr.abort();
-  this.clearTimeout();
-  this.emit('abort');
-  return this;
-};
-
-/**
- * Set Content-Type to `type`, mapping values from `request.types`.
- *
- * Examples:
- *
- *      superagent.types.xml = 'application/xml';
- *
- *      request.post('/')
- *        .type('xml')
- *        .send(xmlstring)
- *        .end(callback);
- *
- *      request.post('/')
- *        .type('application/xml')
- *        .send(xmlstring)
- *        .end(callback);
- *
- * @param {String} type
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.type = function(type){
-  this.set('Content-Type', request.types[type] || type);
-  return this;
-};
-
-/**
- * Set responseType to `val`. Presently valid responseTypes are 'blob' and 
- * 'arraybuffer'.
- *
- * Examples:
- *
- *      req.get('/')
- *        .responseType('blob')
- *        .end(callback);
- *
- * @param {String} val
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.responseType = function(val){
-  this._responseType = val;
-  return this;
-};
-
-/**
- * Set Accept to `type`, mapping values from `request.types`.
- *
- * Examples:
- *
- *      superagent.types.json = 'application/json';
- *
- *      request.get('/agent')
- *        .accept('json')
- *        .end(callback);
- *
- *      request.get('/agent')
- *        .accept('application/json')
- *        .end(callback);
- *
- * @param {String} accept
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.accept = function(type){
-  this.set('Accept', request.types[type] || type);
-  return this;
-};
-
-/**
- * Set Authorization field value with `user` and `pass`.
- *
- * @param {String} user
- * @param {String} pass
- * @param {Object} options with 'type' property 'auto' or 'basic' (default 'basic')
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.auth = function(user, pass, options){
-  if (!options) {
-    options = {
-      type: 'basic'
-    }
-  }
-
-  switch (options.type) {
-    case 'basic':
-      var str = btoa(user + ':' + pass);
-      this.set('Authorization', 'Basic ' + str);
-    break;
-
-    case 'auto':
-      this.username = user;
-      this.password = pass;
-    break;
-  }
-  return this;
-};
-
-/**
-* Add query-string `val`.
-*
-* Examples:
-*
-*   request.get('/shoes')
-*     .query('size=10')
-*     .query({ color: 'blue' })
-*
-* @param {Object|String} val
-* @return {Request} for chaining
-* @api public
-*/
-
-Request.prototype.query = function(val){
-  if ('string' != typeof val) val = serialize(val);
-  if (val) this._query.push(val);
-  return this;
-};
-
-/**
- * Queue the given `file` as an attachment to the specified `field`,
- * with optional `filename`.
- *
- * ``` js
- * request.post('/upload')
- *   .attach(new Blob(['<a id="a"><b id="b">hey!</b></a>'], { type: "text/html"}))
- *   .end(callback);
- * ```
- *
- * @param {String} field
- * @param {Blob|File} file
- * @param {String} filename
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.attach = function(field, file, filename){
-  this._getFormData().append(field, file, filename || file.name);
-  return this;
-};
-
-Request.prototype._getFormData = function(){
-  if (!this._formData) {
-    this._formData = new root.FormData();
-  }
-  return this._formData;
-};
-
-/**
- * Send `data` as the request body, defaulting the `.type()` to "json" when
- * an object is given.
- *
- * Examples:
- *
- *       // manual json
- *       request.post('/user')
- *         .type('json')
- *         .send('{"name":"tj"}')
- *         .end(callback)
- *
- *       // auto json
- *       request.post('/user')
- *         .send({ name: 'tj' })
- *         .end(callback)
- *
- *       // manual x-www-form-urlencoded
- *       request.post('/user')
- *         .type('form')
- *         .send('name=tj')
- *         .end(callback)
- *
- *       // auto x-www-form-urlencoded
- *       request.post('/user')
- *         .type('form')
- *         .send({ name: 'tj' })
- *         .end(callback)
- *
- *       // defaults to x-www-form-urlencoded
-  *      request.post('/user')
-  *        .send('name=tobi')
-  *        .send('species=ferret')
-  *        .end(callback)
- *
- * @param {String|Object} data
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.send = function(data){
-  var obj = isObject(data);
-  var type = this._header['content-type'];
-
-  // merge
-  if (obj && isObject(this._data)) {
-    for (var key in data) {
-      this._data[key] = data[key];
-    }
-  } else if ('string' == typeof data) {
-    if (!type) this.type('form');
-    type = this._header['content-type'];
-    if ('application/x-www-form-urlencoded' == type) {
-      this._data = this._data
-        ? this._data + '&' + data
-        : data;
-    } else {
-      this._data = (this._data || '') + data;
-    }
-  } else {
-    this._data = data;
-  }
-
-  if (!obj || isHost(data)) return this;
-  if (!type) this.type('json');
-  return this;
-};
-
-/**
- * @deprecated
- */
-Response.prototype.parse = function serialize(fn){
-  if (root.console) {
-    console.warn("Client-side parse() method has been renamed to serialize(). This method is not compatible with superagent v2.0");
-  }
-  this.serialize(fn);
-  return this;
-};
-
-Response.prototype.serialize = function serialize(fn){
-  this._parser = fn;
-  return this;
-};
-
-/**
- * Invoke the callback with `err` and `res`
- * and handle arity check.
- *
- * @param {Error} err
- * @param {Response} res
- * @api private
- */
-
-Request.prototype.callback = function(err, res){
-  var fn = this._callback;
-  this.clearTimeout();
-  fn(err, res);
-};
-
-/**
- * Invoke callback with x-domain error.
- *
- * @api private
- */
-
-Request.prototype.crossDomainError = function(){
-  var err = new Error('Request has been terminated\nPossible causes: the network is offline, Origin is not allowed by Access-Control-Allow-Origin, the page is being unloaded, etc.');
-  err.crossDomain = true;
-
-  err.status = this.status;
-  err.method = this.method;
-  err.url = this.url;
-
-  this.callback(err);
-};
-
-/**
- * Invoke callback with timeout error.
- *
- * @api private
- */
-
-Request.prototype.timeoutError = function(){
-  var timeout = this._timeout;
-  var err = new Error('timeout of ' + timeout + 'ms exceeded');
-  err.timeout = timeout;
-  this.callback(err);
-};
-
-/**
- * Enable transmission of cookies with x-domain requests.
- *
- * Note that for this to work the origin must not be
- * using "Access-Control-Allow-Origin" with a wildcard,
- * and also must set "Access-Control-Allow-Credentials"
- * to "true".
- *
- * @api public
- */
-
-Request.prototype.withCredentials = function(){
-  this._withCredentials = true;
-  return this;
-};
-
-/**
- * Initiate request, invoking callback `fn(res)`
- * with an instanceof `Response`.
- *
- * @param {Function} fn
- * @return {Request} for chaining
- * @api public
- */
-
-Request.prototype.end = function(fn){
-  var self = this;
-  var xhr = this.xhr = request.getXHR();
-  var query = this._query.join('&');
-  var timeout = this._timeout;
-  var data = this._formData || this._data;
-
-  // store callback
-  this._callback = fn || noop;
-
-  // state change
-  xhr.onreadystatechange = function(){
-    if (4 != xhr.readyState) return;
-
-    // In IE9, reads to any property (e.g. status) off of an aborted XHR will
-    // result in the error "Could not complete the operation due to error c00c023f"
-    var status;
-    try { status = xhr.status } catch(e) { status = 0; }
-
-    if (0 == status) {
-      if (self.timedout) return self.timeoutError();
-      if (self.aborted) return;
-      return self.crossDomainError();
-    }
-    self.emit('end');
-  };
-
-  // progress
-  var handleProgress = function(e){
-    if (e.total > 0) {
-      e.percent = e.loaded / e.total * 100;
-    }
-    e.direction = 'download';
-    self.emit('progress', e);
-  };
-  if (this.hasListeners('progress')) {
-    xhr.onprogress = handleProgress;
-  }
-  try {
-    if (xhr.upload && this.hasListeners('progress')) {
-      xhr.upload.onprogress = handleProgress;
-    }
-  } catch(e) {
-    // Accessing xhr.upload fails in IE from a web worker, so just pretend it doesn't exist.
-    // Reported here:
-    // https://connect.microsoft.com/IE/feedback/details/837245/xmlhttprequest-upload-throws-invalid-argument-when-used-from-web-worker-context
-  }
-
-  // timeout
-  if (timeout && !this._timer) {
-    this._timer = setTimeout(function(){
-      self.timedout = true;
-      self.abort();
-    }, timeout);
-  }
-
-  // querystring
-  if (query) {
-    query = request.serializeObject(query);
-    this.url += ~this.url.indexOf('?')
-      ? '&' + query
-      : '?' + query;
-  }
-
-  // initiate request
-  if (this.username && this.password) {
-    xhr.open(this.method, this.url, true, this.username, this.password);
-  } else {
-    xhr.open(this.method, this.url, true);
-  }
-
-  // CORS
-  if (this._withCredentials) xhr.withCredentials = true;
-
-  // body
-  if ('GET' != this.method && 'HEAD' != this.method && 'string' != typeof data && !isHost(data)) {
-    // serialize stuff
-    var contentType = this._header['content-type'];
-    var serialize = this._parser || request.serialize[contentType ? contentType.split(';')[0] : ''];
-    if (!serialize && isJSON(contentType)) serialize = request.serialize['application/json'];
-    if (serialize) data = serialize(data);
-  }
-
-  // set header fields
-  for (var field in this.header) {
-    if (null == this.header[field]) continue;
-    xhr.setRequestHeader(field, this.header[field]);
-  }
-
-  if (this._responseType) {
-    xhr.responseType = this._responseType;
-  }
-
-  // send stuff
-  this.emit('request', this);
-
-  // IE11 xhr.send(undefined) sends 'undefined' string as POST payload (instead of nothing)
-  // We need null here if data is undefined
-  xhr.send(typeof data !== 'undefined' ? data : null);
-  return this;
-};
-
-
-/**
- * Expose `Request`.
- */
-
-request.Request = Request;
-
-/**
- * GET `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.get = function(url, data, fn){
-  var req = request('GET', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.query(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * HEAD `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.head = function(url, data, fn){
-  var req = request('HEAD', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * DELETE `url` with optional callback `fn(res)`.
- *
- * @param {String} url
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-function del(url, fn){
-  var req = request('DELETE', url);
-  if (fn) req.end(fn);
-  return req;
-};
-
-request['del'] = del;
-request['delete'] = del;
-
-/**
- * PATCH `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed} data
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.patch = function(url, data, fn){
-  var req = request('PATCH', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * POST `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed} data
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.post = function(url, data, fn){
-  var req = request('POST', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-/**
- * PUT `url` with optional `data` and callback `fn(res)`.
- *
- * @param {String} url
- * @param {Mixed|Function} data or fn
- * @param {Function} fn
- * @return {Request}
- * @api public
- */
-
-request.put = function(url, data, fn){
-  var req = request('PUT', url);
-  if ('function' == typeof data) fn = data, data = null;
-  if (data) req.send(data);
-  if (fn) req.end(fn);
-  return req;
-};
-
-},{"./is-object":77,"./request":79,"./request-base":78,"emitter":43,"reduce":100}],77:[function(require,module,exports){
-/**
- * Check if `obj` is an object.
- *
- * @param {Object} obj
- * @return {Boolean}
- * @api private
- */
-
-function isObject(obj) {
-  return null != obj && 'object' == typeof obj;
-}
-
-module.exports = isObject;
-
-},{}],78:[function(require,module,exports){
-/**
- * Module of mixed-in functions shared between node and client code
- */
-var isObject = require('./is-object');
-
-/**
- * Clear previous timeout.
- *
- * @return {Request} for chaining
- * @api public
- */
-
-exports.clearTimeout = function _clearTimeout(){
-  this._timeout = 0;
-  clearTimeout(this._timer);
-  return this;
-};
-
-/**
- * Force given parser
- *
- * Sets the body parser no matter type.
- *
- * @param {Function}
- * @api public
- */
-
-exports.parse = function parse(fn){
-  this._parser = fn;
-  return this;
-};
-
-/**
- * Set timeout to `ms`.
- *
- * @param {Number} ms
- * @return {Request} for chaining
- * @api public
- */
-
-exports.timeout = function timeout(ms){
-  this._timeout = ms;
-  return this;
-};
-
-/**
- * Faux promise support
- *
- * @param {Function} fulfill
- * @param {Function} reject
- * @return {Request}
- */
-
-exports.then = function then(fulfill, reject) {
-  return this.end(function(err, res) {
-    err ? reject(err) : fulfill(res);
-  });
-}
-
-/**
- * Allow for extension
- */
-
-exports.use = function use(fn) {
-  fn(this);
-  return this;
-}
-
-
-/**
- * Get request header `field`.
- * Case-insensitive.
- *
- * @param {String} field
- * @return {String}
- * @api public
- */
-
-exports.get = function(field){
-  return this._header[field.toLowerCase()];
-};
-
-/**
- * Get case-insensitive header `field` value.
- * This is a deprecated internal API. Use `.get(field)` instead.
- *
- * (getHeader is no longer used internally by the superagent code base)
- *
- * @param {String} field
- * @return {String}
- * @api private
- * @deprecated
- */
-
-exports.getHeader = exports.get;
-
-/**
- * Set header `field` to `val`, or multiple fields with one object.
- * Case-insensitive.
- *
- * Examples:
- *
- *      req.get('/')
- *        .set('Accept', 'application/json')
- *        .set('X-API-Key', 'foobar')
- *        .end(callback);
- *
- *      req.get('/')
- *        .set({ Accept: 'application/json', 'X-API-Key': 'foobar' })
- *        .end(callback);
- *
- * @param {String|Object} field
- * @param {String} val
- * @return {Request} for chaining
- * @api public
- */
-
-exports.set = function(field, val){
-  if (isObject(field)) {
-    for (var key in field) {
-      this.set(key, field[key]);
-    }
-    return this;
-  }
-  this._header[field.toLowerCase()] = val;
-  this.header[field] = val;
-  return this;
-};
-
-/**
- * Remove header `field`.
- * Case-insensitive.
- *
- * Example:
- *
- *      req.get('/')
- *        .unset('User-Agent')
- *        .end(callback);
- *
- * @param {String} field
- */
-exports.unset = function(field){
-  delete this._header[field.toLowerCase()];
-  delete this.header[field];
-  return this;
-};
-
-/**
- * Write the field `name` and `val` for "multipart/form-data"
- * request bodies.
- *
- * ``` js
- * request.post('/upload')
- *   .field('foo', 'bar')
- *   .end(callback);
- * ```
- *
- * @param {String} name
- * @param {String|Blob|File|Buffer|fs.ReadStream} val
- * @return {Request} for chaining
- * @api public
- */
-exports.field = function(name, val) {
-  this._getFormData().append(name, val);
-  return this;
-};
-
-},{"./is-object":77}],79:[function(require,module,exports){
-// The node and browser modules expose versions of this with the
-// appropriate constructor function bound as first argument
-/**
- * Issue a request:
- *
- * Examples:
- *
- *    request('GET', '/users').end(callback)
- *    request('/users').end(callback)
- *    request('/users', callback)
- *
- * @param {String} method
- * @param {String|Function} url or callback
- * @return {Request}
- * @api public
- */
-
-function request(RequestConstructor, method, url) {
-  // callback
-  if ('function' == typeof url) {
-    return new RequestConstructor('GET', method).end(url);
-  }
-
-  // url first
-  if (2 == arguments.length) {
-    return new RequestConstructor('GET', method);
-  }
-
-  return new RequestConstructor(method, url);
-}
-
-module.exports = request;
-
-},{}],80:[function(require,module,exports){
+},{"async":5,"events":71,"forbject":76,"querystring":97,"superagent":119,"util":127,"util-extend":125}],76:[function(require,module,exports){
+arguments[4][72][0].apply(exports,arguments)
+},{"./lib/forbject":77,"dup":72}],77:[function(require,module,exports){
+arguments[4][73][0].apply(exports,arguments)
+},{"dup":73,"events":71,"util":127,"util-extend":125}],78:[function(require,module,exports){
 (function (global){
 
 /*
@@ -31186,7 +28778,9 @@ function hasBinary(data) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"isarray":84}],81:[function(require,module,exports){
+},{"isarray":79}],79:[function(require,module,exports){
+arguments[4][70][0].apply(exports,arguments)
+},{"dup":70}],80:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -31205,7 +28799,7 @@ try {
   module.exports = false;
 }
 
-},{}],82:[function(require,module,exports){
+},{}],81:[function(require,module,exports){
 
 var indexOf = [].indexOf;
 
@@ -31216,7 +28810,7 @@ module.exports = function(arr, obj){
   }
   return -1;
 };
-},{}],83:[function(require,module,exports){
+},{}],82:[function(require,module,exports){
 if (typeof Object.create === 'function') {
   // implementation from standard node.js 'util' module
   module.exports = function inherits(ctor, superCtor) {
@@ -31241,12 +28835,7 @@ if (typeof Object.create === 'function') {
   }
 }
 
-},{}],84:[function(require,module,exports){
-module.exports = Array.isArray || function (arr) {
-  return Object.prototype.toString.call(arr) == '[object Array]';
-};
-
-},{}],85:[function(require,module,exports){
+},{}],83:[function(require,module,exports){
 //! moment.js
 //! version : 2.13.0
 //! authors : Tim Wood, Iskren Chernev, Moment.js contributors
@@ -35287,7 +32876,7 @@ module.exports = Array.isArray || function (arr) {
     return _moment;
 
 }));
-},{}],86:[function(require,module,exports){
+},{}],84:[function(require,module,exports){
 /**
  * Helpers.
  */
@@ -35414,7 +33003,7 @@ function plural(ms, n, name) {
   return Math.ceil(ms / n) + ' ' + name + 's';
 }
 
-},{}],87:[function(require,module,exports){
+},{}],85:[function(require,module,exports){
 (function (global){
 /**
  * JSON parse.
@@ -35449,7 +33038,7 @@ module.exports = function parsejson(data) {
   }
 };
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],88:[function(require,module,exports){
+},{}],86:[function(require,module,exports){
 /**
  * Compiles a querystring
  * Returns string representation of the object
@@ -35488,7 +33077,7 @@ exports.decode = function(qs){
   return qry;
 };
 
-},{}],89:[function(require,module,exports){
+},{}],87:[function(require,module,exports){
 /**
  * Parses an URI
  *
@@ -35529,7 +33118,7 @@ module.exports = function parseuri(str) {
     return uri;
 };
 
-},{}],90:[function(require,module,exports){
+},{}],88:[function(require,module,exports){
 (function (process){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -35757,7 +33346,7 @@ var substr = 'ab'.substr(-1) === 'b'
 ;
 
 }).call(this,require('_process'))
-},{"_process":94}],91:[function(require,module,exports){
+},{"_process":92}],89:[function(require,module,exports){
 /*
  * platter
  * http://github.com/typesettin/platter
@@ -35767,7 +33356,7 @@ var substr = 'ab'.substr(-1) === 'b'
 
 module.exports = require('./lib/platter');
 
-},{"./lib/platter":92}],92:[function(require,module,exports){
+},{"./lib/platter":90}],90:[function(require,module,exports){
 /*
  * manuscript
  * http://github.com/typesettin/platter
@@ -36074,7 +33663,7 @@ module.exports = platter;
 if ( typeof window === 'object' && typeof window.document === 'object' ) {
 	window.platter = platter;
 }
-},{"classie":16,"domhelper":51,"events":70,"util":128,"util-extend":126}],93:[function(require,module,exports){
+},{"classie":16,"domhelper":51,"events":71,"util":127,"util-extend":125}],91:[function(require,module,exports){
 /* global define */
 
 (function (root, pluralize) {
@@ -36531,10 +34120,35 @@ if ( typeof window === 'object' && typeof window.document === 'object' ) {
   return pluralize;
 });
 
-},{}],94:[function(require,module,exports){
+},{}],92:[function(require,module,exports){
 // shim for using process in browser
 
 var process = module.exports = {};
+
+// cached from whatever global is present so that test runners that stub it
+// don't break things.  But we need to wrap it in a try catch in case it is
+// wrapped in strict mode code which doesn't define any globals.  It's inside a
+// function because try/catches deoptimize in certain engines.
+
+var cachedSetTimeout;
+var cachedClearTimeout;
+
+(function () {
+  try {
+    cachedSetTimeout = setTimeout;
+  } catch (e) {
+    cachedSetTimeout = function () {
+      throw new Error('setTimeout is not defined');
+    }
+  }
+  try {
+    cachedClearTimeout = clearTimeout;
+  } catch (e) {
+    cachedClearTimeout = function () {
+      throw new Error('clearTimeout is not defined');
+    }
+  }
+} ())
 var queue = [];
 var draining = false;
 var currentQueue;
@@ -36559,7 +34173,7 @@ function drainQueue() {
     if (draining) {
         return;
     }
-    var timeout = setTimeout(cleanUpNextTick);
+    var timeout = cachedSetTimeout(cleanUpNextTick);
     draining = true;
 
     var len = queue.length;
@@ -36576,7 +34190,7 @@ function drainQueue() {
     }
     currentQueue = null;
     draining = false;
-    clearTimeout(timeout);
+    cachedClearTimeout(timeout);
 }
 
 process.nextTick = function (fun) {
@@ -36588,7 +34202,7 @@ process.nextTick = function (fun) {
     }
     queue.push(new Item(fun, args));
     if (queue.length === 1 && !draining) {
-        setTimeout(drainQueue, 0);
+        cachedSetTimeout(drainQueue, 0);
     }
 };
 
@@ -36627,7 +34241,7 @@ process.chdir = function (dir) {
 };
 process.umask = function() { return 0; };
 
-},{}],95:[function(require,module,exports){
+},{}],93:[function(require,module,exports){
 /*
  * pushie
  * http://github.amexpub.com/modules/pushie
@@ -36639,7 +34253,7 @@ process.umask = function() { return 0; };
 
 module.exports = require('./lib/pushie');
 
-},{"./lib/pushie":96}],96:[function(require,module,exports){
+},{"./lib/pushie":94}],94:[function(require,module,exports){
 /*
  * pushie
  * http://github.com/yawetse/pushie
@@ -36810,7 +34424,7 @@ pushie.prototype.__init = function () {
 };
 module.exports = pushie;
 
-},{"events":70,"util":128,"util-extend":126}],97:[function(require,module,exports){
+},{"events":71,"util":127,"util-extend":125}],95:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -36896,7 +34510,7 @@ var isArray = Array.isArray || function (xs) {
   return Object.prototype.toString.call(xs) === '[object Array]';
 };
 
-},{}],98:[function(require,module,exports){
+},{}],96:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -36983,13 +34597,13 @@ var objectKeys = Object.keys || function (obj) {
   return res;
 };
 
-},{}],99:[function(require,module,exports){
+},{}],97:[function(require,module,exports){
 'use strict';
 
 exports.decode = exports.parse = require('./decode');
 exports.encode = exports.stringify = require('./encode');
 
-},{"./decode":97,"./encode":98}],100:[function(require,module,exports){
+},{"./decode":95,"./encode":96}],98:[function(require,module,exports){
 
 /**
  * Reduce `arr` with `fn`.
@@ -37014,7 +34628,7 @@ module.exports = function(arr, fn, initial){
   
   return curr;
 };
-},{}],101:[function(require,module,exports){
+},{}],99:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -37108,7 +34722,7 @@ exports.connect = lookup;
 exports.Manager = require('./manager');
 exports.Socket = require('./socket');
 
-},{"./manager":102,"./socket":104,"./url":105,"debug":47,"socket.io-parser":108}],102:[function(require,module,exports){
+},{"./manager":100,"./socket":102,"./url":103,"debug":47,"socket.io-parser":106}],100:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -37667,7 +35281,7 @@ Manager.prototype.onreconnect = function(){
   this.emitAll('reconnect', attempt);
 };
 
-},{"./on":103,"./socket":104,"backo2":6,"component-bind":42,"component-emitter":106,"debug":47,"engine.io-client":56,"indexof":82,"socket.io-parser":108}],103:[function(require,module,exports){
+},{"./on":101,"./socket":102,"backo2":6,"component-bind":42,"component-emitter":104,"debug":47,"engine.io-client":56,"indexof":81,"socket.io-parser":106}],101:[function(require,module,exports){
 
 /**
  * Module exports.
@@ -37693,7 +35307,7 @@ function on(obj, ev, fn) {
   };
 }
 
-},{}],104:[function(require,module,exports){
+},{}],102:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -38107,7 +35721,7 @@ Socket.prototype.compress = function(compress){
   return this;
 };
 
-},{"./on":103,"component-bind":42,"component-emitter":106,"debug":47,"has-binary":80,"socket.io-parser":108,"to-array":124}],105:[function(require,module,exports){
+},{"./on":101,"component-bind":42,"component-emitter":104,"debug":47,"has-binary":78,"socket.io-parser":106,"to-array":123}],103:[function(require,module,exports){
 (function (global){
 
 /**
@@ -38187,7 +35801,7 @@ function url(uri, loc){
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"debug":47,"parseuri":89}],106:[function(require,module,exports){
+},{"debug":47,"parseuri":87}],104:[function(require,module,exports){
 
 /**
  * Expose `Emitter`.
@@ -38350,7 +35964,7 @@ Emitter.prototype.hasListeners = function(event){
   return !! this.listeners(event).length;
 };
 
-},{}],107:[function(require,module,exports){
+},{}],105:[function(require,module,exports){
 (function (global){
 /*global Blob,File*/
 
@@ -38495,7 +36109,7 @@ exports.removeBlobs = function(data, callback) {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./is-buffer":109,"isarray":84}],108:[function(require,module,exports){
+},{"./is-buffer":107,"isarray":109}],106:[function(require,module,exports){
 
 /**
  * Module dependencies.
@@ -38897,7 +36511,7 @@ function error(data){
   };
 }
 
-},{"./binary":107,"./is-buffer":109,"component-emitter":110,"debug":47,"isarray":84,"json3":111}],109:[function(require,module,exports){
+},{"./binary":105,"./is-buffer":107,"component-emitter":108,"debug":47,"isarray":109,"json3":110}],107:[function(require,module,exports){
 (function (global){
 
 module.exports = isBuf;
@@ -38914,9 +36528,11 @@ function isBuf(obj) {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],110:[function(require,module,exports){
+},{}],108:[function(require,module,exports){
 arguments[4][66][0].apply(exports,arguments)
-},{"dup":66}],111:[function(require,module,exports){
+},{"dup":66}],109:[function(require,module,exports){
+arguments[4][70][0].apply(exports,arguments)
+},{"dup":70}],110:[function(require,module,exports){
 (function (global){
 /*! JSON v3.3.2 | http://bestiejs.github.io/json3 | Copyright 2012-2014, Kit Cambridge | http://kit.mit-license.org */
 ;(function () {
@@ -39822,7 +37438,7 @@ arguments[4][66][0].apply(exports,arguments)
 }).call(this);
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],112:[function(require,module,exports){
+},{}],111:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -39834,7 +37450,7 @@ arguments[4][66][0].apply(exports,arguments)
 
 module.exports = require('./lib/stylie.modals');
 
-},{"./lib/stylie.modals":113}],113:[function(require,module,exports){
+},{"./lib/stylie.modals":112}],112:[function(require,module,exports){
 /*
  * stylie.modals
  * https://github.com/typesettin/stylie.modals
@@ -40002,7 +37618,7 @@ StylieModals.prototype._show = function (modal_name) {
 };
 module.exports = StylieModals;
 
-},{"classie":16,"events":70,"util":128,"util-extend":126}],114:[function(require,module,exports){
+},{"classie":16,"events":71,"util":127,"util-extend":125}],113:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -40014,7 +37630,7 @@ module.exports = StylieModals;
 
 module.exports = require('./lib/stylie.notifications');
 
-},{"./lib/stylie.notifications":115}],115:[function(require,module,exports){
+},{"./lib/stylie.notifications":114}],114:[function(require,module,exports){
 /*
  * stylie.notifications
  * https://github.com/typesettin/stylie.notifications
@@ -40211,7 +37827,7 @@ StylieNotifications.prototype._show = function () {
 };
 module.exports = StylieNotifications;
 
-},{"classie":16,"detectcss":49,"events":70,"util":128,"util-extend":126}],116:[function(require,module,exports){
+},{"classie":16,"detectcss":49,"events":71,"util":127,"util-extend":125}],115:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin/stylie.tabs
@@ -40223,7 +37839,7 @@ module.exports = StylieNotifications;
 
 module.exports = require('./lib/stylie.tabs');
 
-},{"./lib/stylie.tabs":117}],117:[function(require,module,exports){
+},{"./lib/stylie.tabs":116}],116:[function(require,module,exports){
 /*
  * stylie.tabs
  * http://github.com/typesettin
@@ -40323,7 +37939,7 @@ StylieTabs.prototype._show = function (idx) {
 };
 module.exports = StylieTabs;
 
-},{"classie":16,"events":70,"util":128,"util-extend":126}],118:[function(require,module,exports){
+},{"classie":16,"events":71,"util":127,"util-extend":125}],117:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -40335,7 +37951,7 @@ module.exports = StylieTabs;
 
 module.exports = require('./lib/stylie');
 
-},{"./lib/stylie":119}],119:[function(require,module,exports){
+},{"./lib/stylie":118}],118:[function(require,module,exports){
 /*
  * stylie
  * http://github.com/typesettin/stylie
@@ -40435,7 +38051,7 @@ stylie.prototype._init = function () {
 
 module.exports = stylie;
 
-},{"events":70,"util":128,"util-extend":126}],120:[function(require,module,exports){
+},{"events":71,"util":127,"util-extend":125}],119:[function(require,module,exports){
 /**
  * Module dependencies.
  */
@@ -41415,7 +39031,7 @@ request.put = function(url, data, fn){
   return req;
 };
 
-},{"./is-object":121,"./request":123,"./request-base":122,"emitter":43,"reduce":100}],121:[function(require,module,exports){
+},{"./is-object":120,"./request":122,"./request-base":121,"emitter":43,"reduce":98}],120:[function(require,module,exports){
 /**
  * Check if `obj` is an object.
  *
@@ -41430,7 +39046,7 @@ function isObject(obj) {
 
 module.exports = isObject;
 
-},{}],122:[function(require,module,exports){
+},{}],121:[function(require,module,exports){
 /**
  * Module of mixed-in functions shared between node and client code
  */
@@ -41778,9 +39394,41 @@ exports.send = function(data){
   return this;
 };
 
-},{"./is-object":121}],123:[function(require,module,exports){
-arguments[4][79][0].apply(exports,arguments)
-},{"dup":79}],124:[function(require,module,exports){
+},{"./is-object":120}],122:[function(require,module,exports){
+// The node and browser modules expose versions of this with the
+// appropriate constructor function bound as first argument
+/**
+ * Issue a request:
+ *
+ * Examples:
+ *
+ *    request('GET', '/users').end(callback)
+ *    request('/users').end(callback)
+ *    request('/users', callback)
+ *
+ * @param {String} method
+ * @param {String|Function} url or callback
+ * @return {Request}
+ * @api public
+ */
+
+function request(RequestConstructor, method, url) {
+  // callback
+  if ('function' == typeof url) {
+    return new RequestConstructor('GET', method).end(url);
+  }
+
+  // url first
+  if (2 == arguments.length) {
+    return new RequestConstructor('GET', method);
+  }
+
+  return new RequestConstructor(method, url);
+}
+
+module.exports = request;
+
+},{}],123:[function(require,module,exports){
 module.exports = toArray
 
 function toArray(list, index) {
@@ -41795,7 +39443,7 @@ function toArray(list, index) {
     return array
 }
 
-},{}],125:[function(require,module,exports){
+},{}],124:[function(require,module,exports){
 (function (global){
 /*! https://mths.be/utf8js v2.0.0 by @mathias */
 ;(function(root) {
@@ -42043,7 +39691,7 @@ function toArray(list, index) {
 }(this));
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],126:[function(require,module,exports){
+},{}],125:[function(require,module,exports){
 // Copyright Joyent, Inc. and other Node contributors.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a
@@ -42078,14 +39726,14 @@ function extend(origin, add) {
   return origin;
 }
 
-},{}],127:[function(require,module,exports){
+},{}],126:[function(require,module,exports){
 module.exports = function isBuffer(arg) {
   return arg && typeof arg === 'object'
     && typeof arg.copy === 'function'
     && typeof arg.fill === 'function'
     && typeof arg.readUInt8 === 'function';
 }
-},{}],128:[function(require,module,exports){
+},{}],127:[function(require,module,exports){
 (function (process,global){
 // Copyright Joyent, Inc. and other Node contributors.
 //
@@ -42675,7 +40323,7 @@ function hasOwnProperty(obj, prop) {
 }
 
 }).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./support/isBuffer":127,"_process":94,"inherits":83}],129:[function(require,module,exports){
+},{"./support/isBuffer":126,"_process":92,"inherits":82}],128:[function(require,module,exports){
 'use strict';
 
 var alphabet = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz-_'.split('')
@@ -42745,7 +40393,7 @@ yeast.encode = encode;
 yeast.decode = decode;
 module.exports = yeast;
 
-},{}],130:[function(require,module,exports){
+},{}],129:[function(require,module,exports){
 'use strict';
 var debounce = require('debounce');
 var ajaxlinks,
@@ -43126,6 +40774,7 @@ var defaultAjaxFormie = function (formElement) {
 			}
 			for (var r = 0; r < codemirrorTextAreas.length; r++) {
 				codemirrorTextAreas[r].innerHTML = codeMirrors[codemirrorTextAreas[r].id].getValue();
+				codeMirrors[codemirrorTextAreas[r].id].save();
 			}
 		},
 		successcallback: function (response) {
@@ -43362,6 +41011,7 @@ var search_menu_callback = function () {
 			.get('/p-admin/content/search')
 			.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
 			.set('Accept', 'application/json')
+			.withCredentials()
 			.query({
 				format: 'json',
 				_csrf: document.querySelector('input[name=_csrf]').value,
@@ -43465,6 +41115,7 @@ var deleteContentSubmit = function (e) {
 		.query({
 			format: 'json'
 		})
+		.withCredentials()
 		.end(handle_ajax_button_response(e));
 };
 
@@ -43501,6 +41152,7 @@ var submitAjaxButton = function (e) {
 		.query({
 			format: 'json'
 		})
+		.withCredentials()
 		.end(handle_ajax_button_response(e));
 };
 
@@ -43564,6 +41216,7 @@ var loadAjaxPage = function (options, asyncCB) {
 			.get(options.datahref)
 			.withCredentials()
 			.set('Accept', 'text/html')
+			.withCredentials()
 			.end(function (error, res) {
 				startSessionTimeoutCountner();
 
@@ -43817,6 +41470,7 @@ var refresh_session_check = function () {
 		request
 			.get('/healthcheck')
 			.set('Accept', 'application/json')
+			.withCredentials()
 			.end(function (error, res) {
 				if (error) {
 					window.showErrorNotificaton({
@@ -44338,7 +41992,7 @@ window.addEventListener('load', function () {
 	window.StylieNotification = StylieNotification;
 });
 
-},{"../../controller/data_tables":1,"../../node_modules/codemirror/addon/comment/comment":19,"../../node_modules/codemirror/addon/comment/continuecomment":20,"../../node_modules/codemirror/addon/edit/matchbrackets":21,"../../node_modules/codemirror/addon/fold/brace-fold":22,"../../node_modules/codemirror/addon/fold/comment-fold":23,"../../node_modules/codemirror/addon/fold/foldcode":24,"../../node_modules/codemirror/addon/fold/foldgutter":25,"../../node_modules/codemirror/addon/fold/indent-fold":26,"../../node_modules/codemirror/addon/hint/css-hint":27,"../../node_modules/codemirror/addon/hint/html-hint":28,"../../node_modules/codemirror/addon/hint/javascript-hint":29,"../../node_modules/codemirror/addon/hint/show-hint":30,"../../node_modules/codemirror/addon/lint/css-lint":32,"../../node_modules/codemirror/addon/lint/javascript-lint":33,"../../node_modules/codemirror/addon/lint/lint":34,"../../node_modules/codemirror/mode/css/css":37,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":38,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":39,"../../node_modules/codemirror/mode/javascript/javascript":40,"./datalist":131,"./filterlist":132,"./medialist":133,"./sortlist":134,"./stylieeditor":135,"./tagman":136,"async":5,"bindie":8,"capitalize":15,"classie":16,"codemirror":36,"debounce":46,"ejs":53,"forbject":71,"formie":73,"moment":85,"platterjs":91,"pluralize":93,"pushie":95,"querystring":99,"socket.io-client":101,"stylie":118,"stylie.modals":112,"stylie.notifications":114,"stylie.tabs":116,"superagent":120}],131:[function(require,module,exports){
+},{"../../controller/data_tables":1,"../../node_modules/codemirror/addon/comment/comment":19,"../../node_modules/codemirror/addon/comment/continuecomment":20,"../../node_modules/codemirror/addon/edit/matchbrackets":21,"../../node_modules/codemirror/addon/fold/brace-fold":22,"../../node_modules/codemirror/addon/fold/comment-fold":23,"../../node_modules/codemirror/addon/fold/foldcode":24,"../../node_modules/codemirror/addon/fold/foldgutter":25,"../../node_modules/codemirror/addon/fold/indent-fold":26,"../../node_modules/codemirror/addon/hint/css-hint":27,"../../node_modules/codemirror/addon/hint/html-hint":28,"../../node_modules/codemirror/addon/hint/javascript-hint":29,"../../node_modules/codemirror/addon/hint/show-hint":30,"../../node_modules/codemirror/addon/lint/css-lint":32,"../../node_modules/codemirror/addon/lint/javascript-lint":33,"../../node_modules/codemirror/addon/lint/lint":34,"../../node_modules/codemirror/mode/css/css":37,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":38,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":39,"../../node_modules/codemirror/mode/javascript/javascript":40,"./datalist":130,"./filterlist":131,"./medialist":132,"./sortlist":133,"./stylieeditor":134,"./tagman":135,"async":5,"bindie":8,"capitalize":15,"classie":16,"codemirror":36,"debounce":46,"ejs":53,"forbject":72,"formie":74,"moment":83,"platterjs":89,"pluralize":91,"pushie":93,"querystring":97,"socket.io-client":99,"stylie":117,"stylie.modals":111,"stylie.notifications":113,"stylie.tabs":115,"superagent":119}],130:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -44443,6 +42097,7 @@ tsdatalist.prototype.__addValueToDataList = function () {
 		.query({
 			format: 'json',
 		})
+		.withCredentials()
 		.end(function (err, res) {
 			this.options.inputelement.removeAttribute('disabled');
 			if (err) {
@@ -44597,7 +42252,7 @@ tsdatalist.prototype.__init = function () {
 };
 module.exports = tsdatalist;
 
-},{"bindie":8,"classie":16,"events":70,"superagent":120,"util":128,"util-extend":126}],132:[function(require,module,exports){
+},{"bindie":8,"classie":16,"events":71,"superagent":119,"util":127,"util-extend":125}],131:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -44776,7 +42431,7 @@ filterlist.prototype.__init = function () {
 };
 module.exports = filterlist;
 
-},{"classie":16,"events":70,"querystring":99,"util":128,"util-extend":126}],133:[function(require,module,exports){
+},{"classie":16,"events":71,"querystring":97,"util":127,"util-extend":125}],132:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -44990,7 +42645,7 @@ tsmedialist.prototype.__init = function () {
 };
 module.exports = tsmedialist;
 
-},{"bindie":8,"classie":16,"events":70,"superagent":120,"util":128,"util-extend":126}],134:[function(require,module,exports){
+},{"bindie":8,"classie":16,"events":71,"superagent":119,"util":127,"util-extend":125}],133:[function(require,module,exports){
 'use strict';
 
 var util = require('util'),
@@ -45196,7 +42851,7 @@ sortlist.prototype.__init = function () {
 };
 module.exports = sortlist;
 
-},{"classie":16,"events":70,"querystring":99,"util":128,"util-extend":126}],135:[function(require,module,exports){
+},{"classie":16,"events":71,"querystring":97,"util":127,"util-extend":125}],134:[function(require,module,exports){
 /*
  * stylie.treeview
  * https://github.com/typesettin/stylie.treeview
@@ -45677,7 +43332,7 @@ StylieTextEditor.prototype.restoreSelection = function () {
 
 module.exports = StylieTextEditor;
 
-},{"../../node_modules/codemirror/addon/comment/comment":19,"../../node_modules/codemirror/addon/comment/continuecomment":20,"../../node_modules/codemirror/addon/edit/matchbrackets":21,"../../node_modules/codemirror/addon/fold/brace-fold":22,"../../node_modules/codemirror/addon/fold/comment-fold":23,"../../node_modules/codemirror/addon/fold/foldcode":24,"../../node_modules/codemirror/addon/fold/foldgutter":25,"../../node_modules/codemirror/addon/fold/indent-fold":26,"../../node_modules/codemirror/addon/hint/css-hint":27,"../../node_modules/codemirror/addon/hint/html-hint":28,"../../node_modules/codemirror/addon/hint/javascript-hint":29,"../../node_modules/codemirror/addon/hint/show-hint":30,"../../node_modules/codemirror/addon/lint/css-lint":32,"../../node_modules/codemirror/addon/lint/javascript-lint":33,"../../node_modules/codemirror/addon/lint/lint":34,"../../node_modules/codemirror/mode/css/css":37,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":38,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":39,"../../node_modules/codemirror/mode/javascript/javascript":40,"classie":16,"codemirror":36,"events":70,"stylie.modals":112,"util":128,"util-extend":126}],136:[function(require,module,exports){
+},{"../../node_modules/codemirror/addon/comment/comment":19,"../../node_modules/codemirror/addon/comment/continuecomment":20,"../../node_modules/codemirror/addon/edit/matchbrackets":21,"../../node_modules/codemirror/addon/fold/brace-fold":22,"../../node_modules/codemirror/addon/fold/comment-fold":23,"../../node_modules/codemirror/addon/fold/foldcode":24,"../../node_modules/codemirror/addon/fold/foldgutter":25,"../../node_modules/codemirror/addon/fold/indent-fold":26,"../../node_modules/codemirror/addon/hint/css-hint":27,"../../node_modules/codemirror/addon/hint/html-hint":28,"../../node_modules/codemirror/addon/hint/javascript-hint":29,"../../node_modules/codemirror/addon/hint/show-hint":30,"../../node_modules/codemirror/addon/lint/css-lint":32,"../../node_modules/codemirror/addon/lint/javascript-lint":33,"../../node_modules/codemirror/addon/lint/lint":34,"../../node_modules/codemirror/mode/css/css":37,"../../node_modules/codemirror/mode/htmlembedded/htmlembedded":38,"../../node_modules/codemirror/mode/htmlmixed/htmlmixed":39,"../../node_modules/codemirror/mode/javascript/javascript":40,"classie":16,"codemirror":36,"events":71,"stylie.modals":111,"util":127,"util-extend":125}],135:[function(require,module,exports){
 'use strict';
 var debounce = require('debounce');
 
@@ -45794,6 +43449,7 @@ tstagmanager.prototype.initEventListeners = function () {
 				.get('/p-admin/content/search')
 				.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
 				.set('Accept', 'application/json')
+				.withCredentials()
 				.query({
 					search_entities: self.options.element.getAttribute('data-search-entities'),
 					format: 'json',
@@ -45996,4 +43652,4 @@ tstagmanager.prototype.__init = function () {
 };
 module.exports = tstagmanager;
 
-},{"../../controller/data_tables":1,"bindie":8,"capitalize":15,"classie":16,"debounce":46,"ejs":53,"events":70,"moment":85,"pluralize":93,"superagent":120,"util":128,"util-extend":126}]},{},[130]);
+},{"../../controller/data_tables":1,"bindie":8,"capitalize":15,"classie":16,"debounce":46,"ejs":53,"events":71,"moment":83,"pluralize":91,"superagent":119,"util":127,"util-extend":125}]},{},[129]);

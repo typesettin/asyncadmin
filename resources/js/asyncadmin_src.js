@@ -615,6 +615,7 @@ var search_menu_callback = function () {
 			.get('/p-admin/content/search')
 			.set('x-csrf-token', document.querySelector('input[name=_csrf]').value)
 			.set('Accept', 'application/json')
+			.withCredentials()
 			.query({
 				format: 'json',
 				_csrf: document.querySelector('input[name=_csrf]').value,
@@ -718,6 +719,7 @@ var deleteContentSubmit = function (e) {
 		.query({
 			format: 'json'
 		})
+		.withCredentials()
 		.end(handle_ajax_button_response(e));
 };
 
@@ -754,6 +756,7 @@ var submitAjaxButton = function (e) {
 		.query({
 			format: 'json'
 		})
+		.withCredentials()
 		.end(handle_ajax_button_response(e));
 };
 
@@ -817,6 +820,7 @@ var loadAjaxPage = function (options, asyncCB) {
 			.get(options.datahref)
 			.withCredentials()
 			.set('Accept', 'text/html')
+			.withCredentials()
 			.end(function (error, res) {
 				startSessionTimeoutCountner();
 
@@ -1070,6 +1074,7 @@ var refresh_session_check = function () {
 		request
 			.get('/healthcheck')
 			.set('Accept', 'application/json')
+			.withCredentials()
 			.end(function (error, res) {
 				if (error) {
 					window.showErrorNotificaton({

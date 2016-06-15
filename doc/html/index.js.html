@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <title>JSDoc: Source: index.js</title>
-    
+
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
     <!--[if lt IE 9]>
@@ -16,111 +16,412 @@
 <body>
 
 <div id="main">
-    
+
     <h1 class="page-title">Source: index.js</h1>
+
     
-    
+
 
 
     
     <section>
         <article>
-            <pre class="prettyprint source"><code>'use strict';
+            <pre class="prettyprint source linenums"><code>'use strict';
 
 var path = require('path'),
+	Errorie = require('errorie'),
 	fs = require('fs-extra'),
 	extend = require('utils-merge'),
-	loginExtSettings,
+	numeral = require('numeral'),
+	diff = require('diff'),
+	prettysize = require('prettysize'),
+	stylietreeview = require('stylie.treeview'),
+	data_tables = require('./controller/data_tables'),
+	accountSchema = require('./model/account.js'),
+	AccountModel,
+	accountController,
+	authenticationRoutes,
+	accountAdminRouter,
+	adminExtSettings,
 	appenvironment,
 	settingJSON,
-	Extensions = require('periodicjs.core.extensions'),
-	CoreExtension = new Extensions({
-		extensionFilePath: path.resolve(process.cwd(), './content/config/extensions.json')
-	}),
-	loginExtSettingsFile = path.resolve(CoreExtension.getconfigdir({
-		extname: 'periodicjs.ext.login'
-	}), './settings.json'),
+	extJson,
+	// activate_middleware,
+	adminExtSettingsFile = path.join(process.cwd(), 'content/config/extensions/periodicjs.ext.asyncadmin/settings.json'),
 	defaultExtSettings = require('./controller/default_config');
 
 /**
  * An authentication extension that uses passport to authenticate user sessions.
- * @{@link https://github.com/typesettin/periodicjs.ext.login}
+ * @{@link https://github.com/typesettin/periodicjs.ext.admin}
  * @author Yaw Joseph Etse
  * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
  * @license MIT
- * @exports periodicjs.ext.login
+ * @exports periodicjs.ext.admin
  * @requires module:passport
  * @param  {object} periodic variable injection of resources from current periodic instance
  */
 module.exports = function (periodic) {
 	// periodic = express,app,logger,config,db,mongoose
-	//console.log('before defaultExtSettings', defaultExtSettings);
-
 	appenvironment = periodic.settings.application.environment;
-	settingJSON = fs.readJsonSync(loginExtSettingsFile);
-	//console.log('before settingJSON[appenvironment]', settingJSON[appenvironment]);
-	loginExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
-	//console.log('after defaultExtSettings', defaultExtSettings);
-	//console.log('after settingJSON[appenvironment]', settingJSON[appenvironment]);
+	settingJSON = fs.readJsonSync(adminExtSettingsFile);
+	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
-	periodic.app.controller.extension.login = {
-		loginExtSettings: loginExtSettings
-	};
-	periodic.app.controller.extension.login.auth = require('./controller/auth')(periodic);
-	periodic.app.controller.extension.login.user = require('./controller/user')(periodic);
+	if (adminExtSettings.use_separate_accounts) {
+		AccountModel = periodic.mongoose.model('Account', accountSchema);
+	}
 
-	var passport = periodic.app.controller.extension.login.auth.passport,
-		authRouter = periodic.express.Router(),
-		authController = periodic.app.controller.extension.login.auth,
-		userRouter = periodic.express.Router(),
-		userController = periodic.app.controller.extension.login.user,
-		socialPassportController = require('./controller/social_controller')(periodic, {
-			passport: passport,
-			loginExtSettings: periodic.app.controller.extension.login.auth.loginExtSettings
-		}),
-		tokenController = require('./controller/token_controller')(periodic, {
-			passport: passport,
-			loginExtSettings: periodic.app.controller.extension.login.auth.loginExtSettings
+	try {
+		if (periodic.settings.theme) {
+			var themeinfo = fs.readJsonSync(path.join(periodic.settings.themepath, '/periodicjs.asyncadmin.json'), {
+				throws: false
+			});
+			if (themeinfo &amp;&amp; themeinfo['periodicjs.ext.asyncadmin']) {
+				periodic.app.locals.themeasyncadmin = themeinfo['periodicjs.ext.asyncadmin'];
+			}
+		}
+	}
+	catch (e) {
+		periodic.logger.info('Current Theme does not use a custom cms interface', new Errorie({
+			name: 'Async Admin',
+			message: 'Config error - ' + e.message
+		}));
+	}
+
+	try {
+		// console.log('__dirname',__dirname);
+		extJson = fs.readJsonSync(path.join(__dirname, 'package.json'), {
+			throws: false
 		});
-	periodic.app.controller.extension.login.token = tokenController;
-	periodic.app.controller.extension.login.social = socialPassportController;
-	//tokenRouter      = periodic.express.Router(),
-	//tokenController  = periodic.app.controller.extension.login.token
-	//socialRouter     = periodic.express.Router(),
-	//socialController = periodic.app.controller.extension.login.social,
+		// console.log('extJson',extJson);
+		periodic.app.locals.asyncadminextJson = extJson;
+	}
+	catch (e) {
+		console.log(new Errorie({
+			name: 'Async Admin extJson',
+			message: 'Config error - ' + e.message
+		}));
+	}
 
-	authRouter.get('*', global.CoreCache.disableCache);
-	authRouter.post('*', global.CoreCache.disableCache);
-	userRouter.get('*', global.CoreCache.disableCache);
-	userRouter.post('*', global.CoreCache.disableCache);
+	periodic.app.locals.default_responsive_collapse = data_tables.default_responsive_collapse;
+	periodic.app.locals.default_responsive_expand = data_tables.default_responsive_expand;
+	periodic.app.locals.default_thead = data_tables.default_thead;
+	periodic.app.locals.default_custom_tfoot = data_tables.default_custom_tfoot;
+	periodic.app.locals.get_data_table_html = data_tables.get_data_table_html;
+	periodic.app.locals.cms_default_responsive_collapse = data_tables.cms_default_responsive_collapse;
+	periodic.app.locals.cms_default_tbody = data_tables.cms_default_tbody;
+	periodic.app.locals.numeral = numeral;
+	periodic.app.locals.diff = diff;
+	periodic.app.locals.use_separate_accounts = false;
+	periodic.app.locals.extend = extend;
+	periodic.app.locals.prettysize = prettysize;
+	periodic.app.locals.themename = periodic.settings.theme || 'Theme';
+	periodic.app.locals.appenvironment = appenvironment;
+	periodic.app.locals.session_ttl = periodic.settings.sessions.ttl_in_seconds;
+	periodic.app.locals.adminPath = adminExtSettings.settings.adminPath;
+	periodic.app.locals.adminLoginPath = adminExtSettings.adminLoginPath;
+	periodic.app.locals.socketIoPort = adminExtSettings.settings.socketIoPort;
+	periodic.app.locals.adminExtSettings = adminExtSettings;
+	periodic.app.locals.stylietreeview = stylietreeview;
 
-	authRouter.get('/login', userController.login);
-	authRouter.post('/login', authController.login);
-	authRouter.get('/logout', authController.logout);
-	//token controller & router
-	authRouter.get('/forgot', userController.forgot);
-	authRouter.post('/forgot', tokenController.forgot);
-	authRouter.get('/reset/:token', tokenController.get_token, tokenController.reset);
-	authRouter.post('/reset/:token', tokenController.get_token, tokenController.token);
-	//social controller & router
-	authRouter.get('/facebook', socialPassportController.facebook);
-	authRouter.get('/facebook/callback', socialPassportController.facebookcallback);
-	authRouter.get('/instagram', socialPassportController.instagram);
-	authRouter.get('/instagram/callback', socialPassportController.instagramcallback);
-	authRouter.get('/twitter', socialPassportController.twitter);
-	authRouter.get('/twitter/callback', socialPassportController.twittercallback);
+	periodic.app.controller.extension.asyncadmin = {
+		adminExtSettings: adminExtSettings,
+	};
+	periodic.app.controller.extension.asyncadmin = {
+		admin: require('./controller/admin')(periodic),
+		settings: require('./controller/admin_settings')(periodic),
+		userroles: require('./controller/admin_userroles')(periodic),
+		user: require('./controller/admin_user')(periodic),
+		socket_log: require('./controller/socket_log')(periodic),
+		socket_callback: require('./controller/server_callback')(periodic),
+		admin_extensions: require('./controller/admin_extensions')(periodic),
+		data_tables: data_tables,
+		search: {},
+		cmd: {}
+	};
+	periodic.app.controller.extension.asyncadmin.search.user = periodic.app.controller.extension.asyncadmin.admin.user_search;
+	periodic.app.controller.extension.asyncadmin.search.userrole = periodic.app.controller.extension.asyncadmin.admin.userrole_search;
+	periodic.app.controller.extension.asyncadmin.search.userprivilege = periodic.app.controller.extension.asyncadmin.admin.userprivilege_search;
+	periodic.app.controller.extension.asyncadmin.search.theme = periodic.app.controller.extension.asyncadmin.admin.themesearch;
+	periodic.app.controller.extension.asyncadmin.search.extension = periodic.app.controller.extension.asyncadmin.admin.extensionsearch;
 
-	userRouter.get('/new|/register', userController.newuser);
-	userRouter.get('/finishregistration', userController.finishregistration);
+	periodic.app.controller.extension.asyncadmin.cmd.theme = periodic.app.controller.extension.asyncadmin.admin.themecmd;
+	periodic.app.controller.extension.asyncadmin.cmd.extension = periodic.app.controller.extension.asyncadmin.admin_extensions.extcmd;
 
-	userRouter.post('/new', userController.create);
-	userRouter.post('/finishregistration', userController.updateuserregistration);
 
-	periodic.app.use(authController.rememberme);
-	periodic.app.use(passport.initialize());
-	periodic.app.use(passport.session());
-	periodic.app.use('/auth', authRouter);
-	periodic.app.use('/auth/user', userRouter);
+
+	//SET CUSTOM ADMIN
+	if (adminExtSettings.use_separate_accounts) {
+		periodic.app.controller.extension.login.loginExtSettings.settings = extend(
+			periodic.app.controller.extension.login.loginExtSettings.settings, adminExtSettings.login_settings.settings);
+		periodic.app.locals.use_separate_accounts = true;
+		periodic.app.controller.extension.asyncadmin.search.account = periodic.app.controller.extension.asyncadmin.admin.account_search;
+	}
+
+
+	var adminRouter = periodic.express.Router(),
+		userAdminRouter = periodic.express.Router(),
+		settingsAdminRouter = periodic.express.Router(),
+		extensionAdminRouter = periodic.express.Router(),
+		themeAdminRouter = periodic.express.Router(),
+		adminController = periodic.app.controller.extension.asyncadmin.admin,
+		adminSettingsController = periodic.app.controller.extension.asyncadmin.settings,
+		assetController = periodic.app.controller.native.asset,
+		authController = periodic.app.controller.extension.login.auth,
+		uacController = periodic.app.controller.extension.user_access_control.uac,
+		userroleController = periodic.app.controller.native.userrole,
+		userprivilegeController = periodic.app.controller.native.userprivilege,
+		userController = periodic.app.controller.native.user,
+		userAdminController = periodic.app.controller.extension.asyncadmin.user,
+		UACAdminController = periodic.app.controller.extension.asyncadmin.userroles,
+		mailController = periodic.app.controller.extension.mailer.mailer;
+
+
+	if (adminExtSettings.use_separate_accounts) {
+		accountAdminRouter = periodic.express.Router();
+		authController = require('../periodicjs.ext.login/controller/auth')(periodic, AccountModel);
+		periodic.app.controller.extension.asyncadmin.authController = authController;
+		// periodic.app.locals.depopulate = adminController.depopulate;
+		periodic.app.controller.native.account = periodic.core.controller.controller_routes(require('./model/account_controller_settings'));
+
+		authenticationRoutes = require('./routes/auth_router')(periodic);
+		periodic.app.controller.native.account.getUsersData = periodic.app.controller.native.account.getAccountsData;
+		accountController = periodic.app.controller.native.account;
+		uacController = require('../periodicjs.ext.user_access_control/controller/uac')(periodic, AccountModel, accountController); //periodic.app.controller.extension.user_access_control.uac
+
+	}
+
+	/**
+	 * access control routes
+	 */
+	adminRouter.get('*', global.CoreCache.disableCache);
+	adminRouter.post('*', global.CoreCache.disableCache);
+	if (adminExtSettings.use_separate_accounts) {
+		adminRouter.all('*', adminController.ensureAccountUser, global.CoreCache.disableCache, authController.ensureAuthenticated, adminController.ensureAccountUser, uacController.loadUserRoles, uacController.check_user_access);
+		accountAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	}
+	else {
+		adminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	}
+	extensionAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	themeAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+	userAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+
+	settingsAdminRouter.all('*', global.CoreCache.disableCache, authController.ensureAuthenticated, uacController.loadUserRoles, uacController.check_user_access);
+
+	/**
+	 * admin routes
+	 */
+	// adminRouter.get('/', adminController.admin_index);
+	adminRouter.get('/', adminController.getHomepageStats, adminController.admin_index);
+	adminRouter.get('/dashboard', adminController.getHomepageStats, adminController.admin_index);
+	adminRouter.get('/extensions', adminController.loadExtensions, adminController.extensions_index);
+	adminRouter.get('/themes', adminController.loadThemes, adminSettingsController.load_theme_settings, adminController.themes_index);
+	// adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, uacController.loadUacUsers, adminController.users_index);
+	// adminRouter.get('/check_periodic_version', adminController.check_periodic_version);
+
+
+
+	/**
+	 * admin/user routes
+	 */
+	adminRouter.get('/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	adminRouter.get('/content/users', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	userAdminRouter.get('/search', userController.loadUsersWithCount, userController.loadUsersWithDefaultLimit, userController.loadUsers, userAdminController.users_index);
+	adminRouter.get('/content/user/new', userAdminController.users_new);
+	adminRouter.get('/user/new', userAdminController.users_new);
+	userAdminRouter.get('/:id', userController.loadUser, userAdminController.users_show);
+	userAdminRouter.get('/:id/edit', userController.loadUser, userAdminController.users_edit);
+	adminRouter.get('/content/user/:id/edit', userController.loadUser, userAdminController.users_edit);
+	adminRouter.get('/content/user/:id', userController.loadUser, userAdminController.users_edit);
+	userAdminRouter.post('/edit',
+		assetController.multiupload,
+		assetController.create_assets_from_files,
+		// periodic.core.controller.save_revision,
+		adminController.checkUserValidation,
+		// userController.loadUser,
+		adminController.fixCodeMirrorSubmit,
+		userController.update);
+	userAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, userController.create);
+	userAdminRouter.post('/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
+	adminRouter.post('/users/:id/delete', assetController.upload, userController.loadUser, adminController.checkDeleteUser, userController.remove);
+
+
+	adminRouter.post('/content/user/:id/edit',
+		assetController.multiupload,
+		assetController.create_assets_from_files,
+		periodic.core.controller.save_revision,
+		// adminController.checkUserValidation,
+		userController.loadUser,
+		adminController.fixCodeMirrorSubmit,
+		adminController.removePasswordFromAdvancedSubmit,
+		userController.update);
+
+
+	adminRouter.get('/content/user/:id/revisions', adminController.skip_population, userController.loadUser, adminController.user_revisions);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/delete', adminController.skip_population, userController.loadUser, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit, userController.update);
+	adminRouter.post('/content/user/:id/revision/:revisionindex/revert', adminController.skip_population, userController.loadUser, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit, userController.update);
+
+	if (adminExtSettings.use_separate_accounts) {
+		/**
+		 * admin/account routes
+		 */
+		userAdminRouter.post('/:id/make_account', assetController.upload, userController.loadUser, adminController.convert_user_to_account, accountController.create);
+		adminRouter.get('/accounts', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		adminRouter.get('/content/accounts', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		accountAdminRouter.get('/search', accountController.loadAccountsWithCount, accountController.loadAccountsWithDefaultLimit, accountController.loadAccounts, userAdminController.accounts_index);
+		accountAdminRouter.get('/new', userAdminController.accounts_new);
+		adminRouter.get('/content/account/new', userAdminController.accounts_new);
+		accountAdminRouter.get('/:id', accountController.loadAccount, userAdminController.accounts_show);
+		accountAdminRouter.get('/:id/edit', accountController.loadAccount, userAdminController.accounts_edit);
+		adminRouter.get('/content/account/:id/edit', accountController.loadAccount, userAdminController.accounts_edit);
+		adminRouter.get('/content/account/:id', accountController.loadAccount, userAdminController.accounts_edit);
+		// console.log('accountController',accountController);
+		accountAdminRouter.post('/edit',
+			assetController.multiupload,
+			assetController.create_assets_from_files,
+			// periodic.core.controller.save_revision,
+			adminController.checkUserValidation,
+			// accountController.loadAccount,
+			adminController.fixCodeMirrorSubmit,
+			accountController.update);
+		accountAdminRouter.post('/new', assetController.upload, adminController.checkUserValidation, accountController.create);
+		accountAdminRouter.post('/:id/delete', assetController.upload, accountController.loadAccount, adminController.checkDeleteUser, accountController.remove);
+		adminRouter.post('/accounts/:id/delete', assetController.upload, accountController.loadAccount, adminController.checkDeleteUser, accountController.remove);
+
+
+		adminRouter.post('/content/account/:id/edit',
+			assetController.multiupload,
+			assetController.create_assets_from_files,
+			periodic.core.controller.save_revision,
+			// adminController.checkUserValidation,
+			accountController.loadAccount,
+			adminController.fixCodeMirrorSubmit,
+			adminController.removePasswordFromAdvancedSubmit,
+			accountController.update);
+
+
+		adminRouter.get('/content/account/:id/revisions', adminController.skip_population, accountController.loadAccount, adminController.account_revisions);
+		adminRouter.post('/content/account/:id/revision/:revisionindex/delete', adminController.skip_population, accountController.loadAccount, adminController.revision_delete, adminController.removePasswordFromAdvancedSubmit, accountController.update);
+		adminRouter.post('/content/account/:id/revision/:revisionindex/revert', adminController.skip_population, accountController.loadAccount, adminController.revision_revert, adminController.removePasswordFromAdvancedSubmit, accountController.update);
+		adminRouter.use('/account', accountAdminRouter);
+
+	}
+
+
+	//user roles
+	adminRouter.get('/userroles',
+		userroleController.loadUserrolesWithCount,
+		userroleController.loadUserrolesWithDefaultLimit,
+		userroleController.loadUserroles,
+		UACAdminController.index);
+	adminRouter.get('/content/userroles',
+		userroleController.loadUserrolesWithCount,
+		userroleController.loadUserrolesWithDefaultLimit,
+		userroleController.loadUserroles,
+		UACAdminController.index);
+	adminRouter.get('/userrole/new', UACAdminController.userrole_new);
+	adminRouter.get('/userrole/:id/edit',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		UACAdminController.show);
+	adminRouter.get('/content/userrole/:id',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		UACAdminController.show);
+	adminRouter.get('/userrole/edit/:id',
+		userprivilegeController.loadUserprivileges,
+		userroleController.loadUserrole,
+		UACAdminController.show);
+	adminRouter.post('/userrole/new/:id',
+		uacController.skipInvalid,
+		userroleController.loadUserrole,
+		UACAdminController.getRoleIdCount,
+		userroleController.create); //new from tag list
+	adminRouter.post('/userrole/new',
+		userroleController.create); //new from modal
+	adminRouter.post('/content/userrole/new',
+		userroleController.create); //new from modal
+	adminRouter.post('/userrole/edit',
+		userroleController.update);
+	adminRouter.post('/userrole/:id/delete', userroleController.loadUserrole,
+		userroleController.remove);
+	// user privileges
+	adminRouter.get('/userprivileges',
+		userprivilegeController.loadUserprivilegesWithCount,
+		userprivilegeController.loadUserprivilegesWithDefaultLimit,
+		userprivilegeController.loadUserprivileges,
+		UACAdminController.userprivilege_index);
+	adminRouter.get('/content/userprivileges',
+		userprivilegeController.loadUserprivilegesWithCount,
+		userprivilegeController.loadUserprivilegesWithDefaultLimit,
+		userprivilegeController.loadUserprivileges,
+		UACAdminController.userprivilege_index);
+	adminRouter.post('/userprivilege/new/:id',
+		uacController.skipInvalid,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.getPrivilegeIdCount,
+		userprivilegeController.create); //new from tag list
+	adminRouter.post('/userprivilege/new',
+		userprivilegeController.create); //new from modal
+	adminRouter.post('/content/userprivilege/new',
+		userprivilegeController.create); //new from modal
+	adminRouter.get('/userprivilege/:id/edit',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.get('/content/userprivilege/:id',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.get('/content/userprivilege/:id',
+		userprivilegeController.loadUserprivileges,
+		userprivilegeController.loadUserprivilege,
+		UACAdminController.userprivilege_show);
+	adminRouter.post('/userprivilege/edit',
+		userprivilegeController.update);
+	// 
+
+	/**
+	 * admin/settings routes
+	 */
+	settingsAdminRouter.get('/', adminSettingsController.load_app_settings, adminSettingsController.load_theme_settings, adminController.settings_index);
+	// settingsAdminRouter.get('/faq', adminController.settings_faq);
+	settingsAdminRouter.post('/restart', adminSettingsController.restart_app);
+	settingsAdminRouter.post('/updateapp', adminSettingsController.update_app);
+	settingsAdminRouter.post('/updateappsettings', adminSettingsController.update_app_settings);
+	settingsAdminRouter.post('/updatethemesettings', adminSettingsController.update_theme_settings);
+
+	settingsAdminRouter.post('/updateextfiledata', adminSettingsController.update_ext_filedata);
+	settingsAdminRouter.post('/themefiledata', adminSettingsController.update_theme_filedata);
+	settingsAdminRouter.post('/updateconfigjson', adminSettingsController.update_config_json_files);
+
+
+	//user priviliges
+	adminRouter.get('/userprivileges/search.:ext', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
+	adminRouter.get('/userprivileges/search', global.CoreCache.disableCache, uacController.loadUserprivileges, uacController.userprivilegeSearchResults);
+
+
+	//searching
+	periodic.app.get('/' + periodic.app.locals.adminPath + '/content/search', adminController.admin_search);
+	periodic.app.get('/healthcheck', adminController.healthcheck);
+
+
+	//mail settings
+	periodic.app.get('/' + periodic.app.locals.adminPath + '/mailer/test', mailController.testemail);
+	periodic.app.post('/' + periodic.app.locals.adminPath + '/mailer/sendmail', mailController.sendmail);
+
+	periodic.app.get('/replietest', periodic.app.controller.extension.asyncadmin.socket_log.get_replie_stats);
+	periodic.app.get('/p-secure/asset/:id/:filename', assetController.loadAsset, assetController.decryptAsset);
+
+	adminRouter.use('/extension', extensionAdminRouter);
+	adminRouter.use('/theme', themeAdminRouter);
+	adminRouter.use('/user', userAdminRouter);
+	adminRouter.use('/settings', settingsAdminRouter);
+
+	if (adminExtSettings.use_separate_accounts) {
+		periodic.app.use('/' + periodic.app.locals.adminLoginPath, authenticationRoutes);
+	}
+	periodic.app.use('/' + periodic.app.locals.adminPath, adminRouter);
 	return periodic;
 };
 </code></pre>
@@ -133,13 +434,13 @@ module.exports = function (periodic) {
 </div>
 
 <nav>
-    <h2><a href="index.html">Index</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-userloginController.html">userloginController</a></li><li><a href="login.html">login</a></li></ul><h3>Global</h3><ul><li><a href="global.html#facebook">facebook</a></li><li><a href="global.html#facebookcallback">facebookcallback</a></li><li><a href="global.html#instagram">instagram</a></li><li><a href="global.html#instagramcallback">instagramcallback</a></li><li><a href="global.html#saveUser">saveUser</a></li><li><a href="global.html#twitter">twitter</a></li><li><a href="global.html#twittercallback">twittercallback</a></li><li><a href="global.html#usePassport">usePassport</a></li></ul>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
 </nav>
 
-<br clear="both">
+<br class="clear">
 
 <footer>
-    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.2.2</a> on Thu Jan 29 2015 21:18:44 GMT-0500 (EST)
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
 </footer>
 
 <script> prettyPrint(); </script>

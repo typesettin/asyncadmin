@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controller/admin_userroles.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controller/admin_userroles.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var merge = require('utils-merge'),
+	CoreUtilities,
+	CoreController,
+	appSettings,
+	mongoose,
+	adminPath,
+	Userrole,
+	Userprivilege,
+	logger;
+
+var loadUACCounts = function (req, res, next) {
+	// req.controllerData = (req.controllerData) ? req.controllerData : {};
+	req.headers.loaduserrolecount = true; // loaditemcount
+	req.headers.loaduserprivilegecount = true; // loaditemcount
+	next();
+};
+
+var getRoleIdCount = function (req, res, next) {
+	if (req.controllerData &amp;&amp; req.controllerData.userrole) {
+		res.send({
+			result: 'success',
+			data: {
+				doc: req.controllerData.userrole
+			}
+		});
+	}
+	else if (req.body.userroleid) {
+		next();
+	}
+	else {
+		Userrole.count({}, function (err, count) {
+			if (err) {
+				next(err);
+			}
+			else {
+				req.body.userroleid = count + 1;
+				next();
+			}
+		});
+	}
+};
+
+var getPrivilegeIdCount = function (req, res, next) {
+	if (req.controllerData &amp;&amp; req.controllerData.userprivilege) {
+		res.send({
+			result: 'success',
+			data: {
+				doc: req.controllerData.userprivilege
+			}
+		});
+	}
+	else if (req.body.userprivilegeid) {
+		next();
+	}
+	else {
+		Userprivilege.count({}, function (err, count) {
+			if (err) {
+				next(err);
+			}
+			else {
+				req.body.userprivilegeid = count + 1;
+				next();
+			}
+		});
+	}
+};
+
+/**
+ * manage user role section
+ * @param  {object} req 
+ * @param  {object} res 
+ * @return {object} reponds with an error page or requested view
+ */
+var index = function (req, res) {
+	// console.log('req.controllerData', req.controllerData);
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = merge(req.controllerData, {
+			pagedata: {
+				title: 'Manage Users Roles',
+				toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/userroles" class="async-admin-ajax-link">User Roles&lt;/a>',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		});
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+var userprivilege_index = function (req, res) {
+	// console.log('req.controllerData', req.controllerData);
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/userprivilege_index',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = merge(req.controllerData, {
+			pagedata: {
+				title: 'Manage Users Privileges',
+				toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/userprivileges" class="async-admin-ajax-link">User Privileges&lt;/a>',
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			user: req.user
+		});
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+
+/**
+ * create a new usr role
+ * @param  {object} req 
+ * @param  {object} res 
+ * @return {object} reponds with an error page or requested view
+ */
+var userrole_new = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/new',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: 'New User Role',
+				toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/userroles" class="async-admin-ajax-link">User Roles&lt;/a> &amp;raquo; New User Role',
+				// headerjs: ['/extensions/periodicjs.ext.asyncadmin/js/useraccess.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			userrole: null, //req.controllerData.userrole
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+/**
+ * show user role
+ * @param  {object} req 
+ * @param  {object} res 
+ * @return {object} reponds with an error page or requested view
+ */
+var show = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/edit',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: req.controllerData.userrole.title,
+				toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/userroles" class="async-admin-ajax-link">User Roles&lt;/a> &amp;raquo; ' + req.controllerData.userrole.title,
+				// headerjs: ['/extensions/periodicjs.ext.asyncadmin/js/useraccess.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			userrole: req.controllerData.userrole, //req.controllerData.userrole
+			userprivileges: req.controllerData.userprivileges, //req.controllerData.userrole
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+var userprivilege_show = function (req, res) {
+	var viewtemplate = {
+			viewname: 'p-admin/userroles/userprivilege_edit',
+			themefileext: appSettings.templatefileextension,
+			extname: 'periodicjs.ext.asyncadmin'
+		},
+		viewdata = {
+			pagedata: {
+				title: req.controllerData.userprivilege.title,
+				toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/userprivileges" class="async-admin-ajax-link">User Privileges&lt;/a> &amp;raquo; ' + req.controllerData.userprivilege.title,
+				// headerjs: ['/extensions/periodicjs.ext.asyncadmin/js/useraccess.min.js'],
+				extensions: CoreUtilities.getAdminMenu()
+			},
+			userprivilege: req.controllerData.userprivilege, //req.controllerData.userrole
+			user: req.user
+		};
+	CoreController.renderView(req, res, viewtemplate, viewdata);
+};
+
+/**
+ * user role controller
+ * @module userroleController
+ * @{@link https://github.com/typesettin/periodicjs.ext.user_access_control}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @requires module:periodicjs.core.utilities
+ * @requires module:periodicjs.core.controller
+ * @param  {object} resources variable injection from current periodic instance with references to the active logger and mongo session
+ * @return {object}           userlogin
+ */
+var controller = function (resources) {
+	logger = resources.logger;
+	mongoose = resources.mongoose;
+	appSettings = resources.settings;
+	CoreController = resources.core.controller;
+	CoreUtilities = resources.core.utilities;
+	Userrole = mongoose.model('Userrole');
+	Userprivilege = mongoose.model('Userprivilege');
+	// Usergroup = mongoose.model('Usergroup');
+	adminPath = resources.app.locals.adminPath;
+
+	return {
+		loadUACCounts: loadUACCounts,
+		getRoleIdCount: getRoleIdCount,
+		getPrivilegeIdCount: getPrivilegeIdCount,
+		index: index,
+		userprivilege_index: userprivilege_index,
+		userrole_new: userrole_new,
+		show: show,
+		userprivilege_show: userprivilege_show,
+		// update: update,
+		// remove: remove
+	};
+};
+
+module.exports = controller;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

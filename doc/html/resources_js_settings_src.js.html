@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: resources/js/settings_src.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: resources/js/settings_src.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var jsonFormElements = require('./jsonformelements'),
+	tabMap = {
+		'0': 'application-settings',
+		'1': 'theme-settings',
+		'2': 'restart',
+		'3': 'help'
+	},
+	themesettingsConfiguration,
+	themesettingsReadOnly,
+	appsettingsConfiguration,
+	appsettingsReadOnly;
+
+var handleSettingsTabChange = function (currentTab) {
+	// console.log('currentTab', currentTab);
+	window.location.hash = tabMap[currentTab];
+	styleWindowResizeEventHandler();
+};
+
+var elementSelectors = function () {
+	themesettingsConfiguration = document.getElementById('themesettings-config');
+	themesettingsReadOnly = document.getElementById('themesettings-readonly');
+	appsettingsConfiguration = document.getElementById('appsettings-config');
+	appsettingsReadOnly = document.getElementById('appsettings-readonly');
+};
+
+var eventHandlers = function () {
+	window.StylieTab['periodic-settings-tabs'].on('tabsShowIndex', handleSettingsTabChange);
+	if (window.location.hash) {
+		for (var x in tabMap) {
+			if (window.location.hash.replace('#', '') === tabMap[x]) {
+				window.StylieTab['periodic-settings-tabs'].showTab(x);
+			}
+		}
+	}
+};
+
+/**
+ * resize codemirror on window resize
+ */
+var styleWindowResizeEventHandler = function () {
+	if (window.codeMirrors) {
+		for (var y in window.codeMirrors) {
+			window.codeMirrors[y].refresh();
+			window.codeMirrors[y].setSize('auto', '80%');
+		}
+	}
+};
+// window.backupcompleted = function () {
+// 	window.endPreloader();
+// 	window.showStylieNotification({
+// 		message: 'downloaded back up file'
+// 	});
+// };
+
+
+var initAdvancedCodemirror = function () {
+	if (window.StylieTab &amp;&amp; window.StylieTab['periodic-settings-tabs-config']) {
+		window.StylieTab['periodic-settings-tabs-config'].on('tabsShowIndex', function (idex) {
+			if (idex === 0 &amp;&amp; window.codeMirrors &amp;&amp; window.codeMirrors['themesettings-codemirror']) {
+				window.codeMirrors['themesettings-codemirror'].refresh();
+			}
+			else if (idex === 1 &amp;&amp; window.codeMirrors &amp;&amp; window.codeMirrors['globalconfig-codemirror']) {
+				window.codeMirrors['globalconfig-codemirror'].refresh();
+			}
+			else if (idex === 2 &amp;&amp; window.codeMirrors &amp;&amp; window.codeMirrors['envconfig-codemirror']) {
+				window.codeMirrors['envconfig-codemirror'].refresh();
+			}
+			else if (idex === 3 &amp;&amp; window.codeMirrors &amp;&amp; window.codeMirrors['defaultconfig-codemirror']) {
+				window.codeMirrors['defaultconfig-codemirror'].refresh();
+			}
+		});
+	}
+};
+
+var init = function () {
+	elementSelectors();
+	eventHandlers();
+
+	if (window.appsettings) {
+		appsettingsConfiguration.innerHTML = jsonFormElements({
+			jsonobject: window.appsettings.configuration,
+			idnameprepend: 'asc'
+		});
+		// appsettingsReadOnly.innerHTML = jsonFormElements({
+		// 	jsonobject: window.appsettings.readonly,
+		// 	readonly: true,
+		// 	idnameprepend: 'asro'
+		// });
+	}
+	if (window.themesettings) {
+
+		// themesettingsConfiguration.innerHTML = jsonFormElements({
+		// 	jsonobject: window.themesettings.configuration,
+		// 	idnameprepend: 'tsc'
+		// });
+		themesettingsReadOnly.innerHTML = jsonFormElements({
+			jsonobject: window.themesettings.readonly,
+			readonly: true,
+			idnameprepend: 'tsro'
+		});
+	}
+	initAdvancedCodemirror();
+	styleWindowResizeEventHandler();
+
+};
+
+if (typeof window.domLoadEventFired !== 'undefined') {
+	init();
+}
+else {
+	window.addEventListener('load', init, false);
+}
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

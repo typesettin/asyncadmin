@@ -1,4 +1,32 @@
-'use strict';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: resources/js/tagman.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: resources/js/tagman.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
 var debounce = require('debounce');
 
 var util = require('util'),
@@ -19,7 +47,7 @@ var uniq_fast = function (a) {
 	var out = [];
 	var len = a.length;
 	var j = 0;
-	for (var i = 0; i < len; i++) {
+	for (var i = 0; i &lt; len; i++) {
 		var item = a[i];
 		if (seen[item] !== 1) {
 			seen[item] = 1;
@@ -75,7 +103,7 @@ tstagmanager.prototype.initEventListeners = function () {
 		// console.log('before self.options.taxfields[etarget.getAttribute(data-fieldname)]', self.options.taxfields[etarget.getAttribute('data-fieldname')]);
 		if (classie.has(etarget, 'add-taxonomy')) {
 			try {
-				if (!document.querySelector('[name="docid"]') && window.showServerNotification) {
+				if (!document.querySelector('[name="docid"]') &amp;&amp; window.showServerNotification) {
 					window.showServerNotification({
 						type: 'error',
 						message: 'please save before adding taxonomy'
@@ -156,9 +184,9 @@ tstagmanager.prototype.initEventListeners = function () {
 	tax_prop_container.addEventListener('click', function (e) {
 		var etarget = e.target;
 		if (classie.has(etarget, 'ts-tax-clear-button')) {
-			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '<input style="display:none;" type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
+			document.querySelector('#' + etarget.getAttribute('data-span-container')).innerHTML = '&lt;input style="display:none;" type="checkbox" checked="checked" name="' + etarget.getAttribute('data-field-name') + '" value="!!--EMPTY--' + etarget.getAttribute('data-field-mapping-type') + '--EMTPY--!!"/>';
 
-			if (self.options.formietosubmit && window.AdminFormies[self.options.formietosubmit]) {
+			if (self.options.formietosubmit &amp;&amp; window.AdminFormies[self.options.formietosubmit]) {
 				window.AdminFormies[self.options.formietosubmit].submit();
 			}
 
@@ -260,7 +288,7 @@ tstagmanager.prototype.__init = function () {
 		}
 	});
 
-	this.options.formietosubmit = (this.options.element.getAttribute('data-ajax-formie') && this.options.element.getAttribute('data-ajax-formie') !== null) ? this.options.element.getAttribute('data-ajax-formie') : false;
+	this.options.formietosubmit = (this.options.element.getAttribute('data-ajax-formie') &amp;&amp; this.options.element.getAttribute('data-ajax-formie') !== null) ? this.options.element.getAttribute('data-ajax-formie') : false;
 	this.options.tagmanbindie = new Bindie({
 		ejsdelimiter: '?'
 	});
@@ -280,7 +308,7 @@ tstagmanager.prototype.__init = function () {
 			if (typeof successfn === 'function') {
 				successfn(cbdata);
 			}
-			if (this.options.formietosubmit && initializing === false && window.AdminFormies[this.options.formietosubmit]) {
+			if (this.options.formietosubmit &amp;&amp; initializing === false &amp;&amp; window.AdminFormies[this.options.formietosubmit]) {
 				window.AdminFormies[this.options.formietosubmit].submit();
 			}
 		}.bind(this)
@@ -294,18 +322,18 @@ tstagmanager.prototype.__init = function () {
 	this.options.createable_entities = uniq_fast(this.options.createable_entities);
 	this.options.element.setAttribute('data-original-placeholder', this.options.element.getAttribute('placeholder'));
 	this.options.element.setAttribute('data-search-entities', this.options.search_entities.join(','));
-	var filterselectinnerhtml = '<option value="' + this.options.element.getAttribute('placeholder') + '">Search All</option>';
+	var filterselectinnerhtml = '&lt;option value="' + this.options.element.getAttribute('placeholder') + '">Search All&lt;/option>';
 	this.options.search_entities.forEach(function (entity) {
-		filterselectinnerhtml += '<option value="' + entity + '">' + capitalize(pluralize(entity)) + '</option>';
+		filterselectinnerhtml += '&lt;option value="' + entity + '">' + capitalize(pluralize(entity)) + '&lt;/option>';
 	});
 	this.options.search_filter_select.innerHTML = filterselectinnerhtml;
-	var createselectinnerhtml = '<option value="default">Create new ...</option>';
-	if (this.options.createable_entities.length < 1) {
+	var createselectinnerhtml = '&lt;option value="default">Create new ...&lt;/option>';
+	if (this.options.createable_entities.length &lt; 1) {
 		this.options.create_filter_select.parentElement.style.display = 'none';
 	}
 	else {
 		this.options.createable_entities.forEach(function (entity) {
-			createselectinnerhtml += '<option value="' + entity + '"> Create new ' + capitalize(entity) + '</option>';
+			createselectinnerhtml += '&lt;option value="' + entity + '"> Create new ' + capitalize(entity) + '&lt;/option>';
 		});
 		this.options.create_filter_select.innerHTML = createselectinnerhtml;
 	}
@@ -316,3 +344,26 @@ tstagmanager.prototype.__init = function () {
 	this.emit('initialized');
 };
 module.exports = tstagmanager;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

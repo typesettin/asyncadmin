@@ -1,238 +1,522 @@
-#Index
+## Modules
 
-**Modules**
+<dl>
+<dt><a href="#periodicjs.ext.module_admin">admin</a></dt>
+<dd><p>An authentication extension that uses passport to authenticate user sessions.</p>
+</dd>
+<dt><a href="#module_authController">authController</a> ⇒ <code>object</code></dt>
+<dd><p>admin controller</p>
+</dd>
+<dt><a href="#module_settingsController">settingsController</a> ⇒ <code>object</code></dt>
+<dd><p>settings controller</p>
+</dd>
+<dt><a href="#module_authController">authController</a> ⇒ <code>object</code></dt>
+<dd><p>admin controller</p>
+</dd>
+<dt><a href="#module_userroleController">userroleController</a> ⇒ <code>object</code></dt>
+<dd><p>user role controller</p>
+</dd>
+<dt><a href="#module_authController">authController</a> ⇒ <code>object</code></dt>
+<dd><p>admin controller</p>
+</dd>
+<dt><a href="#module_authController">authController</a> ⇒ <code>object</code></dt>
+<dd><p>admin controller</p>
+</dd>
+<dt><a href="#module_authController">authController</a> ⇒ <code>object</code></dt>
+<dd><p>admin controller</p>
+</dd>
+</dl>
 
-* [periodicjs.ext.login](#periodicjs.ext.module_login)
-* [authController](#module_authController)
-* [userloginController](#module_userloginController)
+## Functions
 
-**Functions**
+<dl>
+<dt><a href="#sendSettingEmail">sendSettingEmail(options, callbackk)</a></dt>
+<dd><p>send setting update email</p>
+</dd>
+<dt><a href="#restart_app">restart_app(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>restarts application response handler and send notification email</p>
+</dd>
+<dt><a href="#update_app">update_app(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>placeholder response for updating application</p>
+</dd>
+<dt><a href="#load_extension_settings">load_extension_settings(req, res, next)</a></dt>
+<dd><p>load the extensions configuration files from the installed config folder in content/config/extensions/[extension]/[config files]</p>
+</dd>
+<dt><a href="#update_theme_filedata">update_theme_filedata(req, res)</a></dt>
+<dd><p>save data from theme page post</p>
+</dd>
+<dt><a href="#update_ext_filedata">update_ext_filedata(req, res)</a></dt>
+<dd><p>save data from config page post</p>
+</dd>
+<dt><a href="#load_app_settings">load_app_settings(req, res, next)</a> ⇒ <code>object</code></dt>
+<dd><p>load app configuration information</p>
+</dd>
+<dt><a href="#load_theme_settings">load_theme_settings(req, res, next)</a> ⇒ <code>object</code></dt>
+<dd><p>load theme configuration information</p>
+</dd>
+<dt><a href="#update_app_settings">update_app_settings(req, res, next)</a> ⇒ <code>object</code></dt>
+<dd><p>form upload handler to update app settings, and sends notification email</p>
+</dd>
+<dt><a href="#update_theme_settings">update_theme_settings(req, res, next)</a> ⇒ <code>object</code></dt>
+<dd><p>form upload handler to update theme settings, and sends notification email</p>
+</dd>
+<dt><a href="#update_config_json_files">update_config_json_files(req, res, next)</a> ⇒ <code>object</code></dt>
+<dd><p>form upload handler to update theme settings, and sends notification email</p>
+</dd>
+<dt><a href="#get_index_page">get_index_page(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>shows list of users page</p>
+</dd>
+<dt><a href="#get_show_page">get_show_page(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>shows user profile page</p>
+</dd>
+<dt><a href="#get_new_page">get_new_page(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>create a new user page</p>
+</dd>
+<dt><a href="#get_edit_page">get_edit_page(req, res)</a> ⇒ <code>function</code></dt>
+<dd><p>make sure a user is authenticated, if not logged in, send them to login page and return them to original resource after login</p>
+</dd>
+<dt><a href="#index">index(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>manage user role section</p>
+</dd>
+<dt><a href="#userrole_new">userrole_new(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>create a new usr role</p>
+</dd>
+<dt><a href="#show">show(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>show user role</p>
+</dd>
+<dt><a href="#getMarkdownReleases">getMarkdownReleases(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>load the markdown release data</p>
+</dd>
+<dt><a href="#getHomepageStats">getHomepageStats(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>does a query to get content counts for all content types</p>
+</dd>
+<dt><a href="#settings_index">settings_index(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>application settings and theme settings page</p>
+</dd>
+<dt><a href="#settings_faq">settings_faq(req, res)</a> ⇒ <code>object</code></dt>
+<dd><p>settings faq page</p>
+</dd>
+</dl>
 
-* [login(req, res)](#login)
-* [logout(req, res)](#logout)
-* [rememberme(req, res)](#rememberme)
-* [ensureAuthenticated(req, res)](#ensureAuthenticated)
-* [usePassport(req, res)](#usePassport)
-* [facebook(req, res)](#facebook)
-* [facebookcallback(req, res)](#facebookcallback)
-* [instagram(req, res)](#instagram)
-* [instagramcallback(req, res)](#instagramcallback)
-* [twitter(req, res)](#twitter)
-* [twittercallback(req, res)](#twittercallback)
-* [saveUser()](#saveUser)
-* [login(req, res)](#login)
-* [newuser(req, res)](#newuser)
-* [create(req, res)](#create)
-* [finishregistration(req, res)](#finishregistration)
-* [updateuserregistration(req, res)](#updateuserregistration)
-* [forgot(req, res)](#forgot)
- 
-<a name="periodicjs.ext.module_login"></a>
-#periodicjs.ext.login
+<a name="periodicjs.ext.module_admin"></a>
+
+## admin
 An authentication extension that uses passport to authenticate user sessions.
 
-**Params**
-
-- periodic `object` - variable injection of resources from current periodic instance  
-
-**Author**: Yaw Joseph Etse  
+**Requires**: <code>module:passport</code>  
+**{@link**: https://github.com/typesettin/periodicjs.ext.admin}  
+**Author:** Yaw Joseph Etse  
 **License**: MIT  
 **Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| periodic | <code>object</code> | variable injection of resources from current periodic instance |
+
 <a name="module_authController"></a>
-#authController
-login controller
 
-**Params**
+## authController ⇒ <code>object</code>
+admin controller
 
-- resources `object` - variable injection from current periodic instance with references to the active logger and mongo session  
-
-**Returns**: `object` - sendmail  
-**Author**: Yaw Joseph Etse  
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.extensions</code>  
+**{@link**: https://github.com/typesettin/periodic}  
+**Author:** Yaw Joseph Etse  
 **License**: MIT  
 **Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
-<a name="module_userloginController"></a>
-#userloginController
-login controller
 
-**Params**
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
 
-- resources `object` - variable injection from current periodic instance with references to the active logger and mongo session  
+<a name="module_settingsController"></a>
 
-**Returns**: `object` - userlogin  
-**Author**: Yaw Joseph Etse  
+## settingsController ⇒ <code>object</code>
+settings controller
+
+**Returns**: <code>object</code> - settings  
+**Requires**: <code>module:async</code>, <code>module:path</code>, <code>module:string-to-json</code>, <code>module:utils-merge</code>, <code>module:ejs</code>, <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.mailer</code>  
+**{@link**: https://github.com/typesettin/periodicjs.ext.admin}  
+**Author:** Yaw Joseph Etse  
 **License**: MIT  
 **Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
-<a name="login"></a>
-#login(req, res)
-logins a user using passport's local strategy, if a user is passed to this function, then the user will be logged in and req.user will be populated
 
-**Params**
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
 
-- req `object`  
-- res `object`  
+<a name="module_authController"></a>
 
-**Returns**: `object` - reponds with an error page or sends user to authenicated in resource  
-<a name="logout"></a>
-#logout(req, res)
-logs user out and destroys user session
+## authController ⇒ <code>object</code>
+admin controller
 
-**Params**
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.extensions</code>  
+**{@link**: https://github.com/typesettin/periodic}  
+**Author:** Yaw Joseph Etse  
+**License**: MIT  
+**Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
 
-- req `object`  
-- res `object`  
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
 
-**Returns**: `object` - sends user to logout resource  
-<a name="rememberme"></a>
-#rememberme(req, res)
-keep a user logged in for 30 days
+<a name="module_userroleController"></a>
 
-**Params**
+## userroleController ⇒ <code>object</code>
+user role controller
 
-- req `object`  
-- res `object`  
+**Returns**: <code>object</code> - userlogin  
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>  
+**{@link**: https://github.com/typesettin/periodicjs.ext.user_access_control}  
+**Author:** Yaw Joseph Etse  
+**License**: MIT  
+**Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
 
-**Returns**: `function` - next() callback  
-<a name="ensureAuthenticated"></a>
-#ensureAuthenticated(req, res)
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
+
+<a name="module_authController"></a>
+
+## authController ⇒ <code>object</code>
+admin controller
+
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.extensions</code>  
+**{@link**: https://github.com/typesettin/periodic}  
+**Author:** Yaw Joseph Etse  
+**License**: MIT  
+**Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
+
+<a name="module_authController"></a>
+
+## authController ⇒ <code>object</code>
+admin controller
+
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.extensions</code>  
+**{@link**: https://github.com/typesettin/periodic}  
+**Author:** Yaw Joseph Etse  
+**License**: MIT  
+**Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
+
+<a name="module_authController"></a>
+
+## authController ⇒ <code>object</code>
+admin controller
+
+**Requires**: <code>module:periodicjs.core.utilities</code>, <code>module:periodicjs.core.controller</code>, <code>module:periodicjs.core.extensions</code>  
+**{@link**: https://github.com/typesettin/periodic}  
+**Author:** Yaw Joseph Etse  
+**License**: MIT  
+**Copyright**: Copyright (c) 2014 Typesettin. All rights reserved.  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| resources | <code>object</code> | variable injection from current periodic instance with references to the active logger and mongo session |
+
+<a name="sendSettingEmail"></a>
+
+## sendSettingEmail(options, callbackk)
+send setting update email
+
+**Kind**: global function  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| options | <code>object</code> | contains email options and nodemailer transport |
+| callbackk | <code>function</code> | async callback |
+
+<a name="restart_app"></a>
+
+## restart_app(req, res) ⇒ <code>object</code>
+restarts application response handler and send notification email
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="update_app"></a>
+
+## update_app(req, res) ⇒ <code>object</code>
+placeholder response for updating application
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="load_extension_settings"></a>
+
+## load_extension_settings(req, res, next)
+load the extensions configuration files from the installed config folder in content/config/extensions/[extension]/[config files]
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+| next | <code>function</code> | 
+
+<a name="load_extension_settings..loadconfigfiles"></a>
+
+### load_extension_settings~loadconfigfiles(callback) ⇒ <code>array</code>
+load config files into array of filejson
+
+**Kind**: inner method of <code>[load_extension_settings](#load_extension_settings)</code>  
+**Returns**: <code>array</code> - array of file data objects  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| callback | <code>function</code> | async callbackk |
+
+<a name="update_theme_filedata"></a>
+
+## update_theme_filedata(req, res)
+save data from theme page post
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="update_ext_filedata"></a>
+
+## update_ext_filedata(req, res)
+save data from config page post
+
+**Kind**: global function  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="load_app_settings"></a>
+
+## load_app_settings(req, res, next) ⇒ <code>object</code>
+load app configuration information
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| req | <code>object</code> |  |
+| res | <code>object</code> |  |
+| next | <code>object</code> | async callback |
+
+<a name="load_theme_settings"></a>
+
+## load_theme_settings(req, res, next) ⇒ <code>object</code>
+load theme configuration information
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| req | <code>object</code> |  |
+| res | <code>object</code> |  |
+| next | <code>object</code> | async callback |
+
+<a name="update_app_settings"></a>
+
+## update_app_settings(req, res, next) ⇒ <code>object</code>
+form upload handler to update app settings, and sends notification email
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| req | <code>object</code> |  |
+| res | <code>object</code> |  |
+| next | <code>object</code> | async callback |
+
+<a name="update_theme_settings"></a>
+
+## update_theme_settings(req, res, next) ⇒ <code>object</code>
+form upload handler to update theme settings, and sends notification email
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| req | <code>object</code> |  |
+| res | <code>object</code> |  |
+| next | <code>object</code> | async callback |
+
+<a name="update_config_json_files"></a>
+
+## update_config_json_files(req, res, next) ⇒ <code>object</code>
+form upload handler to update theme settings, and sends notification email
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type | Description |
+| --- | --- | --- |
+| req | <code>object</code> |  |
+| res | <code>object</code> |  |
+| next | <code>object</code> | async callback |
+
+<a name="get_index_page"></a>
+
+## get_index_page(req, res) ⇒ <code>object</code>
+shows list of users page
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="get_show_page"></a>
+
+## get_show_page(req, res) ⇒ <code>object</code>
+shows user profile page
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="get_new_page"></a>
+
+## get_new_page(req, res) ⇒ <code>object</code>
+create a new user page
+
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
+
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
+
+<a name="get_edit_page"></a>
+
+## get_edit_page(req, res) ⇒ <code>function</code>
 make sure a user is authenticated, if not logged in, send them to login page and return them to original resource after login
 
-**Params**
+**Kind**: global function  
+**Returns**: <code>function</code> - next() callback  
 
-- req `object`  
-- res `object`  
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-**Returns**: `function` - next() callback  
-<a name="usePassport"></a>
-#usePassport(req, res)
-uses passport to log users in, calls done(err,user) when complete, can define what credentials to check here
+<a name="index"></a>
 
-**Params**
+## index(req, res) ⇒ <code>object</code>
+manage user role section
 
-- req `object`  
-- res `object`  
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or requested view  
 
-**Returns**: `function` - done(err,user) callback  
-<a name="facebook"></a>
-#facebook(req, res)
-logs user in via facebook oauth2
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-**Params**
+<a name="userrole_new"></a>
 
-- req `object`  
-- res `object`  
+## userrole_new(req, res) ⇒ <code>object</code>
+create a new usr role
 
-**Returns**: `function` - next() callback  
-<a name="facebookcallback"></a>
-#facebookcallback(req, res)
-facebook oauth callback
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or requested view  
 
-**Params**
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-- req `object`  
-- res `object`  
+<a name="show"></a>
 
-**Returns**: `function` - next() callback  
-<a name="instagram"></a>
-#instagram(req, res)
-logs user in via instagram oauth2
+## show(req, res) ⇒ <code>object</code>
+show user role
 
-**Params**
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or requested view  
 
-- req `object`  
-- res `object`  
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-**Returns**: `function` - next() callback  
-<a name="instagramcallback"></a>
-#instagramcallback(req, res)
-instagram oauth callback
+<a name="getMarkdownReleases"></a>
 
-**Params**
+## getMarkdownReleases(req, res) ⇒ <code>object</code>
+load the markdown release data
 
-- req `object`  
-- res `object`  
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
 
-**Returns**: `function` - next() callback  
-<a name="twitter"></a>
-#twitter(req, res)
-logs user in via twitter oauth2
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-**Params**
+<a name="getHomepageStats"></a>
 
-- req `object`  
-- res `object`  
+## getHomepageStats(req, res) ⇒ <code>object</code>
+does a query to get content counts for all content types
 
-**Returns**: `function` - next() callback  
-<a name="twittercallback"></a>
-#twittercallback(req, res)
-twitter oauth callback
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
 
-**Params**
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-- req `object`  
-- res `object`  
+<a name="settings_index"></a>
 
-**Returns**: `function` - next() callback  
-<a name="saveUser"></a>
-#saveUser()
-description The save user function has two special fn calls on the model to mark the properties on it as changed/modified this gets around some werid edge cases when its being updated in memory but not save in mongo
+## settings_index(req, res) ⇒ <code>object</code>
+application settings and theme settings page
 
-<a name="login"></a>
-#login(req, res)
-user login page
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
 
-**Params**
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-- req `object`  
-- res `object`  
+<a name="settings_faq"></a>
 
-**Returns**: `object` - reponds with an error page or requested view  
-<a name="newuser"></a>
-#newuser(req, res)
-user registration form
+## settings_faq(req, res) ⇒ <code>object</code>
+settings faq page
 
-**Params**
+**Kind**: global function  
+**Returns**: <code>object</code> - reponds with an error page or sends user to authenicated in resource  
 
-- req `object`  
-- res `object`  
+| Param | Type |
+| --- | --- |
+| req | <code>object</code> | 
+| res | <code>object</code> | 
 
-**Returns**: `object` - reponds with an error page or requested view  
-<a name="create"></a>
-#create(req, res)
-create a new user account
-
-**Params**
-
-- req `object`  
-- res `object`  
-
-**Returns**: `object` - reponds with an error page or requested view  
-<a name="finishregistration"></a>
-#finishregistration(req, res)
-complete registration form view
-
-**Params**
-
-- req `object`  
-- res `object`  
-
-**Returns**: `object` - reponds with an error page or requested view  
-<a name="updateuserregistration"></a>
-#updateuserregistration(req, res)
-if username required, updates user username after account is created
-
-**Params**
-
-- req `object`  
-- res `object`  
-
-**Returns**: `object` - reponds with an error page or requested view  
-<a name="forgot"></a>
-#forgot(req, res)
-Shows the forgot password view
-
-**Params**
-
-- req `object`  
-- res `object`  
-
-**Returns**: `object` - reponds with an error page or requested view  

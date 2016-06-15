@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: resources/js/sortlist.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: resources/js/sortlist.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var util = require('util'),
+	events = require('events'),
+	classie = require('classie'),
+	querystring = require('querystring'),
+	extend = require('util-extend'),
+	sortTables;
+
+/**
+ * A module that represents a sortlist object, a componentTab is a page composition tool.
+ * @{@link https://github.com/typesettin/sortlist}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @constructor sortlist
+ * @requires module:events
+ * @requires module:util-extend
+ * @requires module:util
+ * @param {object} options configuration options
+ * @example 
+		sortlist_id: token(),
+		push_state_support: true,
+		replacecallback: function (data) {
+			console.log(data);
+		},
+		popcallback: function (data) {
+			console.log(data);
+		},
+		pushcallback: function (data) {
+			console.log(data);
+		}
+ */
+var sortlist = function (options) {
+	events.EventEmitter.call(this);
+	var defaultOptions = {
+		element: {},
+		sortkeys: []
+	};
+	this.options = extend(defaultOptions, options);
+	// this.options.element = this.options.element.querySelector('.ts-sortlist-element-container');
+	this.options.forbject_name = this.options.element.getAttribute('data-formelement');
+	this.init = this.__init;
+	this.init();
+	// this.addBinder = this._addBinder;
+};
+
+util.inherits(sortlist, events.EventEmitter);
+
+var update_limit_value = function (event) {
+	document.querySelector('[name="limit"]').value = event.target.value;
+	window.AdminFormies['search-options-form'].refresh();
+};
+
+var generate_sort_container = function (elem, e, sortkeyslist, forbject_name) {
+	var sortkeys = sortkeyslist.split(','),
+		set_sq_input_val = function (valEvent) {
+			var parentElem = valEvent.target.parentElement,
+				hidden_input_value = '';
+			if (parentElem.querySelector('.ts-sq-op').value === 'dsc') {
+				hidden_input_value += '-';
+			}
+			hidden_input_value += parentElem.querySelector('.ts-sq-key').value;
+
+			parentElem.querySelector('.ts-sq-h-name').setAttribute('value', hidden_input_value);
+			// parentElem.querySelector('.ts-sq-h-name').setAttribute('checked', 'checked');
+			window.AdminFormies[forbject_name].setFormElements();
+			window.AdminFormies[forbject_name].refresh();
+
+		};
+
+
+	var sort_query_key_select = document.createElement('select'),
+		sort_query_key_op = document.createElement('select'),
+		sort_query_span = document.createElement('span'),
+		sort_query_sortlabel = document.createElement('span'),
+		sort_query_hidden_input = document.createElement('input'),
+		sort_query_container = document.createElement('span');
+
+	sort_query_span.innerHTML = '|';
+	sort_query_sortlabel.innerHTML = 'sort by ';
+
+	sort_query_hidden_input.setAttribute('name', 'sort');
+	sort_query_hidden_input.setAttribute('type', 'hidden');
+	sort_query_hidden_input.setAttribute('class', 'ts-sq-h-name ts-hidden');
+	// if (precheked) {
+	// 	sort_query_hidden_input.setAttribute('checked', 'checked');
+	// }
+	sort_query_hidden_input.setAttribute('value', '');
+
+	// sort_query_hidden_input.type = 'hidden';
+
+	sort_query_key_select.setAttribute('class', 'ts-sq-key ts-button ts-button-transparent');
+	sortkeys.forEach(function (fkey) {
+		sort_query_key_select.innerHTML += '&lt;option value="' + fkey + '">' + fkey + '&lt;/option>';
+	});
+
+	sort_query_key_op.setAttribute('class', 'ts-sq-op ts-button ts-button-transparent');
+	sort_query_key_op.innerHTML = '&lt;option value="dsc"> desc &lt;/option>';
+	sort_query_key_op.innerHTML += '&lt;option value="asc"> asc &lt;/option>';
+
+	sort_query_container.appendChild(sort_query_sortlabel);
+	sort_query_container.appendChild(sort_query_key_select);
+	sort_query_container.appendChild(sort_query_key_op);
+	sort_query_container.appendChild(sort_query_hidden_input);
+	sort_query_container.appendChild(sort_query_span);
+	elem.innerHTML = '';
+	elem.appendChild(sort_query_container);
+
+	// sort_query_key_select.addEventListener('change', set_sq_input_val, false);
+	// sort_query_key_op.addEventListener('change', set_sq_input_val, false);
+	sort_query_key_select.addEventListener('change', set_sq_input_val, false);
+	sort_query_key_op.addEventListener('change', set_sq_input_val, false);
+
+	if (e.generate_from_url) {
+		sort_query_key_select.value = e.key_select_from_url;
+		sort_query_key_op.value = e.op_select_from_url;
+		sort_query_hidden_input.value = e.hidden_select_from_url;
+	}
+
+
+
+	//TODO: this needs to be contained to a specific table
+	var handleSortClicks = function (event) {
+		var eventTarget = event.target;
+		// console.log('eventTarget', eventTarget);
+		if (classie.has(eventTarget, 'sort_tr_true')) {
+			document.querySelector('.ts-sq-key').value = eventTarget.getAttribute('data-sortid');
+
+			document.querySelector('.ts-sq-op').value = (document.querySelector('.ts-sq-op').value === 'dsc') ? 'asc' : 'dsc';
+			set_sq_input_val({
+				target: document.querySelector('.ts-sq-key')
+			});
+		}
+	};
+
+	var initSortTables = function () {
+		sortTables = document.querySelectorAll('.ts-sort-table');
+		if (sortTables &amp;&amp; sortTables.length > 0) {
+			for (var s = 0; s &lt; sortTables.length; s++) {
+				sortTables[s].addEventListener('click', handleSortClicks, false);
+			}
+		}
+	};
+	initSortTables();
+};
+
+var go_to_page = function (pagenum) {
+	document.querySelector('.pagenum-input').value = pagenum;
+	window.AdminFormies['search-options-form'].refresh();
+};
+
+var next_page_click_handler = function () {
+	go_to_page(parseInt(document.querySelector('.pagenum-input').value) + 1);
+};
+
+var prev_page_click_handler = function () {
+	go_to_page(parseInt(document.querySelector('.pagenum-input').value) - 1);
+};
+
+
+
+/**
+ * sets detects support for history push/pop/replace state and can set initial data
+ * @emits initialized
+ */
+sortlist.prototype.__init = function () {
+	var windowqueryobj = querystring.parse(window.location.search),
+		e = {};
+	if (windowqueryobj.sort) {
+		e = ({
+			generate_from_url: true,
+			key_select_from_url: (windowqueryobj.sort.charAt(0) === '-') ? windowqueryobj.sort.substr(1) : windowqueryobj.sort,
+			op_select_from_url: (windowqueryobj.sort.charAt(0) === '-') ? 'dsc' : 'asc',
+			hidden_select_from_url: windowqueryobj.sort,
+		});
+		// generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name, true);
+	}
+	generate_sort_container(this.options.element, e, this.options.sortkeys, this.options.forbject_name);
+	var next_search_button = document.querySelectorAll('.search-filter-next-page');
+	var prev_search_button = document.querySelectorAll('.search-filter-prev-page');
+	if (next_search_button) {
+		for (var nsb = 0; nsb &lt; next_search_button.length; nsb++) {
+			next_search_button[nsb].addEventListener('click', next_page_click_handler, false);
+		}
+	}
+	if (prev_search_button) {
+		for (var psb = 0; psb &lt; prev_search_button.length; psb++) {
+			prev_search_button[psb].addEventListener('click', prev_page_click_handler, false);
+		}
+	}
+	var change_limit_options = document.querySelectorAll('.table-search-limit');
+	if (change_limit_options) {
+		for (var clo = 0; clo &lt; change_limit_options.length; clo++) {
+			change_limit_options[clo].addEventListener('change', update_limit_value, false);
+		}
+	}
+
+
+	// initSortTables();
+
+	this.emit('initialized');
+};
+module.exports = sortlist;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

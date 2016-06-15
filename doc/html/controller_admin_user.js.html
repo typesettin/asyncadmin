@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>JSDoc: Source: controller/admin_user.js</title>
+
+    <script src="scripts/prettify/prettify.js"> </script>
+    <script src="scripts/prettify/lang-css.js"> </script>
+    <!--[if lt IE 9]>
+      <script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+    <link type="text/css" rel="stylesheet" href="styles/prettify-tomorrow.css">
+    <link type="text/css" rel="stylesheet" href="styles/jsdoc-default.css">
+</head>
+
+<body>
+
+<div id="main">
+
+    <h1 class="page-title">Source: controller/admin_user.js</h1>
+
+    
+
+
+
+    
+    <section>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var merge = require('utils-merge'),
+	CoreUtilities,
+	CoreController,
+	appSettings,
+	mongoose,
+	logger,
+	Contenttype,
+	Collection,
+	Compilation,
+	pluralize = require('pluralize'),
+	capitalize = require('capitalize'),
+	Item,
+	User,
+	Account,
+	controllerOptions,
+	adminPath,
+	adminExtSettings;
+
+var get_entity_modifications = function (entityname) {
+	var entity = entityname.toLowerCase(),
+		plural_entity = pluralize.plural(entity);
+	return {
+		name: entity, //item
+		plural_name: pluralize.plural(entity), //items
+		capitalized_name: capitalize(entity), //Item
+		capitalized_plural_name: capitalize(plural_entity) //Items
+	};
+};
+
+/**
+ * shows list of users page
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var get_index_page = function (options) {
+	var entity = get_entity_modifications(options.entity);
+	return function (req, res) {
+		var viewtemplate = {
+				viewname: 'p-admin/users/index',
+				themefileext: appSettings.templatefileextension,
+				extname: 'periodicjs.ext.asyncadmin'
+			},
+			viewdata = merge(req.controllerData, {
+				pagedata: {
+					title: '' + entity.capitalized_plural_name,
+					toplink: '&amp;raquo; ' + entity.capitalized_plural_name,
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				user: req.user,
+				entity: entity
+			});
+		CoreController.renderView(req, res, viewtemplate, viewdata);
+	};
+};
+
+/**
+ * shows user profile page
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var get_show_page = function (options) {
+	var entity = get_entity_modifications(options.entity);
+	return function (req, res) {
+		var allow_edit = false,
+			controllerDataObject = req.controllerData[entity.name],
+			username_display = controllerDataObject.username || controllerDataObject.email || controllerDataObject._id,
+			params = req.params,
+			ObjectToUse = (entity.name === 'account') ? Account : User;
+
+		if (params.id === req.user.username) {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: logged in user matches username');
+			allow_edit = true;
+		}
+		else if (req.user.usertype === 'admin') {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: ' + entity.name + ' is admin');
+			allow_edit = true;
+		}
+		else if (User.hasPrivilege(req.user, 750)) {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: has edit user privilege');
+			allow_edit = true;
+		}
+		else {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: no access');
+		}
+
+		if (allow_edit) {
+			var viewtemplate = {
+					viewname: 'p-admin/users/show',
+					themefileext: appSettings.templatefileextension,
+					extname: 'periodicjs.ext.asyncadmin'
+				},
+				viewdata = {
+					pagedata: {
+						title: entity.capitalized_name + ' profile (' + username_display + ')',
+						toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '&lt;/a> &amp;raquo; ' + username_display,
+						// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+						extensions: CoreUtilities.getAdminMenu()
+					},
+					userprofile: controllerDataObject,
+					allow_edit: allow_edit,
+					user: req.user,
+					entity: entity
+				};
+			CoreController.renderView(req, res, viewtemplate, viewdata);
+		}
+		else {
+			res.status(401);
+			CoreController.handleDocumentQueryErrorResponse({
+				err: new Error('EXT-UAC760: You don\'t have access to modify content'),
+				res: res,
+				req: req
+			});
+		}
+	};
+};
+
+/**
+ * create a new user page
+ * @param  {object} req
+ * @param  {object} res
+ * @return {object} reponds with an error page or sends user to authenicated in resource
+ */
+var get_new_page = function (options) {
+	var entity = get_entity_modifications(options.entity);
+	return function (req, res) {
+		var allow_edit = false,
+			viewtemplate = {
+				viewname: 'p-admin/users/new',
+				themefileext: appSettings.templatefileextension,
+				extname: 'periodicjs.ext.asyncadmin'
+			},
+			ObjectToUse = (entity.name === 'account') ? Account : User,
+			viewdata = {
+				pagedata: {
+					title: 'Create User Account',
+					toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '&lt;/a> &amp;raquo; Create a new user',
+					// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+					extensions: CoreUtilities.getAdminMenu()
+				},
+				userprofile: null,
+				allow_edit: allow_edit,
+				user: req.user,
+				entity: entity
+			};
+
+		if (req.user.usertype === 'admin') {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: user is admin');
+			allow_edit = true;
+		}
+		else if (ObjectToUse.hasPrivilege(req.user, 750)) {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: has edit user privilege');
+			allow_edit = true;
+		}
+		else {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: no access');
+		}
+
+		if (allow_edit) {
+			CoreController.renderView(req, res, viewtemplate, viewdata);
+		}
+		else {
+			res.status(401);
+			CoreController.handleDocumentQueryErrorResponse({
+				err: new Error('EXT-UAC750: You don\'t have access to create content'),
+				res: res,
+				req: req
+			});
+		}
+	}
+};
+
+/**
+ * make sure a user is authenticated, if not logged in, send them to login page and return them to original resource after login
+ * @param  {object} req
+ * @param  {object} res
+ * @return {Function} next() callback
+ */
+var get_edit_page = function (options) {
+	var entity = get_entity_modifications(options.entity);
+	return function (req, res) {
+		var allow_edit = false,
+			controllerDataObject = req.controllerData[entity.name],
+			username_display = controllerDataObject.username || controllerDataObject.email || controllerDataObject._id,
+			params = req.params;
+
+		if (params.id === req.user.username) {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: logged in user matches username');
+			allow_edit = true;
+		}
+		else if (req.user.usertype === 'admin') {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: user is admin');
+			allow_edit = true;
+		}
+		else if (User.hasPrivilege(req.user, 750)) {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: has edit user privilege');
+			allow_edit = true;
+		}
+		else {
+			logger.silly('asyncadmin - ' + entity.plural_name + '_show: no access');
+		}
+
+		if (allow_edit) {
+			var viewtemplate = {
+					viewname: 'p-admin/users/edit',
+					themefileext: appSettings.templatefileextension,
+					extname: 'periodicjs.ext.asyncadmin'
+				},
+				viewdata = {
+					pagedata: {
+						title: 'Edit ' + username_display,
+						toplink: '&amp;raquo; &lt;a href="/' + adminPath + '/' + entity.plural_name + '" class="async-admin-ajax-link">' + entity.capitalized_plural_name + '&lt;/a> &amp;raquo; ' + username_display,
+						// headerjs: ['/extensions/periodicjs.ext.admin/js/userprofile.min.js'],
+						extensions: CoreUtilities.getAdminMenu()
+					},
+					userprofile: controllerDataObject,
+					allow_edit: allow_edit,
+					user: req.user,
+					entity: entity
+				};
+			CoreController.renderView(req, res, viewtemplate, viewdata);
+		}
+		else {
+			res.status(401);
+			CoreController.handleDocumentQueryErrorResponse({
+				err: new Error('EXT-UAC760: You don\'t have access to modify content'),
+				res: res,
+				req: req
+			});
+		}
+	};
+};
+
+// 
+/**
+ * admin controller
+ * @module authController
+ * @{@link https://github.com/typesettin/periodic}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @requires module:periodicjs.core.utilities
+ * @requires module:periodicjs.core.controller
+ * @requires module:periodicjs.core.extensions
+ * @param  {object} resources variable injection from current periodic instance with references to the active logger and mongo session
+ * @return {object}          
+ */
+var controller = function (resources) {
+	logger = resources.logger;
+	mongoose = resources.mongoose;
+	appSettings = resources.settings;
+	CoreController = resources.core.controller;
+	CoreUtilities = resources.core.utilities;
+	Collection = mongoose.model('Collection');
+	Compilation = mongoose.model('Compilation');
+	Contenttype = mongoose.model('Contenttype');
+	Item = mongoose.model('Item');
+	User = mongoose.model('User');
+	controllerOptions = resources.app.controller.native.ControllerSettings;
+	// AppDBSetting = mongoose.model('Setting');
+	// var appenvironment = appSettings.application.environment;
+	adminExtSettings = resources.app.controller.extension.asyncadmin.adminExtSettings;
+	if (adminExtSettings.use_separate_accounts) {
+		Account = mongoose.model('Account');
+	}
+	adminPath = resources.app.locals.adminPath;
+
+	return {
+		users_index: get_index_page({
+			entity: 'user'
+		}),
+		accounts_index: get_index_page({
+			entity: 'account'
+		}),
+		users_edit: get_edit_page({
+			entity: 'user'
+		}),
+		accounts_edit: get_edit_page({
+			entity: 'account'
+		}),
+		users_show: get_show_page({
+			entity: 'user'
+		}),
+		accounts_show: get_show_page({
+			entity: 'account'
+		}),
+		users_new: get_new_page({
+			entity: 'user'
+		}),
+		accounts_new: get_new_page({
+				entity: 'account'
+			})
+			// usersearch: usersearch
+	};
+};
+
+module.exports = controller;
+</code></pre>
+        </article>
+    </section>
+
+
+
+
+</div>
+
+<nav>
+    <h2><a href="index.html">Home</a></h2><h3>Modules</h3><ul><li><a href="module-authController.html">authController</a></li><li><a href="module-settingsController.html">settingsController</a></li><li><a href="module-userroleController.html">userroleController</a></li><li><a href="periodicjs.ext.module_admin.html">admin</a></li></ul><h3>Classes</h3><ul><li><a href="filterlist.html">filterlist</a></li><li><a href="sortlist.html">sortlist</a></li><li><a href="StylieTextEditor.html">StylieTextEditor</a></li><li><a href="tsdatalist.html">tsdatalist</a></li><li><a href="tsmedialist.html">tsmedialist</a></li><li><a href="tstagmanager.html">tstagmanager</a></li></ul><h3>Global</h3><ul><li><a href="global.html#get_edit_page">get_edit_page</a></li><li><a href="global.html#get_index_page">get_index_page</a></li><li><a href="global.html#get_new_page">get_new_page</a></li><li><a href="global.html#get_show_page">get_show_page</a></li><li><a href="global.html#getHomepageStats">getHomepageStats</a></li><li><a href="global.html#getMarkdownReleases">getMarkdownReleases</a></li><li><a href="global.html#index">index</a></li><li><a href="global.html#load_app_settings">load_app_settings</a></li><li><a href="global.html#load_extension_settings">load_extension_settings</a></li><li><a href="global.html#load_theme_settings">load_theme_settings</a></li><li><a href="global.html#restart_app">restart_app</a></li><li><a href="global.html#sendSettingEmail">sendSettingEmail</a></li><li><a href="global.html#settings_faq">settings_faq</a></li><li><a href="global.html#settings_index">settings_index</a></li><li><a href="global.html#show">show</a></li><li><a href="global.html#styleWindowResizeEventHandler">styleWindowResizeEventHandler</a></li><li><a href="global.html#update_app">update_app</a></li><li><a href="global.html#update_app_settings">update_app_settings</a></li><li><a href="global.html#update_config_json_files">update_config_json_files</a></li><li><a href="global.html#update_ext_filedata">update_ext_filedata</a></li><li><a href="global.html#update_theme_filedata">update_theme_filedata</a></li><li><a href="global.html#update_theme_settings">update_theme_settings</a></li><li><a href="global.html#userrole_new">userrole_new</a></li></ul>
+</nav>
+
+<br class="clear">
+
+<footer>
+    Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a> on Wed Jun 15 2016 16:57:18 GMT-0400 (EDT)
+</footer>
+
+<script> prettyPrint(); </script>
+<script src="scripts/linenumber.js"> </script>
+</body>
+</html>

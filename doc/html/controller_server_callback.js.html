@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <title>JSDoc: Home</title>
+    <title>JSDoc: Source: controller/server_callback.js</title>
 
     <script src="scripts/prettify/prettify.js"> </script>
     <script src="scripts/prettify/lang-css.js"> </script>
@@ -17,46 +17,58 @@
 
 <div id="main">
 
-    <h1 class="page-title">Home</h1>
+    <h1 class="page-title">Source: controller/server_callback.js</h1>
 
     
 
 
 
     
-
-
-    <h3> </h3>
-
-
-
-
-
-
-
-
-
-
-    
-
-
-
-
     <section>
-        <article><h1>periodicjs.ext.login</h1><p>An authentication extension that uses passport to authenticate user sessions.</p>
-<p> <a href="https://github.com/typesettin/periodicjs.ext.login/blob/master/doc/api.md">API Documentation</a></p>
-<h2>Installation</h2><pre class="prettyprint source"><code>$ npm install periodicjs.ext.login</code></pre><h2>Configure</h2><p>you can define your own passort authentication strategies, after the extension has been installed, the extension configuration is located in <code>content/config/extensions/periodicjs.ext.login/transport.json</code></p>
-<p>##Development<br><em>Make sure you have grunt installed</em></p>
-<pre class="prettyprint source"><code>$ npm install -g grunt-cli</code></pre><p>Then run grunt watch</p>
-<pre class="prettyprint source"><code>$ grunt watch</code></pre><p>For generating documentation</p>
-<pre class="prettyprint source"><code>$ grunt doc
-$ jsdoc2md controller/**/*.js index.js install.js uninstall.js > doc/api.md</code></pre><p>##Notes</p>
-<ul>
-<li>Check out https://github.com/typesettin/periodicjs for the full Periodic Documentation</li>
-</ul></article>
+        <article>
+            <pre class="prettyprint source linenums"><code>'use strict';
+
+var logger,
+	io = global.io;
+
+var send_server_callback = function (options) {
+	try {
+		if (io &amp;&amp; io.engine) {
+			io.sockets.emit('server_callback', {
+				functionName: options.functionName,
+				functionData: options.functionData
+			});
+		}
+	}
+	catch (e) {
+		logger.error('asyncadmin - send_server_callback e', e);
+	}
+};
+
+/**
+ * admin controller
+ * @module authController
+ * @{@link https://github.com/typesettin/periodic}
+ * @author Yaw Joseph Etse
+ * @copyright Copyright (c) 2014 Typesettin. All rights reserved.
+ * @license MIT
+ * @requires module:periodicjs.core.utilities
+ * @requires module:periodicjs.core.controller
+ * @requires module:periodicjs.core.extensions
+ * @param  {object} resources variable injection from current periodic instance with references to the active logger and mongo session
+ * @return {object}          
+ */
+var controller = function (resources) {
+	logger = resources.logger;
+	return {
+		send_server_callback: send_server_callback
+	};
+};
+
+module.exports = controller;
+</code></pre>
+        </article>
     </section>
-
-
 
 
 
