@@ -88,8 +88,8 @@
   },
   "directories": {},
   "dist": {
-    "shasum": "f074cc4b400b38782ff8f0b0b5945638b865b684",
-    "tarball": "http://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.3.0.tgz"
+    "shasum": "7661437c66a162dd0b42831c8733ad3d3df55710",
+    "tarball": "https://registry.npmjs.org/periodicjs.ext.asyncadmin/-/periodicjs.ext.asyncadmin-7.4.0.tgz"
   },
   "engines": {
     "node": ">=6.x"
@@ -125,5 +125,5 @@
     "postuninstall": "node uninstall.js",
     "test": "mocha"
   },
-  "version": "7.4.0"
+  "version": "7.4.2"
 }

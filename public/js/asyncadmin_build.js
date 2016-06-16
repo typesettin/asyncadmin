@@ -40397,7 +40397,6 @@ module.exports = yeast;
 'use strict';
 var debounce = require('debounce');
 var ajaxlinks,
-	// ajaxforms,
 	// ajaxFormies = {},
 	// summernotes,
 	summernoteContentEditors = {},
