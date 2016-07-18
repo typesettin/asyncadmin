@@ -1,0 +1,106 @@
+<div class="ts-row ts-no-heading-margin">
+	<div class="ts-col-span6 ts-screensm-col-span12 ts-screenxs-col-span12 ts-padding-md">
+		<h3>Data feed</h3>
+		<%- locals.get_data_table_html({
+			data: contentcounts.databaseFeed,
+			data_attributes:[
+				{label:'Data Type'},
+				{label:'Create Date'},
+				{label:'Title'},
+			],
+			responsive_table :false,
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml='',
+					labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
+					if(obj.entitytype){
+						jsontablehtml = '<td width="15%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.entitytype) + '" class="async-admin-ajax-link">' + obj.entitytype + '</a></td>'; 
+						jsontablehtml += '<td width="15%">' + new locals.viewhelper.moment(obj.updatedat).fromNow() + '</td>';
+						jsontablehtml += '<td width="60%"><a href="/p-admin/content/' + obj.entitytype + '/' + obj._id + '/" class="async-admin-ajax-link">' + labeltouse + '</a></td>';
+					}
+					return jsontablehtml;
+				}
+			}
+		}) %>
+	</div>
+	<div class="ts-col-span6 ts-screensm-col-span12 ts-screenxs-col-span12 ts-padding-md">
+		<h3>Data counts</h3>
+		<%- locals.get_data_table_html({
+			data: contentcounts.databaseCount,
+			data_attributes:[
+				{label:'Data Type'},
+				{label:'#'},
+			],
+			responsive_table :false,
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml,
+					jsontablehtml='';
+					if(obj.collection){
+						jsontablehtml = '<td width="30%"><a href="/p-admin/content/' + locals.viewhelper.pluralize( obj.collection).toLowerCase() + '" class="async-admin-ajax-link">' + locals.viewhelper.pluralize(obj.collection) + '</a></td>'; 
+						jsontablehtml += '<td width="60%"> ' + obj.count + '</td>';
+					}
+					return jsontablehtml;
+				}
+			}
+
+		}) %>
+		<h3>Themes</h3>
+		<%- locals.get_data_table_html({
+			data: contentcounts.themes,
+			data_attributes:[
+				{label:'Name'},
+				{label:'Active'},
+			],
+			responsive_table :false,
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml='';
+					if(obj.themename){
+						jsontablehtml = '<td width="30%"><a href="/p-admin/theme/' + obj.themename.toLowerCase() + '" class="async-admin-ajax-link">' + obj.themename + '</a></td>'; 
+						jsontablehtml += '<td width="60%"> ' + obj.active + '</td>';
+					}
+					return jsontablehtml;
+				}
+			}
+
+		}) %>
+
+		<h3>Extensions</h3>
+		<%- locals.get_data_table_html({
+			data: contentcounts.extensions,
+			data_attributes:[
+				{label:'Name'},
+				{label:'Version'},
+				{label:'Enabled'},
+				{label:'Installed'},
+			],
+			responsive_table :false,
+			thead:locals.default_thead(),
+			tbody:{
+				tag: 'tr',
+				style: 'vertical-align:top;',
+				html: function (obj) {
+					var jsontablehtml='';
+					if(obj.name){
+						jsontablehtml = '<td width="45%"><a href="/p-admin/extension/' + obj.name.toLowerCase() + '" class="async-admin-ajax-link">' + obj.name + '</a></td>'; 
+						jsontablehtml += '<td width="10%"> ' + obj.version + '</td>';
+						jsontablehtml += '<td width="10%"> ' + obj.enabled + '</td>';
+						jsontablehtml += '<td width="25%"> ' + new locals.viewhelper.moment(obj.date).fromNow() + '</td>';
+					}
+					return jsontablehtml;
+				}
+			}
+
+		}) %>
+	</div>
+</div>

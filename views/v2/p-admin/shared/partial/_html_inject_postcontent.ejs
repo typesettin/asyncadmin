@@ -1,0 +1,10 @@
+<% if(locals.additionalPostContentHTML && locals.additionalPostContentHTML.length>0){%>
+	<section class="ts-row">
+		<div class="ts-col-span12">
+			<%- locals.viewhelper.getHTML(locals.additionalPostContentHTML) %>
+		</div>
+	</section>
+<%}
+else{%>
+<!-- no post content html -->
+<%} %>

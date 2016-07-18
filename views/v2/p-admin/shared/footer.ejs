@@ -1,0 +1,77 @@
+				</div> <!-- END OF <div id="ts-asyncadmin-content-container"> -->
+			</div>
+			<!-- END OF <div id="ts-asyncadmin-content-wrapper"> -->
+			<div class="ts-modal-hidden-container">
+				<% include _confirm_delete_modal %>
+				<% include _server_modal %>
+			  <div class="ts-modal-overlay ts-bg-primary-color"></div>
+			</div>
+			<footer class="ts-position-fixed ts-position-bottom ts-width-100 ts-text-center ts-serif-clean ts-padding-md ts-bg-text-primary-color" style="border-top: 1px solid black;">
+				<section class="ts-container ">
+					<div class="ts-row ">
+					  <div class="ts-col-span6 ts-text-left ts-text-sm">
+					    <%- periodic.name %>
+					    <%if(locals.adminExtSettings.settings.show_periodic_credit){%>
+								<span class="ts-screenxs-hidden"> | <a href="http://getperiodic.org" target="_blank">Periodic</a>
+								</span>
+					    <%}%>
+					  </div>
+					  <div class="ts-col-span6 ts-pull-right ts-text-right ts-text-sm">
+					    <span id="admin-console-span-container"></span>
+					    <%if(locals.adminExtSettings.settings.show_periodic_credit){%>
+						     | <span class=" ts-screenxs-hidden ts-screensm-hidden ts-screenmd-hidden">Version <%= periodic.version %>
+									<input type="hidden" name="periodic-version" value="<%= periodic.version %>"/> | Typesettin &copy;
+						    <%var d=new Date();%>
+						      <%- d.getFullYear() %> 
+					    <%}%>
+					    <!-- <%- locals.appenvironment %> -->
+					    </span>
+					  </div>
+					</div>
+				</section>
+				
+			</footer>
+		<!-- </div> -->
+	</main>
+
+	<div class="ts-display-none">
+		<div id="ts-admin-console" class="ts-position-relative" >
+			<div id="ts-admin-console-content" class=" ts-padding-lg" style="margin-bottom:3em;">
+				<!-- <pre>admin console</pre> -->
+			</div>
+			<form id="admin_command_submitForm" action="javascript://donothing">
+				<div id="ts-admin-command-button" class="ts-text-xl ts-position-bottom ts-position-fixed ts-width-50 ts-admin-command-button" style="">
+					<div class="ts-row ts-form-row">
+						<div class="ts-col-span10 ">
+							<input autocomplete="off" class="ts-input ts-width-100" id="admin_command_input" />
+						</div>
+						<div class="ts-col-span2 ts-text-center">
+							<button id="admin_command_submit_button" class="ts-button ts-button-accent-color ts-width-100">SEND</button>
+						</div>
+					</div>
+				</div>
+			</form>
+
+		</div>
+	</div>
+	<!-- periodic.app.locals.session_ttl:<%- locals.session_ttl %> -->
+	<% if(locals.appenvironment==='production'){%>
+	<style type="text/css">
+	.ts-hide-production{
+		display:none;
+	}
+	</style>
+	<%}%>
+	<%- locals.viewhelper.getHTML(locals.additionalFooterHTML) %>
+	<script type="text/javascript">
+		window.session_ttl = <%-locals.session_ttl%>;
+	  <%- locals.viewhelper.passObjToClient(periodic,"periodic") %>
+	  <%if(typeof user!=='undefined' && user && user._id && user.apikey){%>
+			  <%- locals.viewhelper.passObjToClient({_id:user._id,apikey:user.apikey,email:user.email,username:user.username},"admin_user") %>
+	  	<%}%>
+	</script>
+	<script type="template/ejs" id="ts-search-result-template">
+	  <% include _search_result_template %>
+	</script>
+</body>
+</html>
