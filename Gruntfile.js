@@ -170,7 +170,7 @@ module.exports = function (grunt) {
 				},
 				files: {
 					'public/stylesheets/asyncadmin.css': 'resources/stylesheets/asyncadmin.less',
-					'public/stylesheets/v2/asyncadmin.css': 'resources/stylesheets/v2/asyncadmin.less'
+					'public/v2/stylesheets/asyncadmin.bulma.css': 'resources/v2/stylesheets/asyncadmin.bulma.less'
 				}
 			}
 		},
@@ -194,6 +194,30 @@ module.exports = function (grunt) {
 					testpaths,
 				],
 				tasks: ['lint', 'packagejs', 'less', 'copy', 'test'],
+				options: {
+					interrupt: true
+				}
+			},
+			no_tests: {
+				files: [
+					'Gruntfile.js',
+					'index.js',
+					'controller/**/*.js',
+					'resources/**/*.less',
+					'resources/**/*.js',
+				],
+				tasks: ['lint', 'packagejs', 'less', 'copy'],
+				options: {
+					interrupt: true
+				}
+			},
+			only_less: {
+				files: [
+					'Gruntfile.js',
+					'index.js',
+					'resources/**/*.less',
+				],
+				tasks: ['less', 'copy'],
 				options: {
 					interrupt: true
 				}

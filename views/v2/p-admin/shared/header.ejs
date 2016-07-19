@@ -10,6 +10,7 @@
 	<meta name="Resource-type" content="Document" />
 	<!-- <link rel="stylesheet" type="text/css" href="/stylesheets/default/periodic.css" /> -->
 	<link rel="stylesheet" type="text/css" href="<%= locals.themehelper.extensionPublicResourcePath('periodicjs.ext.asyncadmin','stylesheets') %>asyncadmin.css" />
+	<link rel="stylesheet" type="text/css" href="/extensions/periodicjs.ext.asyncadmin/v2/stylesheets/asyncadmin.bulma.css" />
 	<script type="text/javascript">
 		<%- locals.viewhelper.passObjToClient(flash_messages,"periodic_flash_messages") %>
 	</script>
@@ -21,7 +22,7 @@
 <body class="ts-body ts-height-100 ts-no-x-overflow">
   <div id="ts-main-div" class=" ">
   	<nav id="ts-nav-menu" class="ts-text-sm animated-fast initialState ts-nav-menu">
-		  <% include _treeview_nav %>
+		  <% include partial/_sidebar_nav %>
 		</nav>
   	<nav id="ts-search-content" class="ts-text-sm animated-fast initialState ts-search-content">
 
@@ -30,7 +31,8 @@
 		<div class="ts-search-overlay hide"></div>
     <main id="ts-main-content">
       <!-- <div class="ts-pushmenu-scroller-inner ts-height-100 "> -->
-      <% include _header_menu_title %>
+      <% include partial/_header_nav %>
       <div id="ts-preloading" class="ts-preloading hide hide-preloading"></div>
       <div id="ts-asyncadmin-content-wrapper">
         <div id="ts-asyncadmin-content-container">
+				<% include partial/_html_inject_precontent %>

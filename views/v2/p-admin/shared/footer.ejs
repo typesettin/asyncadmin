@@ -1,9 +1,10 @@
+				<% include partial/_html_inject_postcontent %>
 				</div> <!-- END OF <div id="ts-asyncadmin-content-container"> -->
 			</div>
 			<!-- END OF <div id="ts-asyncadmin-content-wrapper"> -->
 			<div class="ts-modal-hidden-container">
-				<% include _confirm_delete_modal %>
-				<% include _server_modal %>
+				<% include modal/_confirm_delete_modal %>
+				<% include modal/_server_modal %>
 			  <div class="ts-modal-overlay ts-bg-primary-color"></div>
 			</div>
 			<footer class="ts-position-fixed ts-position-bottom ts-width-100 ts-text-center ts-serif-clean ts-padding-md ts-bg-text-primary-color" style="border-top: 1px solid black;">
@@ -71,7 +72,7 @@
 	  	<%}%>
 	</script>
 	<script type="template/ejs" id="ts-search-result-template">
-	  <% include _search_result_template %>
+	  <% include template/_search_result_template %>
 	</script>
 </body>
 </html>

@@ -1,0 +1,65 @@
+<div class="ts-row  ts-text-sm">
+	<div class="ts-col-span12">Search Results for "<?- request.query.search ?>"</div>
+</div>
+
+ <? search_entities.forEach(function(entity){
+	var pluralentity = pluralize(entity);
+	// console.log(search_results[entity])
+	if(search_results[entity] && search_results[entity][pluralentity] && search_results[entity][pluralentity].length){?>
+			<div class="ts-row ts-text-sm">
+				<div class="ts-col-span12 ts-bg-accent-color ts-text-text-primary-color ts-text-bold ts-padding-md">
+					<!-- <h6><?- capitalize(pluralize( entity)) ?></h6> -->
+					<div class="ts-col-span10"><?- capitalize(pluralize( entity))  ?></div>
+					<div class="ts-col-span2">Create Date</div>
+				</div>
+				<? search_results[entity][pluralentity].forEach(function(obj,i){
+					var labeltouse = obj.title || obj.name || obj.label ||obj.email || obj._id;
+							if(obj.identification && obj.identification.guid){
+								labeltouse = obj.identification.guid;
+							}
+							var linktouse = '/p-admin/content/' + entity + '/' + obj._id + '/';
+							if(search_results[entity][pluralentity+'customlink']){
+								linktouse = search_results[entity][pluralentity+'customlink'].replace(/%obj._id%/gi,obj._id);
+							}
+					?>
+					<div class="ts-col-span10 ts-padding-md">
+						<? if(obj.fileurl && obj.assettype ){?>
+							<figure>
+       		 			<? if(obj.assettype && obj.assettype.match("image")){
+       		 				if(obj.attributes && obj.attributes.encrypted_client_side){?>
+	       		 				<div>
+		       		 				<img  style="height:auto; max-width:10rem; background-image:url('/extensions/periodicjs.ext.asyncadmin/img/preloader/128x128/Preloader_7/Preloader_7.gif'); background-position:50% 50%; background-repeat:no-repeat;" class="ts-col-span12" src="/p-secure/asset/<?- obj._id ?>/<?- obj.attributes.periodicFilename ?>"/>
+	       		 				</div>
+       		 				<?}
+       		 				else{?>
+	       		 				<img class="" style="max-width:10rem;height:auto" src="<?-obj.fileurl?>"/>
+       		 				<?}?>
+					      <? } else if(obj.assettype && obj.assettype.match("pdf")){ ?>
+					        <span class="flaticon-acrobat2"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("zip")){ ?>
+					        <span class="flaticon-zipped2"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("audio")){ ?>
+					        <span class="flaticon-audio55"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("video")){ ?>
+					        <span class="flaticon-video170"> </span>
+					      <? } else if(obj.assettype && obj.assettype.match("text")){ ?>
+					        <span class="flaticon-code41"> </span>
+					      <? } else {?>
+					        <span class="flaticon-file82"> </span>
+					      <? }?>
+     		 			</figure>
+						<?}?>
+						<a href="<?- linktouse ?>" class="async-admin-ajax-link breakword"><?- labeltouse?></a>
+					</div>
+					
+					<div class="ts-col-span2  ts-padding-md"><?- new moment(obj.updatedat).fromNow()?></div>
+					<div class="ts-col-span12"> <hr/></div>
+				<?
+
+				}) ?>
+			</div>
+
+	
+		<? } 
+	});?>
+</div>
