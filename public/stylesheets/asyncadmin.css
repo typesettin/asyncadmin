@@ -1293,12 +1293,12 @@
 
 @-webkit-keyframes animScaleUp {
 	0% { opacity: 0; -webkit-transform: translate3d(0,-50%,0) scale3d(0,0,1); }
-	100% { opacity 1; -webkit-transform: translate3d(0,-50%,0) scale3d(1,1,1); }
+	100% { opacity: 1; -webkit-transform: translate3d(0,-50%,0) scale3d(1,1,1); }
 }
 
 @keyframes animScaleUp {
 	0% { opacity: 0; -webkit-transform: translate3d(0,-50%,0) scale3d(0,0,1); transform: translate3d(0,-50%,0) scale3d(0,0,1); }
-	100% { opacity 1; -webkit-transform: translate3d(0,-50%,0) scale3d(1,1,1); transform: translate3d(0,-50%,0) scale3d(1,1,1); }
+	100% { opacity: 1; -webkit-transform: translate3d(0,-50%,0) scale3d(1,1,1); transform: translate3d(0,-50%,0) scale3d(1,1,1); }
 }
 
 .ts-ns-effect-slidetop.ts-ns-show,
@@ -1509,8 +1509,14 @@
 
 .cm-tab { display: inline-block; text-decoration: inherit; }
 
+.CodeMirror-rulers {
+  position: absolute;
+  left: 0; right: 0; top: -50px; bottom: -20px;
+  overflow: hidden;
+}
 .CodeMirror-ruler {
   border-left: 1px solid #ccc;
+  top: 0; bottom: 0;
   position: absolute;
 }
 
@@ -1712,7 +1718,10 @@ div.CodeMirror span.CodeMirror-nonmatchingbracket {color: #f22;}
   visibility: hidden;
 }
 
-.CodeMirror-cursor { position: absolute; }
+.CodeMirror-cursor {
+  position: absolute;
+  pointer-events: none;
+}
 .CodeMirror-measure pre { position: static; }
 
 div.CodeMirror-cursors {
@@ -1868,6 +1877,7 @@ span.CodeMirror-selectedtext { background: none; }
   background: white;
   font-size: 90%;
   font-family: monospace;
+  max-width: 19em;
 
   max-height: 20em;
   overflow-y: auto;
@@ -1877,8 +1887,6 @@ span.CodeMirror-selectedtext { background: none; }
   margin: 0;
   padding: 0 4px;
   border-radius: 2px;
-  max-width: 19em;
-  overflow: hidden;
   white-space: pre;
   color: black;
   cursor: pointer;

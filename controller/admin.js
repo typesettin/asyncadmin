@@ -40,7 +40,7 @@ var admin_index = function (req, res) {
 	}
 	else {
 		var viewtemplate = {
-				viewname: 'p-admin/home/index',
+				viewname: 'v2/p-admin/home/index',
 				themefileext: appSettings.templatefileextension,
 				extname: 'periodicjs.ext.asyncadmin'
 			},
