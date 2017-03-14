@@ -39,7 +39,7 @@ module.exports = function (periodic) {
 	adminExtSettings = (settingJSON[appenvironment]) ? extend(defaultExtSettings, settingJSON[appenvironment]) : defaultExtSettings;
 
 	if (adminExtSettings.use_separate_accounts) {
-		AccountModel = periodic.mongoose.model('Account', accountSchema);
+		// AccountModel = periodic.mongoose.model('Account', accountSchema);
 	}
 
 	try {
